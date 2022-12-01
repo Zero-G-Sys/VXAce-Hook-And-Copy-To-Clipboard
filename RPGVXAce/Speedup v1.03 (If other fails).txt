@@ -1,0 +1,376 @@
+#==============================================================================
+# RGSS3_テストプレー高速化Ace ver1.03
+# 2012/05/21公開
+# 2014/05/05アクターコマンドからも全滅キー可能　通常プレイでも文章早送り可能
+#           敵全滅後に決定ボタンを押すと攻撃対象選択でエラーになるのを修正
+# 2014/06/19操作キーを変更可能　プレイ時間の表示に早送りを適用しない
+# 2014/06/30ニューゲーム時に現実経過時間がリセットされず引き継がれたのを修正
+# C Winter (http://ccwinter.blog.fc2.com/)
+# 
+# 歯車の城(http://members.jcom.home.ne.jp/cogwheel/)様で公開されている
+# ショウ様のRGSS2スクリプト素材の移植スクリプトです。
+#==============================================================================
+
+module SpeedUp
+  #--------------------------------------------------------------------------
+  # ● 設定項目
+  #--------------------------------------------------------------------------
+  
+  # 倍速スピード
+  SPEED_RATE = 2
+  
+  # falseにするとテストプレイ時でも通常プレイ時と同様の早送り形式になる
+  # （falseでもバトル中の敵全滅キーは使用可能）
+  TEST = true
+  
+  # オンの時にグラフィック高速化するスイッチ番号 0なら無効
+  SWITCH_A = 91
+  # オンの時に「INPUT_SWITCH_Aのボタンを押すとSWITCH_A切替」を
+  # 可能にするスイッチ番号 0なら無効
+  SWITCH_B = 92
+  
+  
+  # trueなら使用する  falseなら使用しない
+  
+  # 通常プレイ時　文章のスキップ
+  MESSAGE_BUTTON  = false # Ｘボタン入力中
+  MESSAGE_SWITCH  = false # SWITCH_AがＯＮの間
+  
+  # 通常プレイ時　グラフィック高速化
+  NOBATTLE_BUTTON = true # バトル中以外　Ｘボタン入力中
+  NOBATTLE_SWITCH = false # バトル中以外　SWITCH_AがＯＮの間
+  INBATTLE_BUTTON = true # バトル中　　　Ｘボタン入力中
+  INBATTLE_SWITCH = false # バトル中　　　SWITCH_AがＯＮの間
+  
+  
+  # 操作に使用するキー
+  #   「Qキー = :L」「Wキー = :R」
+  #   「Aキー = :X」「Sキー = :Y」「Dキー = :Z」
+  #   「Shiftキー = :A」「Ctrlキー = :CTRL」
+  INPUT_SPEED       = :CTRL  # グラフィック高速化
+  INPUT_BATTLE_WIN  = :Y  # 敵全滅
+  INPUT_SWITCH_A    = :CTRL  # SWITCH_A切替
+  
+  
+  # 「セーブデータに表示するプレイ時間」には早送りを適用しないようにするか
+  #   true: 早送りしていないプレイ時間（現実での経過時間）を表示
+  #  false: 早送りしたプレイ時間（ゲーム内経過時間）を表示　ver1.01以前と同じ
+  # 
+  # 「早送りしていないプレイ時間」のカウントはver1.02を導入してから開始する
+  # 
+  # 途中からver1.02に変更した場合、
+  #   「ver1.01以前のスクリプトを使っていたセーブデータ」をロードしても
+  #   それまでに早送りしていた分の時間は「早送りしたプレイ時間」のままとなる
+  # 最初から「ver1.02を導入してからニューゲーム」で開始した場合は
+  #   正しい「早送りしていないプレイ時間」が表示される
+  TIME_NO_SPD = true
+  
+  
+end
+
+#==============================================================================
+# ■ SpeedUp
+#==============================================================================
+module SpeedUp
+  def self.xp_style?
+    return ($lnx_include != nil and $lnx_include[:lnx11a] != nil)
+  end
+end
+#==============================================================================
+# ■ DataManager
+#==============================================================================
+class << DataManager
+  #--------------------------------------------------------------------------
+  # ● ニューゲームのセットアップ
+  #--------------------------------------------------------------------------
+  alias :setup_new_game_spd :setup_new_game
+  def setup_new_game
+    setup_new_game_spd
+    Graphics.spd_frame_count = 0
+  end
+end
+#==============================================================================
+# ■ Game_System
+#==============================================================================
+class Game_System
+  #--------------------------------------------------------------------------
+  # ● セーブ前の処理
+  #--------------------------------------------------------------------------
+  alias :on_before_save_spd :on_before_save
+  def on_before_save
+    @spd_frames_on_save = Graphics.spd_frame_count
+    on_before_save_spd
+    show_spd_playtime
+  end
+  #--------------------------------------------------------------------------
+  # ● ロード後の処理
+  #--------------------------------------------------------------------------
+  alias :on_after_load_spd :on_after_load
+  def on_after_load
+    Graphics.spd_frame_count = @spd_frames_on_save
+    on_after_load_spd
+    show_spd_playtime
+  end
+  #--------------------------------------------------------------------------
+  # ● プレイ時間を秒数で取得
+  #--------------------------------------------------------------------------
+  def playtime_count(count)
+    count / Graphics.frame_rate
+  end
+  #--------------------------------------------------------------------------
+  # ● プレイ時間を文字列で取得
+  #--------------------------------------------------------------------------
+  def playtime_s_count(count)
+    hour = playtime_count(count) / 60 / 60
+    min = playtime_count(count) / 60 % 60
+    sec = playtime_count(count) % 60
+    sprintf("%02d:%02d:%02d", hour, min, sec)
+  end
+  #--------------------------------------------------------------------------
+  # ● プレイ時間を文字列で取得
+  #--------------------------------------------------------------------------
+  def playtime_s
+    count = SpeedUp::TIME_NO_SPD ? Graphics.spd_frame_count : Graphics.frame_count
+    playtime_s_count(count)
+  end
+  #--------------------------------------------------------------------------
+  # ● プレイ時間を表示
+  #--------------------------------------------------------------------------
+  def show_spd_playtime
+    text = sprintf("(Test play speeding up) Play time Fast forward [% s] Fast forward remove [% s]",
+                   playtime_s_count(Graphics.frame_count),
+                   playtime_s_count(Graphics.spd_frame_count))
+    p text
+  end
+end
+#==============================================================================
+# ■ Scene_Base
+#==============================================================================
+class Scene_Base
+  #--------------------------------------------------------------------------
+  # ● Ｚボタン入力時のSWITCH_Aの切替
+  #--------------------------------------------------------------------------
+  def change_switch_a
+    return false if SpeedUp::SWITCH_A == 0
+    return false if SpeedUp::SWITCH_B == 0
+    return false if $game_switches[SpeedUp::SWITCH_B] == false
+    if SceneManager.scene_is?(Scene_Battle)
+      return (Graphics.test? || SpeedUp::INBATTLE_SWITCH)
+    else
+      return (Graphics.test? || SpeedUp::NOBATTLE_SWITCH)
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● フレーム更新
+  #--------------------------------------------------------------------------
+  alias :update_basic_spd :update_basic
+  def update_basic
+    if Input.trigger?(SpeedUp::INPUT_SWITCH_A) && change_switch_a
+      $game_switches[SpeedUp::SWITCH_A] = !$game_switches[SpeedUp::SWITCH_A]
+    end
+    update_basic_spd
+  end
+end
+#==============================================================================
+# ■ Graphics
+#==============================================================================
+class << Graphics
+  def spd_frame_count
+    @spd_frame_count = Graphics.frame_count if @spd_frame_count == nil
+    return @spd_frame_count
+  end
+  def spd_frame_count=(count)
+    @spd_frame_count = count
+  end
+  #--------------------------------------------------------------------------
+  # ● 早送り用のテスト判定
+  #--------------------------------------------------------------------------
+  def test?
+    $TEST && SpeedUp::TEST
+  end
+  #--------------------------------------------------------------------------
+  # ● グラフィックの早送りが可能かどうか
+  #--------------------------------------------------------------------------
+  def speedup_on?
+    if SceneManager.scene_is?(Scene_Battle)
+      return can_battle_speedup?
+    else
+      return can_normal_speedup?
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● バトル中以外でのグラフィックの早送りが可能かどうか
+  #--------------------------------------------------------------------------
+  def can_normal_speedup?
+    a = (test? || SpeedUp::NOBATTLE_BUTTON) && Input.press?(SpeedUp::INPUT_SPEED)
+    b = (test? || SpeedUp::NOBATTLE_SWITCH) && $game_switches[SpeedUp::SWITCH_A]
+    return a ^ b  # Ｘボタン入力とスイッチが両方オンなら早送りしない
+  end
+  #--------------------------------------------------------------------------
+  # ● バトル中のグラフィックの早送りが可能かどうか
+  #--------------------------------------------------------------------------
+  def can_battle_speedup?
+    a = (test? || SpeedUp::INBATTLE_BUTTON) && Input.press?(SpeedUp::INPUT_SPEED)
+    b = (test? || SpeedUp::INBATTLE_SWITCH) && $game_switches[SpeedUp::SWITCH_A]
+    return a ^ b  # Ｘボタン入力とスイッチが両方オンなら早送りしない
+  end
+  #--------------------------------------------------------------------------
+  # ● 文章の「１文字ごとのウェイトを無視」が可能かどうか
+  #--------------------------------------------------------------------------
+  def can_message_no_wait?
+    a = (test? || SpeedUp::MESSAGE_BUTTON) && Input.press?(SpeedUp::INPUT_SPEED)
+    b = (test? || SpeedUp::MESSAGE_SWITCH) && $game_switches[SpeedUp::SWITCH_A]
+    return a ^ b  # Ｘボタン入力とスイッチが両方オンなら早送りしない
+  end
+  #--------------------------------------------------------------------------
+  # ● 文章の「決定ボタンの入力が無くても文章送り」が可能かどうか
+  #--------------------------------------------------------------------------
+  def can_message_skip_input?
+    a = (test? || SpeedUp::MESSAGE_BUTTON) && Input.press?(SpeedUp::INPUT_SPEED)
+    b = (test? || SpeedUp::MESSAGE_SWITCH) && $game_switches[SpeedUp::SWITCH_A]
+    return a ^ b  # Ｘボタン入力とスイッチが両方オンなら早送りしない
+  end
+  #--------------------------------------------------------------------------
+  # ● 敵全滅コマンドが可能かどうか
+  #--------------------------------------------------------------------------
+  def can_all_enemy_kill?
+    $TEST && Input.trigger?(SpeedUp::INPUT_BATTLE_WIN) && !$game_troop.all_dead?
+  end
+  
+  
+  #--------------------------------------------------------------------------
+  # ● フレーム更新
+  #--------------------------------------------------------------------------
+  alias :update_spd :update
+  def update
+    # フレームカウントが SPEED の倍数でない時
+    if Graphics.frame_count % SpeedUp::SPEED_RATE > 0 && speedup_on?
+      # グラフィックの更新をせず、カウントだけ加算する
+      Graphics.frame_count += 1
+    else  # フレームカウントが SPEED の倍数の時
+      # グラフィックの更新を行う
+      Graphics.spd_frame_count += 1
+      update_spd
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● ウェイト処理
+  #--------------------------------------------------------------------------
+  alias :wait_spd :wait
+  def wait(duration)
+    if speedup_on?
+      duration /= SpeedUp::SPEED_RATE
+    end
+    wait_spd(duration)
+  end
+  #--------------------------------------------------------------------------
+  # ● フェードイン処理
+  #--------------------------------------------------------------------------
+  alias :fadein_spd :fadein
+  def fadein(duration)
+    if speedup_on?
+      duration /= SpeedUp::SPEED_RATE
+    end
+    fadein_spd(duration)
+  end
+  #--------------------------------------------------------------------------
+  # ● フェードアウト処理
+  #--------------------------------------------------------------------------
+  alias :fadeout_spd :fadeout
+  def fadeout(duration)
+    if speedup_on?
+      duration /= SpeedUp::SPEED_RATE
+    end
+    fadeout_spd(duration)
+  end
+  #--------------------------------------------------------------------------
+  # ● トランジション処理
+  #--------------------------------------------------------------------------
+  alias :transition_spd :transition
+  def transition(duration = 10, filename = "", vague = 40)
+    if speedup_on?
+      duration /= SpeedUp::SPEED_RATE
+    end
+    transition_spd(duration, filename, vague)
+  end
+end
+
+#==============================================================================
+# ■ Window_Message
+#==============================================================================
+class Window_Message < Window_Base
+  #--------------------------------------------------------------------------
+  # ● 一文字出力後のウェイト
+  #--------------------------------------------------------------------------
+  def wait_for_one_character
+    update_show_fast
+    Fiber.yield unless @show_fast || @line_show_fast ||
+                          Graphics.can_message_no_wait?
+  end
+  #--------------------------------------------------------------------------
+  # ● 入力待ち処理
+  #--------------------------------------------------------------------------
+  def input_pause
+    self.pause = true
+    wait(10)
+    Fiber.yield until Input.trigger?(:B) || Input.trigger?(:C) ||
+                          Graphics.can_message_skip_input?
+    Input.update
+    self.pause = false
+  end
+end
+#==============================================================================
+# ■ Window_PartyCommand
+#==============================================================================
+class Window_PartyCommand < Window_Command
+  #--------------------------------------------------------------------------
+  # ● 決定やキャンセルなどのハンドリング処理
+  #--------------------------------------------------------------------------
+  alias :process_handling_spd :process_handling
+  def process_handling
+    if active && $game_troop.all_dead?
+      close
+      deactivate
+    end
+    process_handling_spd
+    SceneManager.scene.all_enemy_kill if self.active && Graphics.can_all_enemy_kill?
+  end
+end
+#==============================================================================
+# ■ Window_ActorCommand
+#==============================================================================
+class Window_ActorCommand < Window_Command
+  #--------------------------------------------------------------------------
+  # ● 決定やキャンセルなどのハンドリング処理
+  #--------------------------------------------------------------------------
+  alias :process_handling_spd :process_handling
+  def process_handling
+    if active && $game_troop.all_dead?
+      close
+      deactivate
+    end
+    process_handling_spd
+    SceneManager.scene.all_enemy_kill if self.active && Graphics.can_all_enemy_kill?
+  end
+end
+#==============================================================================
+# ■ Scene_Battle
+#==============================================================================
+class Scene_Battle < Scene_Base
+  #--------------------------------------------------------------------------
+  # ● 早送り判定
+  #--------------------------------------------------------------------------
+  def show_fast?
+    Input.press?(:A) || Input.press?(:C) || Graphics.speedup_on?
+  end
+  #--------------------------------------------------------------------------
+  # ● 勝利コマンド
+  #--------------------------------------------------------------------------
+  def all_enemy_kill
+    Sound.play_ok
+    for enemy in $game_troop.members
+      enemy.hp -= 999999
+      enemy.perform_collapse_effect
+    end
+  end
+end

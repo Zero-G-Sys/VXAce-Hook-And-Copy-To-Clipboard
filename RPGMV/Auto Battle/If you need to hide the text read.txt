@@ -1,0 +1,5 @@
+plugin uses this parameter
+
+Window Hide Switch
+
+to hide the window, so either look for a switch that is true or modify the script (look for instances where that switch is read and change it to true)

@@ -1,0 +1,35 @@
+class Window_Message < Window_Selectable
+  DEFAULT_BACK_OPACITY = 150 
+  @transparent = 0
+  
+  alias zero_update update
+  def update
+    zero_update
+    
+    if Input.trigger?(Input::Y)
+      if @transparent == 1
+        self.opacity          = 255
+        self.back_opacity     = DEFAULT_BACK_OPACITY
+        @name_window_frame.visible = true unless @name_window_frame.nil?
+        @name_window_text.visible  = true unless @name_window_text.nil?
+        @input_number_window.visible  = true unless @input_number_window.nil?
+        @transparent = 0
+      else
+        self.opacity            = 0
+        self.back_opacity       = 0
+        @name_window_frame.visible = false unless @name_window_frame.nil?
+        @input_number_window.visible  = false unless @input_number_window.nil?
+        self.pause = false
+        @transparent = 1
+      end
+    end
+    
+    if @transparent == 1
+      self.opacity            = 0
+      self.back_opacity       = 0
+      @name_window_frame.visible = false unless @name_window_frame.nil?
+      @input_number_window.visible  = false unless @input_number_window.nil?
+      self.pause = false
+    end
+  end    
+end

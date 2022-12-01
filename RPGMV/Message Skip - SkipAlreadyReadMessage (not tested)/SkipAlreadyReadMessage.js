@@ -1,0 +1,305 @@
+//=============================================================================
+// SkipAlreadyReadMessage.js
+//=============================================================================
+
+/*:
+ * @plugindesc Provides the ability to skip read messages.
+ * @author 奏ねこま（おとぶきねこま）
+ *
+ * @param MsgSkipKey
+ * @desc Key to skip messages (Both read and unread)
+ * @default control
+ *
+ * @param ReadMsgSkipKey
+ * @desc Key to skip already read messages
+ * @default control
+ *
+ * @param Variable ID for read flag storage
+ * @desc Specify the ID of the variable that saves read flags.
+ * @default 1
+ *
+ * @param Switch ID to enable always skip even unread messages
+ * @desc Specify the ID of the switch that determines whether unreads are also skipped.
+ * @default 0
+ *
+ * @param Already read message character color
+ * @desc Specify the number of the text color for already read messages.
+ * @default 6
+ *
+ * @param Switch ID for read message text color control
+ * @desc Specify the ID of the switch that enables/disables the read message text color.
+ * @default 0
+ *
+ * @param Force read color without using a switch
+ * @desc Ignore previous switch if set to false
+ * @default false
+ * 
+ * @param Tag for judging sentences before modification
+ * @desc Specify a tag to determine that the content of the annotation command is the text before modification.
+ * @default **BeforeMod**
+ *
+ * @help
+ * [プラグインパラメータ]
+ *  ▽メッセージスキップキー
+ *    既読、未読の両方のメッセージをスキップするキーを指定します。
+ *     shift   : Shiftキー
+ *     control : CtrlキーまたはAltキー
+ *    上記以外のキーについては、rpg_core.jsのInput.keyMapperを参照してください。
+ *
+ *  ▽既読メッセージスキップキー
+ *    既読メッセージをスキップするキーを指定します。
+ *
+ *  ▽既読フラグ保存用変数ID
+ *    メッセージの既読状態を保存するための変数のIDを指定します。
+ *    変数をセーブ間で共有できるプラグインをご使用の場合、ここで指定した変数を対
+ *    象にすることで、既読状態を共有することができるようになります。
+ *
+ *  ▽未読スキップ判定用スイッチID
+ *    未読メッセージをスキップするかどうかを判定するスイッチのIDを指定します。
+ *    ここで指定したスイッチがONになっていない場合は、既読未読共用のメッセージス
+ *    キップキーを押下しても、既読メッセージしかスキップされません。
+ *
+ *  ▽既読メッセージ文字色
+ *    既読メッセージの文字色を、番号で指定します。
+ *    Window.pngの右下にある8x4のカラーリストが番号と対応しており、左上から右下に
+ *    向って0番～31番となります。
+ *
+ *  ▽既読メッセージ文字色制御用スイッチID
+ *    既読メッセージの文字色を適用を切り替えるスイッチのIDを指定します。
+ *    ここで指定したスイッチがOFFの場合、既読メッセージ文字色は適用されません。
+ *
+ *  ▽修正前文章判定用タグ
+ *    「文章修正について」の説明を参照。
+ *
+ * [既読の判断方法について]
+ *   メッセージは、以下の要素がすべて一致した場合、同じメッセージと判断されます。
+ *
+ *   ・マップID（コモンイベントはID:0、バトルイベントはID:-1として判断）
+ *   ・イベントID
+ *   ・イベントページ（コモンイベントはページ0として判断）
+ *   ・文章内容
+ *
+ *   文章内容が全く同じでもページが異なれば「別のメッセージ」として判断されます。
+ *   逆に同ページ内に同じ内容の文章があれば「同じメッセージ」として判断されます。
+ *   同ページ内の同じ内容の文章を別物として扱いたい場合は、文末に空白を入れるなど
+ *   して差別化してください。
+ *
+ * [文章修正について]
+ *   製品版としてリリース済みのゲームを、バージョンアップなどで誤字修正してしまう
+ *   と修正前の文章と修正後の文章は「別のメッセージ」となり、そのままでは既読扱い
+ *   されず、スキップできなくなってしまいます。これを回避するには、以下のように対
+ *   応してください。
+ *
+ *   ・修正した文章の直前に「注釈」イベントコマンドを挿入
+ *   ・注釈の一行目に「**修正前**」と記述
+ *   ・二行目以降に、修正前の文章をそのままコピー
+ *
+ *   これにより、既読判定には修正後の文章ではなく、注釈の二行目以降に書かれた文章
+ *   を使用するようになります。
+ *   なお、一行目に記述する「**修正前**」は、プラグインパラメータの「修正前文章判
+ *   定用タグ」にて他の文字列に変更することができます。
+ *
+ * *このプラグインには、プラグインコマンドはありません。      
+ *
+ * [ 利用規約 ] .................................................................
+ *  本プラグインの利用者は、RPGツクールMV/RPGMakerMVの正規ユーザーに限られます。
+ *  商用、非商用、ゲームの内容（年齢制限など）を問わず利用可能です。
+ *  ゲームへの利用の際、報告や出典元の記載等は必須ではありません。
+ *  二次配布や転載、ソースコードURLやダウンロードURLへの直接リンクは禁止します。
+ *  （プラグインを利用したゲームに同梱する形での結果的な配布はOKです）
+ *  不具合対応以外のサポートやリクエストは受け付けておりません。
+ *  本プラグインにより生じたいかなる問題においても、一切の責任を負いかねます。
+ * [ 改訂履歴 ] .................................................................
+ *   2017/03/05 スキップフラグ関連を ConfigManager のフラグに書き換え isSkip()部分
+ *   Version 1.01  2016/08/06  メッセージ切り替え時のウェイトをカットできていない
+ *                             問題を修正
+ *   Version 1.00  2016/08/01  初版
+ * -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *  Web Site: http://i.gmobb.jp/nekoma/rpg_tkool/
+ *  Twitter : https://twitter.com/koma_neko
+ */
+
+(function(){
+    'use strict';
+    
+    const _PRODUCT    = 'SkipAlreadyReadMessage';
+    const _PARAMETERS = PluginManager.parameters(_PRODUCT);
+
+    const _KEY_MSGSKIP   =  _PARAMETERS['MsgSkipKey'] || '';
+    const _KEY_ARMSGSKIP =  _PARAMETERS['ReadMsgSkipKey'] || '';
+    const _VID_ARFLAGS   = +_PARAMETERS['Variable ID for read flag storage'] || 1;
+    const _SID_URSKIP    = +_PARAMETERS['Switch ID to enable always skip even unread messages'] || 0;
+    const _CID_ARMSG     = +_PARAMETERS['Already read message character color'] || 0;
+    const _SID_ARMSGCLR  = +_PARAMETERS['Switch ID for read message text color control'] || 0;
+    const _SID_ARMSGCLRFORCE  = +_PARAMETERS['Force read color without using a switch'] || 0;
+    const _TAG_ORGMSG    =  _PARAMETERS['Tag for judging sentences before modification'] || '';
+    
+    function _(f){ return f[_PRODUCT] = f[_PRODUCT] || {} }
+
+    var _MapID = 0;
+    
+    function AddEventInfo(map, event, page, list) {
+        list.forEach(function(command) {
+            if (command.code === 101) {
+                _(command).info = {
+                    map: map + 1,
+                    event: event,
+                    page: page
+                };
+            }
+        });
+    }
+
+    function ReadARFlag (command, text) {
+        var flag = $gameVariables._data[_VID_ARFLAGS];
+        var map = _(command).info.map;
+        var event = _(command).info.event;
+        var page = _(command).info.page;
+        if (flag) {
+            if (flag[map]) {
+                if (flag[map][event]) {
+                    if (flag[map][event][page]) {
+                        return !!flag[map][event][page][text];
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    function UpdateARFlag (command, text) {
+        var flag = $gameVariables._data[_VID_ARFLAGS];
+        var map = _(command).info.map;
+        var event = _(command).info.event;
+        var page = _(command).info.page;
+        if (!flag) {
+            $gameVariables._data[_VID_ARFLAGS] = [];
+            flag = $gameVariables._data[_VID_ARFLAGS];
+        }
+        if (!flag[map]) {
+            flag[map] = [];
+        }
+        if (!flag[map][event]) {
+            flag[map][event] = [];
+        }
+        if (!flag[map][event][page]) {
+            flag[map][event][page] = {};
+        }
+        flag[map][event][page][text] = true;
+    }
+    
+    function isSkip() {
+        var skip = false;
+		
+		//if (Input.isPressed(_KEY_MSGSKIP) ){
+		//	skip = true;
+		
+        if (Input.isPressed(_KEY_MSGSKIP) && ($gameSwitches.value(_SID_URSKIP) || _($gameMessage).already_read)) {
+        //}else if (ConfigManager.skipMes && !$gameSwitches._data[1195]) {
+			skip = true;
+        } else if (Input.isPressed(_KEY_ARMSGSKIP) && _($gameMessage).already_read) {
+		//} else if (ConfigManager.skipReadedMes && _($gameMessage).already_read && !$gameSwitches._data[1195]) {
+            skip = true;
+        }
+        return skip;
+    }
+    
+    var _DataManager_loadMapData = DataManager.loadMapData;
+    DataManager.loadMapData = function(mapId) {
+        _MapID = mapId;
+        _DataManager_loadMapData.call(this, mapId);
+    };
+    
+    var _DataManager_onLoad = DataManager.onLoad;
+    DataManager.onLoad = function(object) {
+        _DataManager_onLoad.call(this, object);
+        var eventId;
+        switch(object) {
+            case $dataMap:
+                $dataMap.events.forEach(function(event) {
+                    if (event) {
+                        event.pages.forEach(function(page, index) {
+                            AddEventInfo(_MapID, event.id, index, page.list);
+                        });
+                    }
+                });
+                break;
+            case $dataCommonEvents:
+                $dataCommonEvents.forEach(function(event) {
+                    if (event) {
+                        AddEventInfo(0, event.id, 0, event.list);
+                    }
+                });
+                break;
+            case $dataTroops:
+                $dataTroops.forEach(function(event) {
+                    if (event) {
+                        event.pages.forEach(function(page, index) {
+                            AddEventInfo(-1, event.id, index, page.list);
+                        });
+                    }
+                });
+                break;
+        }
+    };
+
+    var _Game_Interpreter_command101 = Game_Interpreter.prototype.command101;
+    Game_Interpreter.prototype.command101 = function() {
+        if (!$gameMessage.isBusy()) {
+            var text = '';
+            if (_($gameMessage).org_text) {
+                text = _($gameMessage).org_text;
+                _($gameMessage).org_text = '';
+            } else {
+                var index = this._index;
+                while (this.nextEventCode() === 401) {
+                    this._index++;
+                    text += this.currentCommand().parameters[0];
+                }
+                this._index = index;
+            }
+            _($gameMessage).already_read = ReadARFlag(this.currentCommand(), text)
+            UpdateARFlag(this.currentCommand(), text);
+        }
+        return _Game_Interpreter_command101.call(this);
+    };
+
+    var _Game_Interpreter_command108 = Game_Interpreter.prototype.command108;
+    Game_Interpreter.prototype.command108 = function() {
+        var result = _Game_Interpreter_command108.call(this);
+        if (_TAG_ORGMSG) {
+            if (this._comments[0] === _TAG_ORGMSG) {
+                _($gameMessage).org_text = '';
+                this._comments.forEach(function(comment, index) {
+                    if (index) {
+                        _($gameMessage).org_text += comment;
+                    }
+                });
+            }
+        }
+        return result;
+    };
+    
+    var _Window_Message_isTriggered = Window_Message.prototype.isTriggered;
+    Window_Message.prototype.isTriggered = function() {
+        this._pauseSkip = this._pauseSkip || isSkip();
+        return _Window_Message_isTriggered.call(this) || isSkip();
+    };
+
+    var _Window_Message_terminateMessage = Window_Message.prototype.terminateMessage;
+    Window_Message.prototype.terminateMessage = function() {
+        _Window_Message_terminateMessage.call(this);
+        _($gameMessage).already_read = false;
+    };
+
+    var _Scene_Map_isFastForward = Scene_Map.prototype.isFastForward;
+    Scene_Map.prototype.isFastForward = function() {
+        return _Scene_Map_isFastForward.call(this) || ($gameMap.isEventRunning() && !SceneManager.isSceneChanging() && isSkip());
+    };
+    
+    var _Window_Message_normalColor = Window_Message.prototype.normalColor;
+    Window_Message.prototype.normalColor = function() {
+        var color = _Window_Message_normalColor.call(this);
+        return (($gameSwitches.value(_SID_ARMSGCLR) || _SID_ARMSGCLRFORCE) && _($gameMessage).already_read) ? this.textColor(_CID_ARMSG) : color;
+    };
+}());

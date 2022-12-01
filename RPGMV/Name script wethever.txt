@@ -1,0 +1,7 @@
+(function() {
+var substrBegin = document.currentScript.src.lastIndexOf('/');
+var substrEnd = document.currentScript.src.indexOf('.js');
+var scriptName = document.currentScript.src.substring(substrBegin+1, substrEnd);
+var parameters = PluginManager.parameters(scriptName);
+
+var eng_font_name = String(parameters['Font Name (English)'] || 'GameFont');

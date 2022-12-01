@@ -1,0 +1,36 @@
+#Zero_G adding a custom menu item to game menu (must create a new Scene class to call)
+
+#Add action when selection option
+class Scene_Menu < Scene_Base
+  alias zerog_create_command_window create_command_window
+  def create_command_window
+    zerog_create_command_window
+    @command_window.addCommand("Custom Menu") #Add new menu    #MODIFY THIS
+    #@command_window.addCommand("Custom Menu N+1") #Add another new menu
+  end
+  
+  alias zerog_update_command_selection update_command_selection
+  def update_command_selection
+    zerog_update_command_selection
+    if Input.trigger?(Input::C)
+      Sound.play_decision
+      case @command_window.index
+      when 6 #New command (number may change if game already added a command) #MODIFY THIS
+        $scene = Scene_End.new
+      #when 7 #another new command
+      # $scene = Scene_End.new
+      end
+    end
+  end
+end
+
+# New method to add commands to menu
+class Window_Command < Window_Selectable
+    def addCommand(command) #Zero_Glala
+    @commands << command
+    @item_max = commands.size
+    self.height = @item_max * WLH + 32 #Resize window
+    create_contents #create new bitmap (no text otherwise)
+    refresh
+  end
+end

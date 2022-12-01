@@ -1,0 +1,4 @@
+-Go to %LOCALAPPDATA%/
+-Delete 'nwjs' folder
+-Go to 'User Data/Default' folder (in %LOCALAPPDATA% too)
+-Delete 'Web Data' and 'Web Data-journal' files

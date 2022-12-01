@@ -1,0 +1,5 @@
+= How to install this in RPG Maker XP
+
+Create a new section at the top and copy this script to it
+
+((I think it means that it should be before all the scripts, test it))

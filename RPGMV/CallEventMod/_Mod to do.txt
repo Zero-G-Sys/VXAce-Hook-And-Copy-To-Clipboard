@@ -1,0 +1,11 @@
+if the script call 
+ -call to map 0, it should use the current map
+ -same for event, it should use the current event
+
+See if map 0 or event 0 exists, else change it for a sign, like *
+
+ex:
+ CallEvent 8, Map 38, Page 7
+
+ CallEvent 0, Map 0, page 7
+ CallEvent *, Map *, page 7

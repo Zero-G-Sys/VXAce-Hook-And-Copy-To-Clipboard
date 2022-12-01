@@ -1,0 +1,22 @@
+=begin
+===============================================================================
+ Toggle Default
+===============================================================================
+ This script will set defualt behavior for walking as running.
+-------------------------------------------------------------------------------
+=end
+
+class Game_Player < Game_Character
+  
+  # Set normal move speed from 4 to 5
+  alias dash_initialize initialize
+  def initialize
+    dash_initialize
+    @move_speed = 5
+  end
+  
+  # Dash now substracts 1 insted of adding it
+  def real_move_speed
+    return @move_speed - (dash? ? 1 : 0)
+  end
+end

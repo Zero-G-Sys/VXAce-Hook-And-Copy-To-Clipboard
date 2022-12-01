@@ -1,0 +1,7 @@
+Modded MessageWindowHidden to trigger with 'd'
+
+Disabled 'd' in ZERO_HideMessageWindowZ
+and used a function of MessageWindowHidden to hide the picutre frame
+
+***MUST SET THE PICTUREID IN A CONST INSIDE ZERO_HideMessageWindowZ
+AND in MessageWindowHidden PARAMETERS (in plugins.js)

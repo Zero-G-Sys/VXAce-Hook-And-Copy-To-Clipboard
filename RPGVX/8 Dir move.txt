@@ -1,0 +1,162 @@
+=begin rdoc
+= #024 プレイヤー斜め移動
+プレイヤーが斜めに移動することが出来るようになります。また、不自然な動作を
+しないように設定することが出来ます。
+* 設定や動作の詳細は下記の[設定・動作について]をご覧下さい。
+
+== このスクリプトの情報
+バージョン:: 1.0.1 ( 2008-01-05 )
+対応::       RPGツクールVX（XP版は別途配布）
+配布元::     http://quiet-labs.net/s/024/
+作成者::     ユミル ( mailto:info@quiet-labs.net )
+挿入位置::   [VX] 標準の位置に挿入
+動作条件::   [VX] 特に無し
+
+== 設定・動作について（設定項目は 50 行目付近）
+* このスクリプトを使用すると、方向キーの同時押しで斜めに移動できるように
+  なります。
+* 下記の設定によってプレイヤーの移動の仕方が変わります。
+  * PassCorner = true とすると、斜め先に移動出来る場合、通行不可のタイルなどに
+    食い込みながら移動します。ただし、一部のタイルでは不自然に見えることが
+    あります。また、一部の接触イベントを通らずに通過してしまうことがあります。
+  * PassCorner = false とすると、建物やイベントなどに食い込まないようにして
+    移動します。
+* 壁などに向かって斜めに移動すると、通行不可能なタイルの横を滑るようにして移動
+  します。
+
+== 更新履歴
+[1.0.1]
+  更新 : 2008-01-05
+  * 斜め移動の際に１マス毎に向きが変わる不具合を修正。
+  * 斜め移動時の速度を補正するように変更。
+[1.0.0]
+  更新 : 2008-01-04
+  * VX 対応版を公開。
+
+==サポート
+* 不具合などがありましたら掲示板で報告していただければ幸いです。
+* 設定や組み込みなどで不明な点が有れば掲示板にてお尋ね下さい。
+=end
+
+# このサイトの名前空間。
+module QuietLab
+end
+
+# このスクリプトの名前空間。
+module QuietLab::Script_24
+  
+  # このスクリプトのバージョンの日付表記。
+  Version = 2008_01_05
+end
+
+# このスクリプトの設定の名前空間。
+module QuietLab::Script_24::Settings
+  
+  # [障害物通行可能設定]
+  # 建物などの角の上を通れるようにするか（ ON なら true , OFF なら false ）
+  PassCorner = false
+  
+  #--
+  # 設定項目は以上です。
+  #++
+end
+
+# プレイヤーのセーブデータクラス。
+class Game_Player
+  
+  # 移動時の更新
+  def update_move
+    distance = 2 ** @move_speed   # 移動速度から移動距離に変換
+    distance *= 2 if dash?        # ダッシュ状態ならさらに倍
+    # 斜め移動時は速度調整
+    if @x * 256 != @real_x and @y * 256 != @real_y
+      distance = (distance / 1.4).to_i
+    end
+    @real_x = [@real_x - distance, @x * 256].max if @x * 256 < @real_x
+    @real_x = [@real_x + distance, @x * 256].min if @x * 256 > @real_x
+    @real_y = [@real_y - distance, @y * 256].max if @y * 256 < @real_y
+    @real_y = [@real_y + distance, @y * 256].min if @y * 256 > @real_y
+    update_bush_depth unless moving?
+    if @walk_anime
+      @anime_count += 1.5
+    elsif @step_anime
+      @anime_count += 1
+    end
+  end
+  
+  include QuietLab::Script_24::Settings
+  
+  # 現在の入力状態に従ってプレイヤーを移動させます。
+  def move_by_input
+    return unless movable?
+    return if $game_map.interpreter.running?
+    case Input.dir8
+      when 2 then move_down
+      when 4 then move_left
+      when 6 then move_right
+      when 8 then move_up
+      when 1 then move_lower_left
+      when 3 then move_lower_right
+      when 7 then move_upper_left
+      when 9 then move_upper_right
+    end
+  end
+  
+  # プレイヤーを指定した方向に斜めに移動させます。
+  def move_skew(dv, dh)
+    mv = dv == 2 ? 1 : -1
+    mh = dh == 6 ? 1 : -1
+    # 斜め先のマスに移動できるか
+    true_skew = passable?(@x + mh, @y + mv)
+    # 途中の経路(横,縦)
+    true_a = passable?(@x + mh, @y)
+    true_b = passable?(@x, @y + mv)
+    # 斜めに移動
+    if true_skew & (true_a & true_b | (true_a ^ true_b) & PassCorner)
+      # 向きの修正
+      unless @direction_fix
+        rdh = dh == 4 ? 6 : 4
+        rdv = dv == 2 ? 8 : 2
+        drc = @direction
+        @direction = (drc == rdh ? dh : drc == rdv ? dv : drc)
+      end
+      @x += mh
+      @y += mv
+      increase_steps
+      @move_failed = false
+    elsif true_a & true_b
+      move_forward
+    elsif true_a ^ true_b
+      case true_a ? dh : dv
+        when 2 then move_down
+        when 4 then move_left
+        when 6 then move_right
+        when 8 then move_up
+      end
+    else
+      @move_failed = true
+    end
+  end
+  
+  # プレイヤーを左下に移動させます。
+  def move_lower_left
+    move_skew(2, 4)
+  end
+  
+  # プレイヤーを右下に移動させます。
+  def move_lower_right
+    move_skew(2, 6)
+  end
+  
+  # プレイヤーを左上に移動させます。
+  def move_upper_left
+    move_skew(8, 4)
+  end
+  
+  # プレイヤーを右上に移動させます。
+  def move_upper_right
+    move_skew(8, 6)
+  end
+end
+
+# QuietLab ScriptFormat v1.1

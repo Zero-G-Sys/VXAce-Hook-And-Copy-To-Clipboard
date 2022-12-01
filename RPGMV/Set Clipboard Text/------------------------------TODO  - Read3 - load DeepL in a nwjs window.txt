@@ -1,0 +1,29 @@
+// NW.JS Window DOC
+// https://docs.nwjs.io/en/latest/References/Window/
+
+// Window API (see window.window to get DOM)
+// https://github.com/nwjs/nw.js/wiki/Window#windowwindow
+// Here last comments says you can use a jquery selector to get
+// https://github.com/nwjs/nw.js/issues/922
+
+var winDeep = nw.Window.open(
+    `https://www.deepl.com/translator#ja/en/${currentText}`,
+    {/*show : false*/} // can set to be hidden by default, can also hide with command winDeep.hide()
+    )
+
+var documentloaded;
+winDeep.on('loaded', function(){
+//set mutation obeserber that checks targetNode for new translations
+// want to set targetNode and read sourceNode so I don't know if this has to be ouside of this function
+// maybe just set a flag and a message when window is ready
+documentloaded = win.window.document;
+});
+
+console.log(winDeep)
+
+const targetNode = document.querySelector('#target-dummydiv');
+const sourceNode = document.querySelector('#source-dummydiv');
+
+
+----
+Look how translator++ is doing it. code is in www\addons\transDeepl\deepl.js

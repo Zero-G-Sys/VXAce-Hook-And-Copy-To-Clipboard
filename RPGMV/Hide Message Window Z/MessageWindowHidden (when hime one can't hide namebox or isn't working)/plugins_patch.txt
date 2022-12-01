@@ -1,0 +1,1 @@
+{"name":"MessageWindowHidden","status":true,"description":"Erase message window","parameters":{"TriggerButton":"d","LinkPictureNumber":""}},

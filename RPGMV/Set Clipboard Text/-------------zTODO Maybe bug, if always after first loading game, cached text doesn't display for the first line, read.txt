@@ -1,0 +1,11 @@
+This bug was introduced by changing the text that read the normal chache read function (line 826)
+this was better because, it prevents from breaking when you copy some text externally from the game (when doing other things). If all else fails, revert it
+
+In the game I was testing this, the name of the map would be cached by clipboard illule
+
+that is read by the cache, and as the cache function only load once per textbox, it reads the name of the map, and ingnores the line in the textbox
+
+solution to this would be to make a variable that makes that function load two times once per game (ie only at the beggining when you encounter the first textbox)
+
+---------
+Of course this won't be a problem one I rewrite the code to not use clipboardIllule

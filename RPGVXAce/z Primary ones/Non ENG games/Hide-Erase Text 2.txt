@@ -1,0 +1,43 @@
+=begin
+===============================================================================
+ Hide/Erase Text
+===============================================================================
+ Author: Zero_G
+
+ Erase text, this method hides faces in the textbox
+
+TODO: Set module for opacity selection
+-------------------------------------------------------------------------------
+=end
+
+module ZERO
+  
+  ERASE_TEXT_KEY = :X    # Set erase text key
+  INTANT_TEXT = true     # Set text to display instantly
+end
+
+if ZERO::INTANT_TEXT
+  class Window_Message < Window_Base  
+    def update_show_fast
+      @show_fast = true
+    end
+  end
+end
+
+class Window_Message < Window_Base
+  alias zero_window_message_update_hide update
+  def update
+    if Input.trigger?(ZERO::ERASE_TEXT_KEY)
+  
+      # Check if windows is open redraw text
+      if self.openness == 255
+        if self.contents_opacity == 255
+          self.contents_opacity = 0
+        else
+          self.contents_opacity = 255
+        end
+      end
+    end
+    zero_window_message_update_hide
+  end 
+end

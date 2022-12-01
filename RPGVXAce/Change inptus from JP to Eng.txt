@@ -1,0 +1,7 @@
+# Name Input
+class Game_System
+  def japanese?
+    #$data_system.japanese
+    false
+  end
+end

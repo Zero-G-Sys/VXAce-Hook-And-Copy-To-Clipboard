@@ -1,0 +1,3 @@
+if Input.trigger?(:_e)
+   puts "lala"
+end

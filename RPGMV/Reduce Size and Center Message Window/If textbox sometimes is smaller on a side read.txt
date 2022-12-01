@@ -1,0 +1,3 @@
+look at Sara & Noel RJ287158 
+there is a line added in ZERO_SetClipboardText (line 843)
+that handles that

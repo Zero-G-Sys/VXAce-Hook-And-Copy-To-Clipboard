@@ -1,0 +1,10 @@
+Originally this functionality was in this plugins because allising the refresh method of YEP names was giving an error, but in another game it didn't give error
+
+So ideally move all this functionality to setClipboardText
+
+-v2.3.3 alt added a function to save names with translation (with a timeout, but that can be done better with a flag in the replace text in setClipboardText)
+  -Also remove name block from showing text and saved cache text.
+
+-That overly complicated sending of replacements to illule can be descarted and make illule read the file instead.
+
+-Of course the refresh method should be alised here and in setClipboardText, Force names should be moved too

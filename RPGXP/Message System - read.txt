@@ -1,0 +1,4 @@
+Not tested, it seems to be a whole message handling script, if it has conflict with game, try to extract the code that hides window
+
+Search for:  if Input.trigger?(Input::X)
+for respective code (or if you want to change input for it)

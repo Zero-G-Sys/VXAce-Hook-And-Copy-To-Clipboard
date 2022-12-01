@@ -1,0 +1,3 @@
+in plugins configuration search or add this
+
+"Fast Forward":"Input.isPressed('control')"

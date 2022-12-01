@@ -1,0 +1,62 @@
+#  * Description:
+#  This script allows you to skip messages by pressing the Control key (CTRL)
+#------------------------------------------------------------------------------
+#  * Features: 
+#  Skip text boxes.
+#------------------------------------------------------------------------------
+#  * Instructions:
+#  Just put it in your game and press the the CTRL key to skip text.
+#------------------------------------------------------------------------------
+#  * Notes:
+#  None.
+#------------------------------------------------------------------------------
+# WARNING:
+#
+# Do not release, distribute or change my work without my expressed written 
+# consent, doing so violates the terms of use of this work.
+#
+# If you really want to share my work please just post a link to the original
+# site.
+#
+# * Not Knowing English or understanding these terms will not excuse you in any
+#   way from the consequenses.
+#==============================================================================
+# * Import to Global Hash *
+#==============================================================================
+($imported ||= {})[:TDS_Text_Skip] = true
+
+#==============================================================================
+# ** Window_Message
+#------------------------------------------------------------------------------
+#  This message window is used to display text.
+#==============================================================================
+
+class Window_Message < Window_Base
+  #--------------------------------------------------------------------------
+  # * Alias Listing
+  #--------------------------------------------------------------------------  
+  alias tds_text_skip_window_message_wait_for_one_character wait_for_one_character
+  alias tds_text_skip_window_message_input_pause            input_pause
+  #--------------------------------------------------------------------------
+  # * Determine if all text should be skipped
+  #--------------------------------------------------------------------------
+  def skip_all_text? ; Input.press?(:CTRL) end
+  #--------------------------------------------------------------------------
+  # * Wait After Output of One Character
+  #--------------------------------------------------------------------------
+  def wait_for_one_character(*args, &block)
+    # Return if Skipping All Text
+    return if skip_all_text? 
+    # Run Original Method
+    tds_text_skip_window_message_wait_for_one_character(*args, &block) 
+  end  
+  #--------------------------------------------------------------------------
+  # * Input Pause Processing
+  #--------------------------------------------------------------------------
+  def input_pause(*args, &block)
+    # Return and Remove Pause if skipping all text
+    return self.pause = false if skip_all_text?     
+    # Run Original Method
+    tds_text_skip_window_message_input_pause(*args, &block)
+  end
+end

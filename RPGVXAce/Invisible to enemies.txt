@@ -1,0 +1,4 @@
+Make an item with the following note
+ƒXƒeƒ‹ƒX:100
+
+where 100 is the amount of steps to stealth to wear off

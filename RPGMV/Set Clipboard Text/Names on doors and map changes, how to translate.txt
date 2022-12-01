@@ -1,0 +1,9 @@
+If there is a plugin calles EventInformation.js
+
+Search maps for "info:
+and change for translated text, must use _ instad of spaces, and it will ignore upper case
+
+go to plugin and add on line 77 (case 'info':)
+
+param[1] = param[1].replace(/_/g, ' ');
+param[1] = param[1].replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase()); // Capitalize first letter of each word

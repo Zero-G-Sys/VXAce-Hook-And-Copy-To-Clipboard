@@ -1,0 +1,1 @@
+{"name":"VPS - Message Wrapper","status":true,"description":"v1.0 Wraps messages to a certain width for automatic indention and breaks.","parameters":{"Wrapper Width":"40"}}

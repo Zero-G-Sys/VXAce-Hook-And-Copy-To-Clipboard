@@ -1,0 +1,45 @@
+
+=begin
+===============================================================================
+ Change default text outline color for the whole game
+===============================================================================
+ This script will change the outline color of the text for the whole game
+ 
+ Color codes: https://www.francelettekindnessadventure.com/uploads/4/8/4/9/48492729/6868356_orig.jpg
+ 
+Code 	Color Name
+ 00 	WHITE
+ 01 	Light Blue
+ 02 	Light Orange
+ 03 	Light Green
+ 04 	Lighter Blue
+ 05 	Lightest purple
+ 06 	Lightest Yellow
+ 07 	Lightest Black
+ 15     BLACK
+ 08 to 15 	Darker versions of the first 8
+ 
+ (Single digits are valid 1 or 01)
+-------------------------------------------------------------------------------
+=end
+
+module ZERO
+  
+  OUT_COLOR = 0           # Set outline color
+  OUT_COLOR_ALPHA = 230   # Set occupacity of outline color
+  COLOR = 15              # Set text color
+
+end
+
+class Window_Message < Window_Base
+  alias zero_new_page new_page
+
+  def new_page(text, pos)
+    zero_new_page(text, pos)
+    
+    contents.font.out_color.set(text_color(ZERO::OUT_COLOR))
+    contents.font.color.set(text_color(ZERO::COLOR))
+    contents.font.out_color.alpha = ZERO::OUT_COLOR_ALPHA
+  end
+  
+end

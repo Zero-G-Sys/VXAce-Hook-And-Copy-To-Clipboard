@@ -1,0 +1,3 @@
+seems that every line spoken calls this plugin command
+
+$gameBackLog.addLog(name, message);

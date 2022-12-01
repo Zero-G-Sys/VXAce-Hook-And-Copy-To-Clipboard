@@ -1,0 +1,7 @@
+#Add dot at end of choices
+class Window_ChoiceList < Window_Command
+  def draw_item(index)
+    rect = item_rect_for_text(index)
+    draw_text_ex(rect.x, rect.y, command_name(index)+".")
+  end
+end

@@ -1,0 +1,3 @@
+use this line in the plugin, this way you can have two or more plugins while only activating the first one (of course all .js files must be in the plugin folder)
+
+PluginManager.loadScript('another_plugin.js');

@@ -1,0 +1,19 @@
+# EXP for Dead Actors
+# Script for RPG Maker VX, not Ace.
+# Allows dead party members to gain EXP, level up, etc at the end of battle.
+# Overwrites 1 stock method; place before any scripts that alias this method.
+# Written by Decanter.
+
+class Scene_Battle < Scene_Base
+  
+  def display_level_up
+    exp = $game_troop.exp_total
+    for actor in $game_party.members
+      last_level = actor.level
+      last_skills = actor.skills
+      actor.gain_exp(exp, true)
+    end
+    wait_for_message
+  end
+  
+end

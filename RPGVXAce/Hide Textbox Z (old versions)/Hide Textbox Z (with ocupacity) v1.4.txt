@@ -1,0 +1,79 @@
+=begin
+===============================================================================
+ Message Visibility by efeberk (Mod by Zero_G)
+ Version: RGSS3
+===============================================================================
+ This script will allow to player sets message window visible or unvisible with 
+ a key.
+ 
+ KEY2 is for returing visibility of text box on next page, default C (z)
+
+ KEY3 is for hiding the textbox but not the text (borderless).
+ 
+ Example : Press CTRL to hide message window and repress CTRL to show message 
+ window.
+ 
+ Possible key bindings: A B C X Y Z L R, 
+ SHIFT CTRL ALT (these are direct keyboard bindings)
+ Gamepad = Keboard key
+ A = shift
+ B = x
+ C = z
+ X = a
+ Y = s
+ Z = d
+ L = q
+ R = w
+--------------------------------------------------------------------------------
+=end
+
+
+
+module EFE
+  
+  KEY = :Z    # Hide textbox window with text
+  KEY2 = :C   
+  KEY3 = :Y   # Hide textbox window without text
+  DEFAULT_OCUPACITY = 255
+
+end
+
+class Window_Message < Window_Base
+  @@toggle = 0 # Class Variable, toggle for window ocupacity, default off
+  
+  alias efeberk_window_message_update update
+  def update
+    efeberk_window_message_update
+    
+    # Checks for every update if toggle is set
+    # and changes the background repectively
+    # without this, every effect would reset occupacity
+    if @@toggle == 1
+      self.opacity = 0
+    end
+    
+    # Waits for intput and changes ocupacity of window
+    # stores default ocupacity in a constant in case a game doesn't use
+    # the default (255). Also sets the toggle state
+    if Input.trigger?(EFE::KEY3)
+      if self.opacity == EFE::DEFAULT_OCUPACITY
+        self.opacity = 0
+        @@toggle = 1
+      elsif self.opacity == 0
+        self.opacity = EFE::DEFAULT_OCUPACITY
+        @@toggle = 0
+      end
+    end
+    
+    # Hides textbox completly, makes it visible with same button press
+    # or with ok button
+    if Input.trigger?(EFE::KEY)
+      self.visible = !self.visible
+    end
+    if Input.press?(EFE::KEY2)
+      self.visible = true
+    end
+    
+  end
+  
+end

@@ -1,0 +1,5 @@
+arrow functions
+use of let variables (solution "use strict"; at beggining of script)
+event listener
+
+and other things don't work

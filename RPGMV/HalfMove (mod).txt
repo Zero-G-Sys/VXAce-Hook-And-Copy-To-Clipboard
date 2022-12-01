@@ -1,0 +1,3 @@
+Keep diagonal movement but disable being able to half move into walls and objects.
+
+This is a problem in case that an event is inside a wall, for example a door. So if you see a door that you can't enter, disable this mod, or add a toogle to it.

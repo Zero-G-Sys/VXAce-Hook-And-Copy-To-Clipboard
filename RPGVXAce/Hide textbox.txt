@@ -1,0 +1,48 @@
+=begin
+===============================================================================
+ Message Visibility by efeberk
+ Version: RGSS3
+===============================================================================
+ This script will allow to player sets message window visible or unvisible with 
+ a key.
+ 
+ KEY2 is for returing visibility of text box on next page, default C (z)
+ 
+ Example : Press CTRL to hide message window and repress CTRL to show message 
+ window.
+ 
+ Possible key bindings: A B C X Y Z L R, 
+ SHIFT CTRL ALT (these are direct keyboard bindings)
+ Gamepad = Keboard key
+ A = shift
+ B = x
+ C = z
+ X = a
+ Y = s
+ Z = d
+ L = q
+ R = w
+--------------------------------------------------------------------------------
+=end
+
+module EFE
+  
+  KEY = :X
+  KEY2 = :C
+
+end
+
+class Window_Message < Window_Base
+  
+  alias efeberk_window_message_update update
+  def update
+    efeberk_window_message_update
+    if Input.trigger?(EFE::KEY)
+      self.visible = !self.visible
+    end
+    if Input.press?(EFE::KEY2)
+      self.visible = true
+    end
+  end
+  
+end

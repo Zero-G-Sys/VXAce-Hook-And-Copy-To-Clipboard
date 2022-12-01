@@ -1,0 +1,9 @@
+this may fix the window changing size and place when it is remplace with the translated text, need to test it
+
+In ZERO_SetClipboardText, uncomment line 877, that would be 
+
+this.updatePlacement();
+
+
+
+don't know why I commented it, may have given undesireable results. In a game i'm playing this fixed the possition well

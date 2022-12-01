@@ -1,0 +1,20 @@
+-God Mode for any Actor (infinite hp and mp, skills shouldn't cost anything)
+-Set Enemy/Party HP to 0 hp or 1 hp, Party Full Recover (HP, MP, Status)
+-Toggle No Clip
+-Edit Exp
+-Edit Stats
+-Edit Gold
+-Edit Items, Weapons, Armor
+-Change player movement speed
+-Clear Status/States Effects
+-Edit Variables/Switches
+
+-Save/Recall Location and Teleport
+   -Be careful not to skip game events
+   -If you teleport off the map lower X,Y and teleport again to fix it.
+
+-Open javascript console/developer tools with F8
+   -With this you can edit game Variables and Switches (at your own risk) in the $gameVariables and $gameSwitches, as well as other advanced stuff
+
+-Open Switch/Variable Debug Menu from playtest Mode with F9
+   -Better/easier method for editing the Switches and Variables than using the console, slower if you want to edit variables by large amounts

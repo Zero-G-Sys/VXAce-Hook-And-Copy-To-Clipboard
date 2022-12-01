@@ -1,0 +1,2 @@
+'(M|m)iss (\\w+)': '$3-san', // capturing group 3 because a line of code will add a group to the space: "(M|m)iss( |\n)(\w+)"
+    'Lady (\\w+)': '$2-sama',

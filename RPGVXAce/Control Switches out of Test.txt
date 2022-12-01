@@ -1,0 +1,6 @@
+#Control Switches out of Test
+class Scene_Map < Scene_Base
+    def update_call_debug
+    SceneManager.call(Scene_Debug) if Input.press?(:F9)
+  end
+end

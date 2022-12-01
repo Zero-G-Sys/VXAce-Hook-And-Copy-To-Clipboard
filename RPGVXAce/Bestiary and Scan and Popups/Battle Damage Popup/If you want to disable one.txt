@@ -1,0 +1,3 @@
+In the dictionary, put an empty string: Ej, for no damage popups: :hp_dmg     => "",
+
+:word_setting   =>  {

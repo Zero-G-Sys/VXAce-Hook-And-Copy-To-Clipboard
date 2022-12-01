@@ -1,0 +1,15 @@
+# For keeping index of last save
+
+  # Save last save index into a var then after the save, restore it
+  def quick_save
+    i = @last_savefile_index.to_i
+    save_game(-1) #this saves to an index, not to save00? Need to test
+    @last_savefile_index = i
+  end
+
+------------------
+Add function to lock overwriting a save 
+-Add a lock icon on something to save menu
+-on lock create a file with same name as save, and check if it exists (use same method as game uses to check for a save)
+-on lock release delete said file
+-if file exist don't let to overwrite save

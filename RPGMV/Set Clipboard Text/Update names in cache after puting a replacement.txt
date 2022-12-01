@@ -1,0 +1,21 @@
+-Use search replace regex
+
+-We want to start with name+suffix
+
+-For this example line
+
+"や、やっぱり！？アリサさんの声だ……。": "Oh, I knew it! It's Arisa's voice...",
+
+-We will search for アリサさん (Arisa-san) and replace the JP text, and the ENG name, that doesn't have the san
+
+-In regex replace use this:
+  +Search: JPname.(.*)EngName(suffix)?
+  -アリサさん(.*)(Arisa|Alisa)(-san)?
+  +Replace with: ProperName$1ProperName
+  -Alisa-san$1Alisa-san
+
+-Result is: "や、やっぱり！？Alisa-sanの声だ……。": "Oh, I knew it! It's Alisa-san's voice...",
+
+So do a ReplaceAll of -san-san to -san
+
+-Repeat for all other important suffixes (chan, sama, etc)

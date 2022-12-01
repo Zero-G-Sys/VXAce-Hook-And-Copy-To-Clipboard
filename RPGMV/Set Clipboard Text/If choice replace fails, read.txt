@@ -1,0 +1,5 @@
+If any other plugin aliases Window_Selectable.prototype.update (or any other function, don't know)
+it will break the 'this' calls
+ex: MessageSelectPicture
+
+solution, put ZERO_SetClipboarText almost at top of plugins list, or put the plugin that does the alias below

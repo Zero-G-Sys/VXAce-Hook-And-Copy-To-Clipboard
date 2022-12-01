@@ -1,0 +1,797 @@
+#_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+#_/    ◆ アイテム分類 - KGC_CategorizeItem ◆ VX ◆
+#_/    ◇ Last update : 2009/09/04 ◇
+#_/----------------------------------------------------------------------------
+#_/  アイテムや武器、防具を種類別に分類する機能を作成します。
+#_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+
+$data_system = load_data("Data/System.rvdata") if $data_system == nil
+
+#==============================================================================
+# ★ カスタマイズ項目 - Customize ★
+#==============================================================================
+
+module KGC
+module CategorizeItem
+  # ◆ 非戦闘時に分類する
+  ENABLE_NOT_IN_BATTLE = true
+  # ◆ 戦闘時に分類する
+  ENABLE_IN_BATTLE     = true
+
+  # ◆ 戦闘時と非戦闘時で同じカテゴリを使用する
+  #  分類ウィンドウの設定は個別に行ってください。
+  USE_SAME_CATEGORY = true
+
+  # ◆ 自動振り分けを行う
+  ENABLE_AUTO_CATEGORIZE = false
+  # ◆ 複数のカテゴリには配置しない
+  #  true にすると、いずれか１つのカテゴリにしか振り分けなくなります。
+  #  （「全種」は例外）
+  NOT_ALLOW_DUPLICATE = false
+
+  # ◆ 戦闘中に選択したアイテムの位置を記憶する
+  REMEMBER_INDEX_IN_BATTLE = true
+
+
+  # ━━━━━━━━ 非戦闘時 カテゴリ ━━━━━━━━
+
+  # ◆ カテゴリ識別名
+  #  メモ欄でカテゴリを識別するための名称を並べてください。
+  #  以下の名称は、メモ欄に記述する必要はありません。
+  #   "全種", "貴重品", "武器", "防具", "装飾品"
+  CATEGORY_IDENTIFIER = [
+    "通常アイテム",
+    "戦闘用アイテム",
+    "武器",
+    "法盤",
+    "装飾品",
+    "称号",
+    "貴重品",
+    "全種",  # ← 最後の項目だけは , を付けても付けなくてもOK
+  ]
+  # ◆ アイテムのデフォルトカテゴリ
+  #  どのカテゴリにも当てはまらないアイテムの割り当て先です。
+  ITEM_DEFAULT_CATEGORY = "通常アイテム"
+
+  # ◆ リストに表示する名称
+  #  アイテム画面で分類ウィンドウに表示する名称です。
+  #  「カテゴリ識別名」と同じ順に並べてください。
+  
+  #Zero_G before translation
+#  CATEGORY_NAME = [
+#    "通常",
+#    "戦闘用",
+#    Vocab.weapon,           # 武器
+#    Vocab.armor1,           # 防具
+#    "#{Vocab.armor2}",  # 装飾品
+#    "称号",
+#    "貴重品",
+#    "すべて",
+#  ]
+  CATEGORY_NAME = [
+    "General",
+    "Combat",
+    Vocab.weapon,           # 武器
+    Vocab.armor1,           # 防具
+    "#{Vocab.armor2}",  # 装飾品
+    "Title",
+    "Valuables",
+    "All",
+  ]
+
+  # ◆ 分類の説明文
+  #  「カテゴリ識別名」と同じ順に並べてください。
+  CATEGORY_DESCRIPTION = [
+    "Display normal #{Vocab.item}s",
+    "Display combat #{Vocab.item}s",
+    "Display #{Vocab.weapon}",
+    "Display #{Vocab.armor1}",
+    "Display #{Vocab.armor2}s",
+    "Display titles",
+    "Display valuable #{Vocab.item}s",
+    "Display all #{Vocab.item}s",
+  ]
+
+
+  # ━━━━━━━━ 戦闘時 カテゴリ ━━━━━━━━
+  # USE_SAME_CATEGORY = false  の場合のみ有効になります。
+  # 設定方法は非戦闘時と同様です。
+
+  # ◆ カテゴリ識別名
+  CATEGORY_IDENTIFIER_BATTLE = [
+    "通常アイテム",
+    "戦闘用アイテム",
+    "武器",
+    "法盤",
+    "装飾品",
+    "貴重品",
+    "全種",  # ← 最後の項目だけは , を付けても付けなくてもOK
+  ]
+  # ◆ アイテムのデフォルトカテゴリ
+  ITEM_DEFAULT_CATEGORY_BATTLE = "通常アイテム"
+
+  # ◆ リストに表示する名称
+  CATEGORY_NAME_BATTLE = [
+    "General",
+    "Combat",
+    Vocab.weapon,           # 武器
+    Vocab.armor1,           # 防具
+    "#{Vocab.armor2}",  # 装飾品防具
+    "Valuables",
+    "All",
+  ]
+
+  # ◆ 分類の説明文
+  CATEGORY_DESCRIPTION_BATTLE = [
+    "Display normal #{Vocab.item}s",
+    "Display combat #{Vocab.item}s",
+    "Display #{Vocab.weapon}s",
+    "Display #{Vocab.armor1}s",
+    "Display #{Vocab.armor2}s",
+    "Display valuable #{Vocab.item}s",
+    "Display all #{Vocab.item}s",
+  ]
+
+  if USE_SAME_CATEGORY
+    # 非戦闘時の設定を流用
+    CATEGORY_IDENTIFIER_BATTLE   = CATEGORY_IDENTIFIER
+    ITEM_DEFAULT_CATEGORY_BATTLE = ITEM_DEFAULT_CATEGORY
+    CATEGORY_NAME_BATTLE         = CATEGORY_NAME
+    CATEGORY_DESCRIPTION_BATTLE  = CATEGORY_DESCRIPTION
+  end
+
+
+  # ━━━━━━━━ 非戦闘時 分類ウィンドウ ━━━━━━━━
+
+  # ◆ 分類ウィンドウの座標 [x, y]
+  CATEGORY_WINDOW_POSITION  = [264, 128]
+  # ◆ 分類ウィンドウの列数
+  CATEGORY_WINDOW_COLUMNS   = 2
+  # ◆ 分類ウィンドウの列幅
+  CATEGORY_WINDOW_COL_WIDTH = 96
+  # ◆ 分類ウィンドウの列間の空白
+  CATEGORY_WINDOW_COL_SPACE = 32
+
+
+  # ━━━━━━━━ 戦闘時 分類ウィンドウ ━━━━━━━━
+
+  # ◆ 分類ウィンドウの座標 [x, y]
+  CATEGORY_WINDOW_POSITION_BATTLE  = [264, 128]
+  # ◆ 分類ウィンドウの列数
+  CATEGORY_WINDOW_COLUMNS_BATTLE   = 2
+  # ◆ 分類ウィンドウの列幅
+  CATEGORY_WINDOW_COL_WIDTH_BATTLE = 96
+  # ◆ 分類ウィンドウの列間の空白
+  CATEGORY_WINDOW_COL_SPACE_BATTLE = 32
+end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+$imported = {} if $imported == nil
+$imported["CategorizeItem"] = true
+
+module KGC::CategorizeItem
+  # アイテムのデフォルトカテゴリ index
+  ITEM_DEFAULT_CATEGORY_INDEX =
+    CATEGORY_IDENTIFIER.index(ITEM_DEFAULT_CATEGORY)
+  # アイテムのデフォルトカテゴリ index (戦闘時)
+  ITEM_DEFAULT_CATEGORY_INDEX_BATTLE =
+    CATEGORY_IDENTIFIER_BATTLE.index(ITEM_DEFAULT_CATEGORY_BATTLE)
+
+  # 予約識別名
+  RESERVED_CATEGORIES = [
+    "全種", "貴重品", "武器", "防具", "盾", "頭防具", "身体防具", "装飾品"
+  ]
+  # 予約カテゴリ index
+  RESERVED_CATEGORY_INDEX = {}
+  # 予約カテゴリ index (戦闘時)
+  RESERVED_CATEGORY_INDEX_BATTLE = {}
+
+  # 予約カテゴリ index 作成
+  RESERVED_CATEGORIES.each { |c|
+    RESERVED_CATEGORY_INDEX[c]        = CATEGORY_IDENTIFIER.index(c)
+    RESERVED_CATEGORY_INDEX_BATTLE[c] = CATEGORY_IDENTIFIER_BATTLE.index(c)
+  }
+
+  module Regexp
+    module BaseItem
+      # カテゴリ
+      CATEGORY = /<(?:CATEGORY|分類|カテゴリー?)[ ]*(.*)>/i
+    end
+  end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# ■ RPG::BaseItem
+#==============================================================================
+
+class RPG::BaseItem
+  #--------------------------------------------------------------------------
+  # ○ アイテム分類のキャッシュ生成 (非戦闘時)
+  #--------------------------------------------------------------------------
+  def create_categorize_item_cache
+    if @__item_category == nil || !KGC::CategorizeItem::ENABLE_AUTO_CATEGORIZE
+      @__item_category = []
+    else
+      @__item_category.compact!
+    end
+
+    self.note.each_line { |line|
+      if line =~ KGC::CategorizeItem::Regexp::BaseItem::CATEGORY
+        # カテゴリ
+        c = KGC::CategorizeItem::CATEGORY_IDENTIFIER.index($1)
+        @__item_category << c if c != nil
+      end
+    }
+    if @__item_category.empty?
+      @__item_category << KGC::CategorizeItem::ITEM_DEFAULT_CATEGORY_INDEX
+    elsif KGC::CategorizeItem::NOT_ALLOW_DUPLICATE
+      # 最後に指定したカテゴリに配置
+      @__item_category = [@__item_category.pop]
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ○ アイテム分類のキャッシュ生成 (戦闘時)
+  #--------------------------------------------------------------------------
+  def create_categorize_item_battle_cache
+    if @__item_category_battle == nil ||
+        !KGC::CategorizeItem::ENABLE_AUTO_CATEGORIZE
+      @__item_category_battle = []
+    else
+      @__item_category_battle.compact!
+    end
+
+    self.note.each_line { |line|
+      if line =~ KGC::CategorizeItem::Regexp::BaseItem::CATEGORY
+        # カテゴリ
+        c = KGC::CategorizeItem::CATEGORY_IDENTIFIER_BATTLE.index($1)
+        @__item_category_battle << c if c != nil
+      end
+    }
+    if @__item_category_battle.empty?
+      @__item_category_battle <<
+        KGC::CategorizeItem::ITEM_DEFAULT_CATEGORY_INDEX_BATTLE
+    elsif KGC::CategorizeItem::NOT_ALLOW_DUPLICATE
+      # 最後に指定したカテゴリに配置
+      @__item_category_battle = [@__item_category_battle.pop]
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ○ アイテムのカテゴリ (非戦闘時)
+  #--------------------------------------------------------------------------
+  def item_category
+    create_categorize_item_cache if @__item_category == nil
+    return @__item_category
+  end
+  #--------------------------------------------------------------------------
+  # ○ アイテムのカテゴリ (戦闘時)
+  #--------------------------------------------------------------------------
+  def item_category_battle
+    create_categorize_item_battle_cache if @__item_category_battle == nil
+    return @__item_category_battle
+  end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# ■ RPG::UsableItem
+#==============================================================================
+
+class RPG::UsableItem < RPG::BaseItem
+  #--------------------------------------------------------------------------
+  # ○ アイテム分類のキャッシュ生成 (非戦闘時)
+  #--------------------------------------------------------------------------
+  def create_categorize_item_cache
+    @__item_category = []
+    if self.price == 0
+      @__item_category << KGC::CategorizeItem::RESERVED_CATEGORY_INDEX["貴重品"]
+    end
+    super
+  end
+  #--------------------------------------------------------------------------
+  # ○ アイテム分類のキャッシュ生成 (戦闘時)
+  #--------------------------------------------------------------------------
+  def create_categorize_item_battle_cache
+    @__item_category_battle = []
+    if self.price == 0
+      @__item_category_battle <<
+        KGC::CategorizeItem::RESERVED_CATEGORY_INDEX_BATTLE["貴重品"]
+    end
+    super
+  end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# ■ RPG::Weapon
+#==============================================================================
+
+class RPG::Weapon < RPG::BaseItem
+  #--------------------------------------------------------------------------
+  # ○ アイテム分類のキャッシュ生成 (非戦闘時)
+  #--------------------------------------------------------------------------
+  def create_categorize_item_cache
+    @__item_category = []
+    @__item_category << KGC::CategorizeItem::RESERVED_CATEGORY_INDEX["武器"]
+    super
+  end
+  #--------------------------------------------------------------------------
+  # ○ アイテム分類のキャッシュ生成 (戦闘時)
+  #--------------------------------------------------------------------------
+  def create_categorize_item_battle_cache
+    @__item_category_battle = []
+    @__item_category_battle <<
+      KGC::CategorizeItem::RESERVED_CATEGORY_INDEX_BATTLE["武器"]
+    super
+  end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# ■ RPG::Armor
+#==============================================================================
+
+class RPG::Armor < RPG::BaseItem
+  #--------------------------------------------------------------------------
+  # ○ 定数
+  #--------------------------------------------------------------------------
+  CATEGORIZE_TYPE = ["盾", "頭防具", "身体防具", "装飾品"]
+  #--------------------------------------------------------------------------
+  # ○ アイテム分類のキャッシュ生成 (非戦闘時)
+  #--------------------------------------------------------------------------
+  def create_categorize_item_cache
+    @__item_category = []
+    @__item_category << KGC::CategorizeItem::RESERVED_CATEGORY_INDEX["防具"]
+    type = CATEGORIZE_TYPE[self.kind]
+    if type != nil
+      @__item_category << KGC::CategorizeItem::RESERVED_CATEGORY_INDEX[type]
+    end
+    super
+  end
+  #--------------------------------------------------------------------------
+  # ○ アイテム分類のキャッシュ生成 (戦闘時)
+  #--------------------------------------------------------------------------
+  def create_categorize_item_battle_cache
+    @__item_category_battle = []
+    @__item_category_battle <<
+      KGC::CategorizeItem::RESERVED_CATEGORY_INDEX_BATTLE["防具"]
+    type = CATEGORIZE_TYPE[self.kind]
+    if type != nil
+      @__item_category_battle <<
+        KGC::CategorizeItem::RESERVED_CATEGORY_INDEX_BATTLE[type]
+    end
+    super
+  end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# ■ Game_Temp
+#==============================================================================
+
+class Game_Temp
+  #--------------------------------------------------------------------------
+  # ● 公開インスタンス変数
+  #--------------------------------------------------------------------------
+  attr_accessor :item_window_category     # アイテム画面で表示するカテゴリ
+  attr_accessor :item_category_disabled   # アイテム画面のカテゴリ無効化フラグ
+  #--------------------------------------------------------------------------
+  # ● オブジェクト初期化
+  #--------------------------------------------------------------------------
+  alias initialize_KGC_CategorizeItem initialize
+  def initialize
+    initialize_KGC_CategorizeItem
+
+    @item_window_category   = nil
+    @item_category_disabled = false
+  end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# ■ Game_Actor
+#==============================================================================
+
+class Game_Actor < Game_Battler
+  #--------------------------------------------------------------------------
+  # ● 公開インスタンス変数
+  #--------------------------------------------------------------------------
+  attr_writer   :last_item_category       # カーソル記憶用 : アイテムカテゴリ
+  #--------------------------------------------------------------------------
+  # ● オブジェクト初期化
+  #     actor_id : アクター ID
+  #--------------------------------------------------------------------------
+  alias initialize_KGC_CategorizeItem initialize
+  def initialize(actor_id)
+    initialize_KGC_CategorizeItem(actor_id)
+
+    @last_item_category = 0
+  end
+  #--------------------------------------------------------------------------
+  # ○ カーソル記憶用のカテゴリ取得
+  #--------------------------------------------------------------------------
+  def last_item_category
+    @last_item_category = 0 if @last_item_category == nil
+    return @last_item_category
+  end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# ■ Window_Item
+#==============================================================================
+
+class Window_Item < Window_Selectable
+  #--------------------------------------------------------------------------
+  # ● 公開インスタンス変数
+  #--------------------------------------------------------------------------
+  attr_reader   :category                 # カテゴリ
+  #--------------------------------------------------------------------------
+  # ● オブジェクト初期化
+  #     x      : ウィンドウの X 座標
+  #     y      : ウィンドウの Y 座標
+  #     width  : ウィンドウの幅
+  #     height : ウィンドウの高さ
+  #--------------------------------------------------------------------------
+  alias initialize_KGC_CategorizeItem initialize
+  def initialize(x, y, width, height)
+    @category = 0
+
+    initialize_KGC_CategorizeItem(x, y, width, height)
+  end
+  #--------------------------------------------------------------------------
+  # ○ カテゴリ設定
+  #--------------------------------------------------------------------------
+  def category=(value)
+    @category = value
+    refresh
+  end
+  #--------------------------------------------------------------------------
+  # ● アイテムをリストに含めるかどうか
+  #     item : アイテム
+  #--------------------------------------------------------------------------
+  alias include_KGC_CategorizeItem? include?
+  def include?(item)
+    return false if item == nil
+
+    # 「全種」なら無条件で含める
+    if $game_temp.in_battle
+      return true unless KGC::CategorizeItem::ENABLE_IN_BATTLE
+      reserved_index = KGC::CategorizeItem::RESERVED_CATEGORY_INDEX_BATTLE
+    else
+      return true unless KGC::CategorizeItem::ENABLE_NOT_IN_BATTLE
+      reserved_index = KGC::CategorizeItem::RESERVED_CATEGORY_INDEX
+    end
+    return true if @category == reserved_index["全種"]
+
+    result = include_KGC_CategorizeItem?(item)
+
+    unless result
+      # 使用可能なら追加候補とする
+      if $imported["UsableEquipment"] && $game_party.item_can_use?(item)
+        result = true
+      end
+    end
+    # カテゴリ一致判定
+    item_category = ($game_temp.in_battle ?
+      item.item_category_battle : item.item_category)
+    result &= item_category.include?(@category)
+    # 「全種」なら含める
+    return true if @category == reserved_index["全種"]
+
+    return result
+  end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# □ Window_ItemCategory
+#------------------------------------------------------------------------------
+# 　アイテム画面でカテゴリ選択を行うウィンドウです。
+#==============================================================================
+
+class Window_ItemCategory < Window_Command
+  #--------------------------------------------------------------------------
+  # ● オブジェクト初期化
+  #--------------------------------------------------------------------------
+  def initialize
+    if $game_temp.in_battle
+      cols     = KGC::CategorizeItem::CATEGORY_WINDOW_COLUMNS_BATTLE
+      width    = KGC::CategorizeItem::CATEGORY_WINDOW_COL_WIDTH_BATTLE
+      space    = KGC::CategorizeItem::CATEGORY_WINDOW_COL_SPACE_BATTLE
+      commands = KGC::CategorizeItem::CATEGORY_NAME_BATTLE
+      position = KGC::CategorizeItem::CATEGORY_WINDOW_POSITION_BATTLE
+    else
+      cols     = KGC::CategorizeItem::CATEGORY_WINDOW_COLUMNS
+      width    = KGC::CategorizeItem::CATEGORY_WINDOW_COL_WIDTH
+      space    = KGC::CategorizeItem::CATEGORY_WINDOW_COL_SPACE
+      commands = KGC::CategorizeItem::CATEGORY_NAME
+      position = KGC::CategorizeItem::CATEGORY_WINDOW_POSITION
+    end
+    width = width * cols + 32
+    width += (cols - 1) * space
+    super(width, commands, cols, 0, space)
+    self.x = position[0]
+    self.y = position[1]
+    self.z = 1000
+    self.index = 0
+  end
+  #--------------------------------------------------------------------------
+  # ● ヘルプテキスト更新
+  #--------------------------------------------------------------------------
+  def update_help
+    if $game_temp.in_battle
+      text = KGC::CategorizeItem::CATEGORY_DESCRIPTION_BATTLE[self.index]
+    else
+      text = KGC::CategorizeItem::CATEGORY_DESCRIPTION[self.index]
+    end
+    @help_window.set_text(text)
+  end
+end
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# ■ Scene_Item
+#==============================================================================
+
+if KGC::CategorizeItem::ENABLE_NOT_IN_BATTLE
+class Scene_Item < Scene_Base
+  #--------------------------------------------------------------------------
+  # ● 開始処理
+  #--------------------------------------------------------------------------
+  alias start_KGC_CategorizeItem start
+  def start
+    start_KGC_CategorizeItem
+
+    @category_window = Window_ItemCategory.new
+    @category_window.help_window = @help_window
+
+    if $game_temp.item_window_category == nil
+      show_category_window
+    else
+      # 指定カテゴリを表示
+      category = $game_temp.item_window_category
+      if category.is_a?(String)
+        category = KGC::CategorizeItem::CATEGORY_IDENTIFIER.index(category)
+      end
+      @category_window.openness = 0
+      hide_category_window
+      @category_window.index = category
+      @item_window.category  = category
+      @item_window.call_update_help
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● 終了処理
+  #--------------------------------------------------------------------------
+  alias terminate_KGC_CategorizeItem terminate
+  def terminate
+    terminate_KGC_CategorizeItem
+
+    @category_window.dispose
+    $game_temp.item_window_category = nil
+  end
+  #--------------------------------------------------------------------------
+  # ● フレーム更新
+  #--------------------------------------------------------------------------
+  alias update_KGC_CategorizeItem update
+  def update
+    @category_window.update
+
+    update_KGC_CategorizeItem
+
+    if @category_window.active
+      update_category_selection
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ○ カテゴリ選択の更新
+  #--------------------------------------------------------------------------
+  def update_category_selection
+    unless @category_activated
+      @category_activated = true
+      show_category_window
+      return
+    end
+
+    # 選択カテゴリー変更
+    if @last_category_index != @category_window.index
+      @item_window.category = @category_window.index
+      @item_window.refresh
+      @last_category_index = @category_window.index
+    end
+
+    if Input.trigger?(Input::B)
+      Sound.play_cancel
+      return_scene
+    elsif Input.trigger?(Input::C)
+      Sound.play_decision
+      hide_category_window
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● アイテム選択の更新
+  #--------------------------------------------------------------------------
+  alias update_item_selection_KGC_CategorizeItem update_item_selection
+  def update_item_selection
+    if Input.trigger?(Input::B)
+      Sound.play_cancel
+      if $game_temp.item_category_disabled
+        return_scene
+      else
+        show_category_window
+      end
+      return
+    end
+
+    update_item_selection_KGC_CategorizeItem
+  end
+  #--------------------------------------------------------------------------
+  # ○ カテゴリウィンドウの表示
+  #--------------------------------------------------------------------------
+  def show_category_window
+    @category_window.open
+    @category_window.active = true
+    @item_window.active = false
+  end
+  #--------------------------------------------------------------------------
+  # ○ カテゴリウィンドウの非表示
+  #--------------------------------------------------------------------------
+  def hide_category_window
+    @category_activated = false
+    @category_window.close
+    @category_window.active = false
+    @item_window.active = true
+    # アイテムウィンドウのインデックスを調整
+    if @item_window.index >= @item_window.item_max
+      @item_window.index = [@item_window.item_max - 1, 0].max
+    end
+  end
+end
+end  # <-- if KGC::CategorizeItem::ENABLE_NOT_IN_BATTLE
+
+#★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★☆★
+
+#==============================================================================
+# ■ Scene_Battle
+#==============================================================================
+
+if KGC::CategorizeItem::ENABLE_IN_BATTLE
+class Scene_Battle < Scene_Base
+  #--------------------------------------------------------------------------
+  # ● アイテム選択の開始
+  #--------------------------------------------------------------------------
+  alias start_item_selection_KGC_CategorizeItem start_item_selection
+  def start_item_selection
+    start_item_selection_KGC_CategorizeItem
+
+    # カテゴリウィンドウを作成
+    @category_window = Window_ItemCategory.new
+    @category_window.help_window = @help_window
+    @category_window.z = @help_window.z + 10
+
+    if $game_temp.item_window_category == nil
+      @item_window.active = false
+
+      # 記憶していたカテゴリを復元
+      if KGC::CategorizeItem::REMEMBER_INDEX_IN_BATTLE
+        @category_window.index = @active_battler.last_item_category
+        @item_window.category = @category_window.index
+      end
+    else
+      # 指定カテゴリを表示
+      category = $game_temp.item_window_category
+      if category.is_a?(String)
+        category =
+          KGC::CategorizeItem::CATEGORY_IDENTIFIER_BATTLE.index(category)
+      end
+      hide_item_category_window
+      @category_window.openness = 0
+      @category_window.index    = category
+      @item_window.category     = category
+      @item_window.refresh
+      @item_window.call_update_help
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● アイテム選択の終了
+  #--------------------------------------------------------------------------
+  alias end_item_selection_KGC_CategorizeItem end_item_selection
+  def end_item_selection
+    if @category_window != nil
+      @category_window.dispose
+      @category_window = nil
+    end
+    $game_temp.item_window_category = nil
+
+    end_item_selection_KGC_CategorizeItem
+  end
+  #--------------------------------------------------------------------------
+  # ● アイテム選択の更新
+  #--------------------------------------------------------------------------
+  alias update_item_selection_KGC_CategorizeItem update_item_selection
+  def update_item_selection
+    @category_window.update
+    if @category_window.active
+      update_item_category_selection
+      return
+    elsif Input.trigger?(Input::B)
+      Sound.play_cancel
+      if $game_temp.item_category_disabled
+        end_item_selection
+      else
+        show_item_category_window
+      end
+      return
+    end
+
+    update_item_selection_KGC_CategorizeItem
+  end
+  #--------------------------------------------------------------------------
+  # ● アイテムの決定
+  #--------------------------------------------------------------------------
+  alias determine_item_KGC_CategorizeItem determine_item
+  def determine_item
+    # 選択したカテゴリを記憶
+    if KGC::CategorizeItem::REMEMBER_INDEX_IN_BATTLE && @category_window != nil
+      @active_battler.last_item_category = @category_window.index
+    end
+
+    determine_item_KGC_CategorizeItem
+  end
+  #--------------------------------------------------------------------------
+  # ○ アイテムのカテゴリ選択の更新
+  #--------------------------------------------------------------------------
+  def update_item_category_selection
+    @help_window.update
+
+    # 選択カテゴリー変更
+    if @last_category_index != @category_window.index
+      @item_window.category = @category_window.index
+      @item_window.refresh
+      @last_category_index = @category_window.index
+    end
+
+    if Input.trigger?(Input::B)
+      Sound.play_cancel
+      end_item_selection
+    elsif Input.trigger?(Input::C)
+      Sound.play_decision
+      hide_item_category_window
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ○ アイテムカテゴリウィンドウの表示
+  #--------------------------------------------------------------------------
+  def show_item_category_window
+    @category_window.open
+    @category_window.active = true
+    @item_window.active = false
+  end
+  #--------------------------------------------------------------------------
+  # ○ アイテムカテゴリウィンドウの非表示
+  #--------------------------------------------------------------------------
+  def hide_item_category_window
+    @category_activated = false
+    @category_window.close
+    @category_window.active = false
+    @item_window.active = true
+    # アイテムウィンドウのインデックスを調整
+    if @item_window.index >= @item_window.item_max
+      @item_window.index = [@item_window.item_max - 1, 0].max
+    end
+  end
+end
+end  # <-- if KGC::CategorizeItem::ENABLE_IN_BATTLE
+

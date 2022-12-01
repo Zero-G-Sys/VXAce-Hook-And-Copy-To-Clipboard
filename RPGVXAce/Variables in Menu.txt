@@ -1,0 +1,89 @@
+#==============================================================================
+# RGSS3 Variable display window (for menu screen) Ver1.00
+#==============================================================================
+=begin
+  Author:Ç’ÇËñ∫ (prico)
+web site:Sister's Eternal 4th(Ancient)
+     URL:http://pricono.whitesnow.jp/
+Permission to use: Not required, but please mention in the game, Readme, etc.
+
+Adds a window that can display variables.
+All you need to do is to add this script.
+
+Make various settings according to the module.
+
+2012.12.06  Ver1.00Å@Initial release
+=end
+
+module Prico
+
+  # Display switch number (Displayed when specified switch is ON)
+  # If 0 is specified, it is displayed.
+  Disp_SW = 0
+
+  # Number of variable for display. 0 is prohibited
+  Var_Num = 1
+
+  # Window title string (less than 15 characters)
+  Var_Prefix = "Variable #"
+
+  # Unit (less than 13 characters). Nil if not needed
+  Var_Suffix = ".Pt"
+  
+  # Numerical display position (X: coordinate)
+  # (Calculate with the string specified by Var_Suffix)
+  # Half-width characters: 10 (9),
+  # Full-width characters: 20 (18) * Number of characters
+  # Example: 50 (45) for "Point", 60 (54) for "Medal", etc.
+  Num_Adj = 24
+
+  # Window position correction (Y: coordinate)
+  # 305 to display right above the gold window.
+  WindowY = 305
+
+end
+
+
+class Window_Var < Window_Base
+  #--------------------------------------------------------------------------
+  # Åú Initialization
+  #--------------------------------------------------------------------------
+  def initialize
+    if Prico::Disp_SW == 0 || $game_switches[Prico::Disp_SW] == true
+      super(0, 0, 160,fitting_height(2) - 8)
+      self.contents = Bitmap.new(width - 24, height - 24)# - 32)
+      refresh
+    end
+  end
+  #--------------------------------------------------------------------------
+  # Åú Refresh
+  #--------------------------------------------------------------------------
+  def refresh
+    self.contents.clear
+    text = $game_variables[Prico::Var_Num]
+    self.contents.font.color = system_color
+    self.contents.draw_text(0, -2, width + 28,line_height,Prico::Var_Prefix,0)
+    self.contents.draw_text(0,line_height - 4, 138,line_height,Prico::Var_Suffix,2)
+    self.contents.font.color = normal_color
+    self.contents.draw_text(0,line_height - 4, 128 - Prico::Num_Adj, line_height, text, 2)
+  end
+  #--------------------------------------------------------------------------
+  # Åú Update
+  #--------------------------------------------------------------------------
+  def update
+    super
+    refresh
+  end
+end
+
+class Scene_Menu
+  alias var_start start
+  def start
+    var_start
+    if Prico::Disp_SW == 0 || $game_switches[Prico::Disp_SW] == true
+      @Var_window = Window_Var.new
+      @Var_window.x = 0
+      @Var_window.y = Prico::WindowY
+    end
+  end
+end

@@ -1,0 +1,1 @@
+This plugin allows you to set up your own text speeds within the message window, along with setting defaults and allowing or disallowing forward skipping of the text when the mouse button or ok input is triggered within the message window.

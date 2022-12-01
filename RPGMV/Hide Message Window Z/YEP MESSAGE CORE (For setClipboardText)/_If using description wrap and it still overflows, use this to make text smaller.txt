@@ -1,0 +1,4 @@
+in YEP_MessageCore.js
+go to line 972 and change it for this (just added a 'make font smaller' code in item description)
+
+this.setText(item ? '<WordWrap>' + '\\}' + item.description : '');

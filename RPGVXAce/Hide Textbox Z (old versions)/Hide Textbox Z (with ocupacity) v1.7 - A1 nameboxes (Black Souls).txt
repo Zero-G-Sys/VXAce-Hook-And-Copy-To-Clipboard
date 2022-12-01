@@ -1,0 +1,218 @@
+=begin
+===============================================================================
+ Hide textbox2 (with ocupacity) v5.1
+ Message Visibility by efeberk (Mod by Zero_G)
+ Version: RGSS3
+===============================================================================
+ This script will allow to player sets message window visible or unvisible with 
+ a key.
+ And toogle window ocupacy (make it transparent) while displaying text
+ with another key. In case the message displayed used a dim background, 
+ it will make it transparent in the next message.
+ 
+ KEY is for hiding the window.
+ 
+ KEY2 is for returing visibility of text box on next page, default C (z).
+
+ KEY3 is for hiding the textbox but not the text (borderless).
+ 
+ Example : 
+ -Press "D" to hide message window and repress "D" to show message 
+ window.
+ -Press "C" to turn message window transparent and repress "C" to set default
+ ocupacy.
+ 
+ Possible key bindings: A B C X Y Z L R, 
+ SHIFT CTRL ALT (these are defualt keyboard bindings)
+ Functions Keys use: Input::F# (ex: Input::F5) [F1-4 can't be used]
+ Gamepad = Keboard key
+ A = shift
+ B = x
+ C = z
+ X = a
+ Y = s
+ Z = d
+ L = q
+ R = w
+ 
+ Changelog
+ v7 A1 Handle A1 nameboxes
+ v7 Changed method of textbox hiding, now dim backgrounds are also hidden
+ v6 Changed how default ocupacy of textbox is stored (Changes not applied)
+ v5 Added the functionality of hiding dim backgrounds (on next message)
+ v4 Fixed the problem where an effect would reset the background ocupacy
+    reverted v3 changes, as they are not necessary
+ v3 Added functionality of both v1 and v2
+ v2 Changed back ocupacy to whole window ocupacy (no window borders)
+ v1 Added back ocupacy
+--------------------------------------------------------------------------------
+=end
+
+## About handling nameboxes, due to tranlations being in the script
+## the script has to be modified, look for script by by A1 (ネームウィンドウ) 
+## and add the following line to the method |def show_name_window|
+## after all the if statements replacing japanese with english
+## 
+
+module EFE
+  
+  KEY = :F6    # Set hide textbox window and text button
+  KEY2 = :C   # Set defualt ok button (show next message)
+  KEY3 = :Y   # Set hide textbox window while displaying text button
+  DEFAULT_OCUPACITY = 255  # Set default window ocupacy 255 is opaque
+
+end
+
+# Global var used for toggling the ocupacy and setting Game_Interpreter
+# default window display (needed for dim background)
+$globalVar = 0 
+$dimBackgroundDisplayed = false
+
+=begin
+## This can't be used as translation for names are in the script
+#Handle name window by A1 (ネームウィンドウ) 
+#Add a line to show_name function of A1 script
+class Window_Base < Window
+  def show_name(face_name, face_index)
+    return nil unless $game_system.use_name_window
+    name = $game_temp.direct_show_name
+    if name.empty?
+      return nil if face_name == nil || face_name.empty?
+      name = A1_System::NameWindow::NAME_LIST[sprintf("%s_%d", face_name, face_index)]
+      name = A1_System::NameWindow::NAME_LIST[face_name] if name == nil
+      name = name[$game_temp.name_index] if name.is_a?(Array)
+      name = $game_actors[$1.to_i].name if name =~ /Actor\[(\d+)\]/
+    end
+    $game_temp.name_index       = 0
+    $game_temp.direct_show_name = ""
+    $namebox = name # line added
+    return name
+  end
+end
+#Handle end
+=end
+
+class Window_Message < Window_Base
+  @hidden = 0
+  alias process_all_text_namebox process_all_text
+  
+  #Handle name window by A1 (ネームウィンドウ)
+  def process_all_text
+    process_all_text_namebox
+    if $globalVar == 1
+      @name_windows.values.each {|window| window.opacity = 0 }
+    end
+  end #Handle end
+  
+  alias efeberk_window_message_update update
+  def update
+    efeberk_window_message_update
+    
+    # Waits for intput and changes ocupacity of window
+    # default ocupacity is stored in a constant in case a game doesn't use
+    # the default (255). Also sets the global variable for hiding dim backgrounds
+    if Input.trigger?(EFE::KEY3)
+      if $globalVar == 0
+        #Handle name window by A1 (ネームウィンドウ)
+        if !@name_windows.empty?
+          @name_windows.values.each {|window| window.opacity = 0 }
+        end #Handle end
+        self.opacity = 0
+        $globalVar = 1
+      elsif $globalVar == 1
+        self.opacity = EFE::DEFAULT_OCUPACITY
+
+        #Handle name window by A1 (ネームウィンドウ)
+        if !@name_windows.empty?
+          @name_windows.values.each {|window| window.opacity = EFE::DEFAULT_OCUPACITY }
+        end #Handle end
+        $globalVar = 0
+      end
+    end
+    
+    # Hides textbox completly, makes it visible with same button press
+    # or with ok button
+    if Input.trigger?(EFE::KEY)
+      if self.visible == true
+        @hidden = 1
+        hide
+        if @background == 1
+          @background = 0
+          @black_window = 2
+        end
+        #Handle name window by A1 (ネームウィンドウ)
+        if @name_windows[$namebox] != "" && !@name_windows.empty?
+          @name_windows[$namebox].hide
+        end #Handle end
+      else
+        @hidden = 0
+        show
+        if @black_window == 2
+          @background = 1
+          @black_window = 0
+        end
+        #Handle name window by A1 (ネームウィンドウ)
+        if @name_windows[$namebox] != "" && !@name_windows.empty?
+          @name_windows[$namebox].show
+        end
+      end
+    end
+    
+    # Show textbox if hidden and pressed next message button
+    if Input.press?(EFE::KEY2) 
+      show
+      if @black_window == 2
+        @background = 1
+        @black_window = 0
+      end
+      #Handle name window by A1 (ネームウィンドウ)
+      if @name_windows[$namebox] != "" && !@name_windows.empty? && @hidden == 1
+        @hidden = 0
+        @name_windows[$namebox].show
+      end #Handle end
+    end
+    
+  end # end def update
+  
+end # class Window_Message
+
+
+# Dim backgrounds don't have a transparency feature, so there is a need to
+# modify the core display in the next message via a global variable
+class Game_Interpreter
+
+  def command_101
+    wait_for_message
+    $game_message.face_name = @params[0]
+    $game_message.face_index = @params[1]
+    $game_message.background = @params[2]
+    
+    if $game_message.background == 1 || $game_message.background == 0
+      $dimBackgroundDisplayed = true
+    else
+      $dimBackgroundDisplayed = false
+    end
+    if $globalVar == 1 # Check if toogled
+    	$game_message.background = 2 # Make text window transparent
+    end
+    
+    $game_message.position = @params[3]
+    while next_event_code == 401       # Text data
+      @index += 1
+      $game_message.add(@list[@index].parameters[0])
+    end
+    case next_event_code
+    when 102  # Show Choices
+      @index += 1
+      setup_choices(@list[@index].parameters)
+    when 103  # Input Number
+      @index += 1
+      setup_num_input(@list[@index].parameters)
+    when 104  # Select Item
+      @index += 1
+      setup_item_choice(@list[@index].parameters)
+    end
+    wait_for_message
+  end
+  
+end

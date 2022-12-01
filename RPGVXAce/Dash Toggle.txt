@@ -1,0 +1,38 @@
+=begin
+===============================================================================
+ Toggle Dash
+===============================================================================
+ This script will toggle the state of dashing when pressing the Shift button
+ (:A)
+-------------------------------------------------------------------------------
+=end
+
+class Game_Player < Game_Character 
+  #-------------------------------------------------------------------------- 
+  #   * Object Initialization 
+  #-------------------------------------------------------------------------- 
+  alias dash_initialize initialize 
+  def initialize 
+    dash_initialize 
+    @dash = false 
+  end 
+  #-------------------------------------------------------------------------- 
+  #   * Determine if Dashing 
+  #-------------------------------------------------------------------------- 
+  def dash? 
+    return false if @move_route_forcing 
+    return false if $game_map.disable_dash? 
+    return false if vehicle 
+    return @dash 
+  end 
+  #-------------------------------------------------------------------------- 
+  # * Frame Update 
+  #-------------------------------------------------------------------------- 
+  alias dash_update update 
+  def update 
+    dash_update 
+    if Input.trigger?(:A) 
+      @dash = !@dash 
+    end
+  end
+end

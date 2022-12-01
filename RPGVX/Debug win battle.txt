@@ -1,0 +1,31 @@
+# press ::Y to win
+# delete $TEST in the if to use outside of testing
+
+class Scene_Battle < Scene_Base
+  #--------------------------------------------------------------------------
+  # ● パーティコマンド選択の更新
+  #--------------------------------------------------------------------------
+  alias :update_party_command_selection_spd :update_party_command_selection
+  def update_party_command_selection
+    update_party_command_selection_spd
+    if $TEST and Input.trigger?(Input::Y)
+      Sound.play_decision
+      $game_troop.increase_turn
+      @info_viewport.visible = false
+      @info_viewport.ox = 0
+      @message_window.visible = true
+      @party_command_window.active = false
+      @actor_command_window.active = false
+      @status_window.index = @actor_index = -1
+      @active_battler = nil
+      @message_window.clear
+      $game_party.clear_actions
+      $game_troop.clear_actions
+      make_action_orders
+      for enemy in $game_troop.members
+        enemy.hp -= 999999
+        enemy.perform_collapse
+      end
+    end
+  end
+end

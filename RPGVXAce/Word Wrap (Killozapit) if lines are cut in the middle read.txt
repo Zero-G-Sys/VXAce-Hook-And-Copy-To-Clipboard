@@ -1,0 +1,27 @@
+set DEFAULT_WHITESPACE to true
+
+but if the game has names inside the textbox
+example
+
+---------------------------
+[Name]
+text text text
+---------------------------
+
+it will end like this
+
+---------------------------
+[Name] text text text
+---------------------------
+
+a fix is to add this code after "def process_character(c, text, pos)"
+
+    c = ' ' if @convert_newlines && c == "\n" && @nameEscape
+    if c == "]"
+      @nameEscape = false
+    else
+      @nameEscape = true
+    end
+
+
+but if the is no character after the name (in this case "]"), then this will not work.

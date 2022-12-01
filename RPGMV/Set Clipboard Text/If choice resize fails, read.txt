@@ -1,0 +1,10 @@
+// RJ227685 specific, choices lenght was not updating unless this whole block runs multiple times, deduced that a wait
+    // and calling update placement again should fix it, another plugin must be doing something to the choices
+// Add this code in line 704, should be after the original this.updateCursor(); 
+
+    setTimeout(() => {
+      this.updatePlacement(true, width);
+      this.refresh();
+      this.ensureCursorVisible();
+      this.updateCursor(); 
+    }, 20);

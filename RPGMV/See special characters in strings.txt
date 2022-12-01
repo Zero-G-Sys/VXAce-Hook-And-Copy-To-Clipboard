@@ -1,0 +1,7 @@
+-Two ways, to see them in console
+
+JSON.stringify(text)
+
+-to check if there is a line break
+
+/(\n|\r)/.test(text)

@@ -1,0 +1,141 @@
+#Pause Screen
+#Author: Orochii Zouveleki
+#https://mundo-maker.foroactivo.com/t15983-xp-vx-ace-pantalla-de-pausa
+#Compatibility: XP/VX/Ace
+
+module OZPause
+  #============================================================================#
+  #============================== CONFIGURATIONS ==============================#
+  #============================================================================#
+  
+  # Button to be used as pause/unpause
+  #PAUSE_BUTTON = Input::F8
+  PAUSE_BUTTON = :_p
+  # String to show at the pause overlay
+  PAUSE_STRING = "PAUSED"
+  # Color for the pause overlay
+  COLOR_OVERLAY = Color.new(0,0,0,128)
+  
+  #============================================================================#
+  #=========================== END OF CONFIGURATION ===========================#
+  #============================================================================#
+  # Checks if the necessary audio methods exists
+  def self.new_audio?
+    return Audio.method_defined?(:bgm_pos)
+  end
+  # Checks if the necessary graphics methods exists
+  def self.new_graphics?
+    return Graphics.method_defined?(:snap_to_bitmap)
+  end
+  
+end
+
+module Audio
+  class << self
+    alias orig_bgm_play bgm_play
+    alias orig_bgs_play bgs_play
+    
+    @@curr_bgm = RPG::AudioFile.new
+    @@curr_bgs = RPG::AudioFile.new
+    
+    def bgm_restore(pos=0)
+      if @@curr_bgm.name==""
+        bgm_stop
+      else
+        bgm_play(@@curr_bgm.name, @@curr_bgm.volume, @@curr_bgm.pitch, pos)
+      end
+    end
+    def bgs_restore(pos=0)
+      if @@curr_bgs.name==""
+        bgs_stop
+      else
+        bgs_play(@@curr_bgs.name, @@curr_bgs.volume, @@curr_bgs.pitch, pos)
+      end
+    end
+    
+    def bgm_play(filename, volume=100, pitch=100, pos=0)
+      @@curr_bgm.name = filename
+      @@curr_bgm.volume = volume
+      @@curr_bgm.pitch = pitch
+      if OZPause.new_audio?
+        orig_bgm_play(filename, volume, pitch, pos) rescue nil
+      else
+        orig_bgm_play(filename, volume, pitch) rescue nil
+      end
+    end
+    def bgs_play(filename, volume=100, pitch=100, pos=0)
+      @@curr_bgs.name = filename
+      @@curr_bgs.volume = volume
+      @@curr_bgs.pitch = pitch
+      if OZPause.new_audio?
+        orig_bgs_play(filename, volume, pitch, pos) rescue nil
+      else
+        orig_bgs_play(filename, volume, pitch) rescue nil
+      end
+    end
+  end
+end
+
+module Input
+  class << self
+    # * Alias Methods
+    alias ozpause_update update unless $@
+    
+    # * Frame Update
+    def update
+      # Call original method
+      ozpause_update
+      # Pause update
+      pause_update
+    end
+    
+    def create_screenshot
+      if OZPause.new_graphics?
+        # TODO: Implement screenshot.dll
+        b = Bitmap.new(640,480)
+        b.fill_rect(0,0,640,480,Color.new(0,0,0,255))
+        return b
+      else
+        return Graphics.snap_to_bitmap
+      end
+    end
+    
+    def pause_update
+      return if $game_system == nil
+      # Check if pause button is pressed
+      if Input.trigger?(OZPause::PAUSE_BUTTON)
+        # Save current frame count
+        framecount = Graphics.frame_count
+        # Take screenshot
+        screenshot = create_screenshot
+        # Store current audio variables
+        bgmpos = OZPause.new_audio? ? 0 : Audio.bgm_pos
+        bgspos = OZPause.new_audio? ? 0 : Audio.bgs_pos
+        Audio.bgm_stop
+        Audio.bgs_stop
+        pause = true
+        pause_layer = Sprite.new
+        pause_layer.bitmap = screenshot
+        pause_layer.bitmap.fill_rect(0, 0, 640, 480, OZPause::COLOR_OVERLAY)
+        pause_layer.bitmap.draw_text(512, 400, 160, 80, OZPause::PAUSE_STRING)
+        pause_layer.z = 15000000
+        while pause == true
+          pause_layer.update
+          Graphics.update
+          # Call input update
+          ozpause_update
+          #Audio.update
+          pause = false if Input.trigger?(OZPause::PAUSE_BUTTON)
+        end
+        Audio.bgm_restore(bgmpos)
+        Audio.bgs_restore(bgspos)
+        pause_layer.bitmap.dispose
+        pause_layer.bitmap = nil
+        pause_layer.dispose
+        pause_layer = nil
+        # Restore frame count
+        Graphics.frame_count = framecount
+      end
+    end
+  end
+end

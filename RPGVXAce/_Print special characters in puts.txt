@@ -1,0 +1,3 @@
+puts string.dump
+
+ex: puts text.dump

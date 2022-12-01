@@ -1,0 +1,125 @@
+=begin
+===============================================================================
+ Hide Text
+===============================================================================
+ Author: Zero_G
+
+ Workaround for hiding text withouth hiding face sprite. This script modifies
+ draw_text from update_message to draw each character with no width, and thus
+ making it invisible
+ 
+ If game doesn't use face sprites, you can use self.contents_opacity in 
+ Hide textbox script
+
+ Has instant text enabled
+ 
+ IMPORTANT
+ As this scripts overwrites update_message, it must be at top of other aliases
+ also look if another script overwristes update_message.
+-------------------------------------------------------------------------------
+=end
+
+$hiding = false
+$hiding_helper = false
+
+class Window_Message < Window_Selectable
+  
+  alias hide_update update
+  def update
+    if Input.trigger?(Input::F5)
+      $hiding = !$hiding
+      $hiding_helper = !$hiding_helper
+      
+      # If windows is open redraw text
+      if self.openness == 255
+        start_message
+        @show_fast = true
+        update_message unless @text.nil?
+#       @show_fast = false
+      end
+    end
+    
+    # If text has choices display them
+    if $game_message.choice_start != 99 or $scene.is_a?(Scene_Battle)
+      $hiding = false
+    else
+      $hiding = true if $hiding_helper
+    end
+    
+    hide_update
+  end
+  
+  def update_message
+    loop do
+      c = @text.slice!(/./m)            # 次の文字を取得
+      case c
+      when nil                          # 描画すべき文字がない
+        finish_message                  # 更新終了
+        break
+      when "\x00"                       # 改行
+        new_line
+        if @line_count >= MAX_LINE      # 行数が最大のとき
+          unless @text.empty?           # さらに続きがあるなら
+            self.pause = true           # 入力待ちを入れる
+            break
+          end
+        end
+      when "\x01"                       # \C[n]  (文字色変更)
+        @text.sub!(/\[([0-9]+)\]/, "")
+        contents.font.color = text_color($1.to_i)
+        next
+      when "\x02"                       # \G  (所持金表示)
+        @gold_window.refresh
+        @gold_window.open
+      when "\x03"                       # \.  (ウェイト 1/4 秒)
+        @wait_count = 15
+        break
+      when "\x04"                       # \|  (ウェイト 1 秒)
+        @wait_count = 60
+        break
+      when "\x05"                       # \!  (入力待ち)
+        self.pause = true
+        break
+      when "\x06"                       # \>  (瞬間表示 ON)
+        @line_show_fast = true
+      when "\x07"                       # \<  (瞬間表示 OFF)
+        @line_show_fast = false
+      when "\x08"                       # \^  (入力待ちなし)
+        @pause_skip = true
+      else                              # 普通の文字
+        contents.draw_text(@contents_x, @contents_y, 40, WLH, c) if !$hiding
+        contents.draw_text(@contents_x, @contents_y, 0, WLH, c) if $hiding
+        c_width = contents.text_size(c).width
+        @contents_x += c_width
+      end
+      #break unless @show_fast or @line_show_fast
+    end
+  end
+
+  # Instant text
+  def update_show_fast
+    @show_fast = true
+    if @show_fast and @wait_count > 0
+      @wait_count -= 1
+    end
+  end
+end
+
+# Old way to determine start of battle
+=begin 
+class Scene_Battle < Scene_Base
+  alias hide_start start
+  def start
+    puts "start"
+    $hiding = false
+    hide_start
+  end
+  
+  alias hide_battle_end battle_end
+  def battle_end(result)
+    hide_battle_end(result)
+    puts "stop"
+    $hiding = true if $hiding_helper
+  end
+end
+=end

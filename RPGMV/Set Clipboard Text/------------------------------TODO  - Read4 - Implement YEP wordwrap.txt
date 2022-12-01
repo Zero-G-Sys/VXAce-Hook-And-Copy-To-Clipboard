@@ -1,0 +1,19 @@
+YEP wordwrap is better beacuse you don't have to set the width of the windows in numbers, it wraps automatically
+
+The wordwrap can be used now as is, just add <WordWrap> to the start of the text and YEP_MessageCore will wrap it. (If you want to test this, look form my word wrap function (function wordWrapper) and make it return: return '<WordWrap>' + str; while commenting the rest of the code in that function
+
+---
+Now the problem with this is how I handle overflowed text, as of now, I'm checking the number of \n that my wordwrap function text returns (function isOverflowing) and separate text for it being called with 's'
+
+How to implement that into YEP:
+
+lines 903 and 908 (in YEP_MessageCore) handle the word wrap, and it seems to be calling process new line each time the text needs a new line
+
+So we could copy those functions into my script and call them directly (so no use of <WordWrap> tag)
+
+intialize a counter in startMessage (start value of 1), add to it each time processNormalCharacter calls a new line
+and save all the text now split into lines into a new text variable, so it's used in my code that slipts it into 2 textboxes (line 986). But this code will need to be called after showing text (now it's before)
+
+---
+
+Seems that this is also being called when doing choice replace so may need to test if choice replaces work fine afterwards

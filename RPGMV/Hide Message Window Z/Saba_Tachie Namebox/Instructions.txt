@@ -1,0 +1,28 @@
+In Saba_Tachie.js look for:
+
+Window_MessageName.prototype.update = function () {
+
+before that line add: 
+
+            // variables to hide namebox Zero_G
+            const hideButton = 'd';
+            const opacityButton = 'c';
+            isHiddenNamebox = false;
+            isHiddenOcupacy = false;
+            // End
+
+At end of the update function add:
+
+                // Zero_G added Code
+                if (Input.isTriggered(hideButton)){
+                    isHiddenNamebox = !isHiddenNamebox;
+                    if (isHiddenNamebox) this.visible = false;
+                    else this.visible = true;
+                }
+
+                if (Input.isTriggered(opacityButton)){
+                    isHiddenOcupacy = !isHiddenOcupacy;
+                    if (isHiddenOcupacy) this.opacity = 0;
+                    else this.opacity = 255;
+                }
+                // End of Zero_G added Code

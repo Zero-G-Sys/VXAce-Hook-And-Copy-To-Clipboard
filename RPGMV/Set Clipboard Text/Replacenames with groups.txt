@@ -1,0 +1,1 @@
+"japName(|[A-Za-z])": "TransName $1",

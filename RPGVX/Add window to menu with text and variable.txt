@@ -1,0 +1,105 @@
+=begin
+===============================================================================
+ Menu Desire and Fertilize
+ Autor: Zero_G v1.1
+ Version: RGSS2
+===============================================================================
+ == Description ==
+ Set widnow for desire and fertilize lvl, this script is exclusive for
+ Parralel Fantasy 0. v1.1 can be reused in other games
+
+ == Changelog ==
+ v1.1 Changed to only one window with multiple lines of text
+ v1.0 Initial
+--------------------------------------------------------------------------------
+=end
+module ZERO
+    # Hash (dictionary) for lines of text in the window
+    TEXT_LINES = [
+      {
+        :x => 0,                # x coordinate of text inside window
+        :y => 0,                # y coordinate
+        :width => 70,           # width of text
+        :xOffset => -5,         # offset of x position of value (can be negative)
+        :text => "Amy's Desire",# text of window
+        :value => 2             # game variable number
+      },
+      {
+        :x => -1,
+        :y => 22,
+        :width => 95,
+        :xOffset => -4,
+        :text => "Amy's Fertilize Lv",
+        :value => 6
+      },
+      {
+        :x => -4,
+        :y => 44,
+        :width => 70,
+        :xOffset => 0,
+        :text => "Yuri's Desire",
+        :value => 3
+      },
+      {
+        :x => -5,
+        :y => 66,
+        :width => 95,
+        :xOffset => 1,
+        :text => "Yuri's Fertilize Lv",
+        :value => 7
+      }
+    ]
+    
+    # Window position and size
+    WINDOW_WIDTH = 160 
+    WINDOW_HEIGHT = 125 # This value plus WLH (24)
+    WINDOW_X = 0      # X Coordinate of window
+    WINDOW_Y = 241        # Y Coordinate of window
+    
+end
+
+# Create window classes
+# Size of window and value to display can be set here
+class Window_Desire < Window_Base
+  def initialize
+    # If there needs to be more than one window, put this values in
+    # the instatiation of the object instead of here (need to set values to initialize-constructor)
+    super(ZERO::WINDOW_X, ZERO::WINDOW_Y, ZERO::WINDOW_WIDTH, ZERO::WINDOW_HEIGHT)
+    refresh
+  end
+
+  def refresh
+    self.contents.clear
+    draw_desire
+  end
+end
+
+# Set contents of window
+class Window_Base < Window
+  def draw_desire
+    ZERO::TEXT_LINES.each { |x|
+      cx = contents.text_size(x[:text]).width
+      self.contents.font.color = normal_color
+      self.contents.draw_text(x[:x], x[:y], ZERO::WINDOW_WIDTH - 27 + x[:xOffset], WLH, $game_variables[x[:value]], 2)
+      self.contents.font.color = system_color
+      self.contents.draw_text(x[:x], x[:y], x[:width], WLH, x[:text], 2)
+    }
+  end
+end
+
+class Scene_Menu < Scene_Base
+  # Open windows when opening menu
+  alias :desire_menu_start :start
+  def start
+    desire_menu_start
+    # Initialize new window in menu
+    @desire_window = Window_Desire.new
+  end
+  
+  # Close windows when closing menu
+  alias :desire_menu_terminate :terminate
+  def terminate
+    @desire_window.dispose
+    desire_menu_terminate
+  end
+end

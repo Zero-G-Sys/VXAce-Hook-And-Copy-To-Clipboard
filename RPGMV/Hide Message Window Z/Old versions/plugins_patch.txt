@@ -1,0 +1,2 @@
+{"name":"HIME_HMSHideMessageWindow","status":true,"description":"","parameters":{"Hide Button":"d","Ocupacy Button":"c"}},
+{"name":"Zero_MoreInputs","status":true,"description":"","parameters":{}}

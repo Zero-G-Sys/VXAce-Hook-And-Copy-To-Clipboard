@@ -1,0 +1,5 @@
+Seems that when it adds a name that uses regex it immediately doesn't add it to ignore regexbloc in cliboardLulle, you end up with the name in the text
+
+I already fixed that in line 196 in clipboardLulle, but it seems that only runs when the game starts, we need to run that line each time a name is added
+
+there was a function that updated replacements2 each time, I need to search for that and add the fix there

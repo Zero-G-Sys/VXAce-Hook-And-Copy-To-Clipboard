@@ -1,0 +1,39 @@
+Input.key_press(InputVALUE)
+Input.key_trigger(InputVALUE)
+Input.key_repeat(InputVALUE)
+
+Use key_press for normal button input.
+key_trigger, I'm not quite sure but I think a single tap on the key.
+key_repeat, again not sure but at least if the key is either pressed repeatedly or hold down for a couple of frames.
+
+For VALUE, use
+LETTERS[value] with value being the letter of your keyboard in uppercase and surrounded by quotation marks ( 's)
+NUMBERS[value] with value being the number. Not sure if value 0 is a 0 or 1. If it's one, substract every number by one and 9 = 0.
+NUMPAD[value] exact the same case as NUMBERS, bbut this time for the numberpad only.
+BACK for backspace
+ENTER for enter
+SPACE for space....
+SCOLON ( ;)
+ESC
+QUOTE
+EQUALS
+COMMA
+USCORE
+PERIOD
+SLASH
+LBRACE (brackets)
+RBRACE
+BSLASH
+TILDE (~)
+F10
+F11
+CAPS
+NMUL (numpad asterisk)
+NPLUS (numpad +)
+NSEP (numpad... something... enter)
+NMINUS (numpad -)
+NDECI (numpad dot)
+NDIV (numpad forwardslash)
+
+
+One last note, use Input.upcase to see if the player is holding shifthas caps lock on and Input.typing to see if the player's typing.

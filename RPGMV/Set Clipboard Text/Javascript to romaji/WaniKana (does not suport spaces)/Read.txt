@@ -1,0 +1,20 @@
+-Copy wanakana.js to www/js/lib/
+-edit index.html and add:
+  <script type="text/javascript" src="js/libs/wanakana.js"></script>
+before plugins.js
+
+-Now from plugins you can make call to the wanakana methods: 
+ Ej:
+    wanakana.toRomaji('‚¨‚Ë‚¦‚¿‚á‚ñ')
+
+See documentation in github readme.md
+https://github.com/WaniKani/WanaKana
+
+
+May need updated nwjs (no need)
+
+
+romaji isnt puting spaces between works, kind of bad. Look for another library or how to load custom map
+look in documentation 
+https://wanakana.com/docs/global.html#toRomaji
+defaultOptions customRomajiMapping

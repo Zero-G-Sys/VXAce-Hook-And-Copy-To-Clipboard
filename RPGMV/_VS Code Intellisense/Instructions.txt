@@ -1,0 +1,9 @@
+-Download both files; keep the file names.
+
+-Place the jsconfig.json  and the rmmv.d.ts or rmmv-pixi.d.t.s  file in your game’s js/ directory (You will need to copy over both files for new projects).
+
+-Make sure you open your RPGMakerMV project as a folder (Right click -> Open with Code)
+
+-Reload Visual Studio Code
+
+-Enjoy The Intellisense!

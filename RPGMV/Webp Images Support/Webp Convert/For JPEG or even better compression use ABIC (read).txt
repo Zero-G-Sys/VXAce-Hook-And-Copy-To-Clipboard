@@ -1,0 +1,7 @@
+Use advanced - output format - webp
+
+comrpression method 6
+
+Quality in percent - 90 
+
+(Could try quality in PSNR, read wiki page)

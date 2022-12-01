@@ -1,0 +1,7 @@
+Open the Menu by pressing the [1] Key.
+Move menu to different positions with ` (key with tilde ~)
+Scroll between cheats with [2] and [3] Keys.
+Any [#] indicates a number key to press to cause an action, if you don't want to click.
+
+The menu can also be interacted with by clicking (everything except opening the menu can be done with the mouse).
+Clicking is done with left click and clickable elements will be highlighted red on hover over.

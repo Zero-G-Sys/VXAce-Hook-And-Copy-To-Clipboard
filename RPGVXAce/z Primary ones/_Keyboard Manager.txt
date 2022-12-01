@@ -1,0 +1,376 @@
+#Keyboard Manager
+$imported ||= {}
+$imported[:zf_keyboard_manager] = "1.1.0"
+#+----------------------------------------------------------------------------+
+#|   1 - Basic Info
+#-============================================================================-
+#|  Script:  Keyboard Manager
+#|  Version: 1.1.0
+#|  Updated: April 9th 2015
+#|  Author:  Zalerinian (~ZF)
+#------------------------------------------------------------------------------
+#|   2 - Section Overview
+#-============================================================================-
+#|    1 - Basic Info
+#|    2 - Section Overview
+#|    3 - Script Summary
+#|    4 - Version History
+#|    5 - Script Support
+#|    6 - Attribution
+#|    7 - Method List
+#|    8 - Usage
+#|    9 - Known Issues
+#|   10 - Configuration
+#------------------------------------------------------------------------------
+#|   3 - Script Summary
+#-============================================================================-
+#| This script allows the developer to set the controls for the game, without
+#| needing to worry about the player's control setup.
+#------------------------------------------------------------------------------
+#|   4 - Version History
+#-============================================================================-
+#|  v1.1.0 - April 9th, 2015
+#|   - Fixed an issue that prevented the player from moving with the set
+#|     keybinding.
+#|
+#|  v1.0.1 - March 11th, 2014
+#|   - Fixed a bug when using conditional branches in events
+#|
+#|  v1.0.0 - March 9th 2014
+#|   - Initial Release
+#------------------------------------------------------------------------------
+#|   5 - Script Support
+#-============================================================================-
+#|  For support, bug reports, or feedback, please email scripts@razelon.tk,
+#|  or send me (Zalerinian) a private message (PM) on the RPG maker forums.
+#------------------------------------------------------------------------------
+#|   6 - Attribution (Credit)
+#-============================================================================-
+#|  I do not require credit to be given. You may use this script in a
+#|  commercial or non-commercial game, so long as you do not claim that
+#|  you wrote it. You may port this script to another engine, and are free
+#|  to require credit for it. Do not claim that the original script was
+#|  yours. The script also must remain free for both commercial and
+#|  non-commercial use.
+#------------------------------------------------------------------------------
+#|   7 - Method List
+#|    + = New Method
+#|    * = Aliased Method
+#|    ! = Overwritten Method
+#-============================================================================-
+#| Input
+#|  + any_key?
+#|  + released?(key)
+#|  * press?(key)
+#|  * trigger?(key)
+#|  ! repeat?(key)
+#|  ! dir4
+#|  ! dir8
+#------------------------------------------------------------------------------
+#|   8 - Usage
+#-============================================================================-
+#| This script is plug-n-play, with configuration explained below.
+#------------------------------------------------------------------------------
+#|   9 - Known Issues
+#-============================================================================-
+#| Bound keys will not function with gamepads, only those that do not get
+#| rebound will function with gamepads, however RMs gamepad system is designed
+#| to work with a controller setup that is not similar to those found on the
+#| Xbox or Playstation.
+#|
+#| Rebinding keys is not currently possible in-game. A future update will
+#| provide this feature.
+#------------------------------------------------------------------------------
+#|  10 - Configuration
+#-============================================================================-
+module Zale
+  module Keyboard_Manager
+    # Editable Area below!
+    # Don't touch this
+    Keys = {
+  #   backspace    tab         enter         any shift     any control     any alt     caps lock    escape      spacebar
+      _back: 0x08, _tab: 0x09, _enter: 0x0D, _shift: 0x10, _control: 0x11, _alt: 0x12, _capl: 0x14, _esc: 0x1B, _space: 0x20,
+  #   page up      page down    end         home         left arrow   up arrow   right arrow   down arrow   print screen key
+      _pgup: 0x21, _pgdn: 0x22, _end: 0x23, _home: 0x24, _left: 0x25, _up: 0x26, _right: 0x27, _down: 0x28, _print_screen: 0x2C,
+  #   insert         delete         help         0         1         2         3         4         5         6         7
+      _insert: 0x2D, _delete: 0x2E, _help: 0x2F, _0: 0x30, _1: 0x31, _2: 0x32, _3: 0x33, _4: 0x34, _5: 0x35, _6: 0x36, _7: 0x37,
+  #   8          9         A         B         C         D         E         F         G         H         I         J
+      _8: 0x38, _9: 0x39, _a: 0x41, _b: 0x42, _c: 0x43, _d: 0x44, _e: 0x45, _f: 0x46, _g: 0x47, _h: 0x48, _i: 0x49, _j: 0x4A,
+  #   K         L         M         N         O         P         Q         R         S         T         U         V
+      _k: 0x4B, _l: 0x4C, _m: 0x4D, _n: 0x4E, _o: 0x4F, _p: 0x50, _q: 0x51, _r: 0x52, _s: 0x53, _t: 0x54, _u: 0x55, _v: 0x56, 
+  #   W         X         Y         Z         left win     right win    numpad 0    numpad 1      numpad 2     numpad 3
+      _w: 0x57, _x: 0x58, _y: 0x59, _z: 0x5A, _lwin: 0x5B, _rwin: 0x5C, _num0: 0x60, _num1: 0x61, _num2: 0x62, _num3: 0x63,
+  #   numpad 4     numpad 5     numpad 6     numpad 7     numpad 8     numpad 9     numpad *      numpad +    numpad -
+      _num4: 0x64, _num5: 0x65, _num6: 0x66, _num7: 0x67, _num8: 0x68, _num9: 0x69, _multi: 0x6A, _add: 0x6B, _sub: 0x6D, 
+  #   numpad .    numpad /    FN 1       FN 2       FN 3       FN 4       FN 5       FN 6       FN 7       FN 8
+      _dec: 0x6E, _div: 0x6F, _f1: 0x70, _f2: 0x71, _f3: 0x72, _f4: 0x73, _f5: 0x74, _f6: 0x75, _f7: 0x76, _f8: 0x77,
+  #   FN 9       FN 10       FN 11       FN 12       FN 13       FN 14       FN 15       FN 16       FN 17       FN 18
+      _f9: 0x78, _f10: 0x79, _f11: 0x7A, _f12: 0x7B, _f13: 0x7C, _f14: 0x7D, _f15: 0x7E, _f16: 0x7F, _f17: 0x80, _f18: 0x81,
+  #   FN 19       FN 20       FN 21       FN 22       FN 23       FN 24       left shift     right shift    left ctrl
+      _f19: 0x82, _f20: 0x83, _f21: 0x84, _f22: 0x85, _f23: 0x86, _f24: 0x87, _lshift: 0xA0, _rshift: 0xA1, _lcontrol: 0xA2, 
+  #   right xtrl       left alt     right alt    :             =              ,             -             .
+      _rcontrol: 0xA3, _lalt: 0xA4, _ralt: 0xA5, _colon: 0xBA, _equals: 0xBB, _comma: 0xBC, _minus: 0xBD, _period: 0xBE,
+  #   /             ` (~)         [              \                 ]              ' (")
+      _slash: 0xBF, _tilde: 0xC0, _lbrace: 0xDB, _backslash: 0xDC, _rbrace: 0xDD, _quote: 0xDE
+    }
+    
+    # Edit here: 
+    # Each key binding is stored in the format:
+    # internal_button: array of keyboard keys to check.
+    
+    # Using this, you can create your own key bindings for
+    # special functions. These names are used internally to
+    # check for input. Each key on the keyboard is stored
+    # in the Keys hash above. Ex:
+    
+    # JUMP: [Keys[:_space] ]
+    
+    # Now if whenever we use Input.trigger?(:JUMP), Input.press?(:JUMP),
+    # or similar, it will check to see if the spacebar has been
+    # pressed down, or just released if you use Input.released?(:JUMP).
+    
+    # The default RM controls are setup by default. If 
+    # wish to allow the player to change some controls,
+    # comment out (place a # before), or remove each
+    # control you wish to leave up to the player. Currently,
+    # this is the only way to change controls during the
+    # game. A later update will change this.
+    Key_Bindings = {
+      A:     [Keys[:_shift] ],
+      B:     [Keys[:_esc], Keys[:_x] ],
+      C:     [Keys[:_enter], Keys[:_space], Keys[:_z] ],
+      X:     [Keys[:_a] ],
+#     Y:     [Keys[:_s], Keys[:_v] ], # added v key
+      Y:     [Keys[:_s] ],
+      Z:     [Keys[:_d] ],
+      L:     [Keys[:_q] ], 
+      R:     [Keys[:_w] ],
+      UP:    [Keys[:_up], Keys[:_num8] ],
+      DOWN:  [Keys[:_down], Keys[:_num2] ],
+      RIGHT: [Keys[:_right], Keys[:_num6] ],
+      LEFT:  [Keys[:_left], Keys[:_num4] ],
+      SHIFT: [Keys[:_shift] ],
+      CTRL:  [Keys[:_lcontrol] ], # Changed to left control only
+      ALT:   [Keys[:_alt] ],
+      F5:    [Keys[:_f5] ],
+      F6:    [Keys[:_f6] ],
+      F7:    [Keys[:_f7] ],
+      F8:    [Keys[:_f8] ],
+      F9:    [Keys[:_f9] ]
+    }
+  end
+end
+
+module Input
+  @released = Hash.new{}
+  @triggers = Hash.new{}
+  @pressed  = Hash.new{}
+  @timer    = Hash.new{}
+  @table = {
+    2 => :DOWN,
+    4 => :LEFT,
+    6 => :RIGHT,
+    8 => :UP,
+    11 => :A,
+    12 => :B,
+    13 => :C,
+    14 => :X,
+    15 => :Y,
+    16 => :Z,
+    17 => :L,
+    18 => :R,
+  }
+  
+  KEY   = Win32API.new("user32.dll", "GetKeyState",      ["i"], "i")
+  AKEY  = Win32API.new("user32.dll", "GetAsyncKeyState", ["i"], "i")
+  
+  class << self
+    include Zale::Keyboard_Manager
+    #--------------------------------------------------------------------------
+    # Input: Update                                             ALIASED METHOD
+    #  * Update will update the status of each key for input check.
+    #--------------------------------------------------------------------------
+    alias zale_keyman_input_update_CIO223cjcivoa update
+    def update
+      zale_keyman_input_update_CIO223cjcivoa
+      Keys.each_value{ |key|
+        @pressed[key]  == nil ? @pressed[key]  = false : nil
+        @triggers[key] == nil ? @triggers[key] = false : nil
+        @released[key] == nil ? @released[key] = false : nil
+        @timer[key]    == nil ? @timer[key]    = 30    : nil
+        (@pressed[key] == false && AKEY.call(key) != 0) ? @triggers[key] = true : @triggers[key] = false
+        (AKEY.call(key) != 0) ? @pressed[key] = true : @pressed[key] = false
+        (@pressed[key] == true && AKEY.call(key) == 0) ? @released[key] = true : @released[key] = false
+      }
+    end
+    
+    #--------------------------------------------------------------------------
+    # Input: Press?                                             ALIASED METHOD
+    #  * Press will check if the given key is pressed down on the keyboard.
+    #  * This method does not take into account any delays, if the key is
+    #  * down, this will return true.
+    #--------------------------------------------------------------------------
+    alias zale_keyman_input_press_DIOjd2iovjs press?
+    def press?(key)
+      if @table[key]
+        key = @table[key]
+      end
+      if Key_Bindings[key]
+        Key_Bindings[key].any?{|k| @pressed[k] }
+      elsif !@pressed[Keys[key]].nil?
+        @pressed[Keys[key]]
+      else
+        zale_keyman_input_press_DIOjd2iovjs(key)
+      end
+    end
+
+    #--------------------------------------------------------------------------
+    # Input: Trigger?                                           ALIASED METHOD
+    #  * Trigger checks if the key was just immediately pressed. This returns
+    #  * true only for the first frame the key is pressed down. To check for
+    #  * the key being down at any time, use press?, described above.
+    #--------------------------------------------------------------------------
+    alias zale_keyman_input_trigger_389fHUKWquihc trigger?
+    def trigger?(key)
+      if @table[key]
+        key = @table[key]
+      end
+      if Key_Bindings[key]
+        Key_Bindings[key].any?{|k| @triggers[k] }
+      elsif !@triggers[Keys[key]].nil?
+        @triggers[Keys[key]]
+      else
+        zale_keyman_input_trigger_389fHUKWquihc(key)
+      end
+    end
+    
+    #--------------------------------------------------------------------------
+    # Input: Repeat?                                        OVERWRITTEN METHOD
+    #  * Repeat will check if a key is pressed down, similar to press?, 
+    #  * however, repeat? will take into account a delay. After initially
+    #  * pressing the button, the delay will 30 frames (one half of second).
+    #  * After, the delay will be 5 frames (one 12th of a second)
+    #--------------------------------------------------------------------------
+    def repeat?(key)
+      if @table[key]
+        key = @table[key]
+      end
+      if !press?(key) || @timer[key].nil?
+        @timer[key] = 30
+      end
+      if trigger?(key)
+        return true
+      else
+        if @timer[key] <= 0
+          @timer[key] = 5
+          true
+        else
+          @timer[key] -= 1
+          false
+        end
+      end
+    end
+
+    #--------------------------------------------------------------------------
+    # Input: Toggle?                                                NEW METHOD
+    #  * Toggle checks the specified key to see if it is 'on or off'. This is
+    #  * useless for most keys, however capslock can by checked with this.
+    #--------------------------------------------------------------------------
+    def toggle?(key)
+      if @table[key]
+        key = @table[key]
+      end
+      key = Keys[key]
+      key ? nil : (return false)
+      if KEY.call(key) == 1
+        return true
+      else
+        return false
+      end
+    end
+
+    #--------------------------------------------------------------------------
+    # Input: Released?                                              NEW METHOD
+    #  * Similar to trigger?, release will check if a key has jut been
+    #  * released. Again, this only returns true for the first frame
+    #--------------------------------------------------------------------------
+    def released?(key)
+      if @table[key]
+        key = @table[key]
+      end
+      if Key_Bindings[key]
+        Key_Bindings[key].all?{ |bind| @released[bind] }
+      else
+        @released[key]
+      end
+    end
+
+    #--------------------------------------------------------------------------
+    # Input: Any_key?                                               NEW METHOD
+    #  * Any_key? will check to see if any key on the entire keyboard has been
+    #  * pressed down. If any single key is down, this returns true, otherwise
+    #  * false.
+    #--------------------------------------------------------------------------
+    def any_key?
+      @pressed.any?{|i| i[1] == true}
+    end
+    
+    #--------------------------------------------------------------------------
+    # Input: dir4?                                           OVERWRITTEN METHOD
+    #  * dir4 returns an integer based on the keys being pressed. This only
+    #  * checks for 4 directions, up, down, left, or right. If no keys are
+    #  * pressed, the method returns 0.
+    #--------------------------------------------------------------------------
+    def dir4
+      l = Key_Bindings[:LEFT].any?  {|bind| @pressed[bind]}
+      r = Key_Bindings[:RIGHT].any? {|bind| @pressed[bind]}
+      u = Key_Bindings[:UP].any?    {|bind| @pressed[bind]}
+      d = Key_Bindings[:DOWN].any?  {|bind| @pressed[bind]}
+      
+      if u && !d
+        8
+      elsif d && !u
+        2
+      elsif l && !r
+        4
+      elsif r && !l
+        6
+      else
+        0
+      end
+    end
+    
+    #--------------------------------------------------------------------------
+    # Input: dir8?                                           OVERWRITTEN METHOD
+    #  * Similar to dir4, this method will return an integer based on 8
+    #  * directions, meaning it works with diagonal movement. Again, if no keys
+    #  * are being pressed, the method returns 0.
+    #--------------------------------------------------------------------------
+    def dir8
+      l = Key_Bindings[:LEFT].any?  {|bind| @pressed[bind]}
+      r = Key_Bindings[:RIGHT].any? {|bind| @pressed[bind]}
+      u = Key_Bindings[:UP].any?    {|bind| @pressed[bind]}
+      d = Key_Bindings[:DOWN].any?  {|bind| @pressed[bind]}
+      
+      if l && u && !r && !d
+        7
+      elsif u && r && !l && !d
+        9
+      elsif l && d && !r && !u
+        1
+      elsif d && r && !l && !u
+        3
+      elsif u && !d
+        8
+      elsif d && !u
+        2
+      elsif l && !r
+        4
+      elsif r && !l 
+        6
+      else
+        0
+      end
+    end
+  end
+end

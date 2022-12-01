@@ -1,0 +1,69 @@
+=begin
+===============================================================================
+ Save Backups (by Zero_G)
+ Version: RGSS3
+===============================================================================
+  ==  Description ==
+ Create a backup of the current save before overwriting it
+ Option to change default save location
+ Option to change max saveslots
+ Compatibility with kaisou-ryouiki's Shared Save Data
+ 
+ == Terms of Use ==
+ - Free for use in non-commercial projects with credits
+ - Free for use in commercial projects
+ - Please provide credits to Zero_G
+ 
+ == Usage ==
+ Just add the plugin before main.
+-------------------------------------------------------------------------------
+=end
+
+module ZERO
+  CHANGE_MAX_SAVESLOTS = false
+  SAVE_SLOTS = 32
+  
+  CHANGE_SAVE_LOCATION = true
+  SAVE_LOCATION = "Save"
+end
+
+module DataManager
+  class << self
+    alias :ZERO_save_game_without_rescue :save_game_without_rescue
+    def save_game_without_rescue(index)
+      if ZERO::CHANGE_SAVE_LOCATION
+        Dir.mkdir("Save") unless File.directory?("Save")
+      end
+      backup_save(index)
+      ZERO_save_game_without_rescue(index)
+    end
+    
+    def backup_save(index)
+      if File.exist?(make_filename(index))
+        File.rename(make_filename(index), make_filename(index) + ".bak")
+      end
+    end
+    
+    # Max Save Files
+    if ZERO::CHANGE_MAX_SAVESLOTS
+      def savefile_max
+        return ZERO::SAVE_SLOTS
+      end
+    end
+    
+    # Change directory to Save
+    if ZERO::CHANGE_SAVE_LOCATION
+      def save_file_exists?
+        !Dir.glob(ZERO::SAVE_LOCATION + '/Save*.rvdata2').empty?
+      end
+
+      def make_filename(index)
+        sprintf(ZERO::SAVE_LOCATION + "/Save%02d.rvdata2", index + 1)
+      end
+      
+      if defined?(PUBLIC_DATA)
+          PUBLIC_DATA::FILE_NAME = ZERO::SAVE_LOCATION + "/PublicData.rvdata2"
+      end
+    end
+  end
+end

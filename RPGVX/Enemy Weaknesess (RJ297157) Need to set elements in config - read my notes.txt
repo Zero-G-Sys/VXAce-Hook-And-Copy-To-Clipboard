@@ -1,0 +1,949 @@
+#===========================================================================
+# 
+# ■敵データ表示機能v3.1.1
+# 
+#   FF等のライブラみたいな機能です
+#   カスタマイズ項目の説明をよく読んで設定してください
+#   
+#   ・カスタマイズ内の ANARAIZ_EQUIP = [] 等の括弧内は
+#     任意の数値を(例)[1, 23, 30]のようにカンマで区切って記入してください
+#
+#   ・v3.1.1での追加項目
+#     CLEAR_ANARAIZ_LIST_TYPE
+#       ANARAIZ_ENEMYがtrueの状態で
+#       スキル(アイテム)を使用してアナライズリストに登録させる場合
+#       スキル(アイテム)使用後、アナライズリストの削除を任意の
+#       タイミングで行うことができます
+#       0:初期化しない         ･･･一度リストに登録されれば同じ敵をアナライズする
+#                                  必要はありません
+#       1:バトル終了後に初期化 ･･･バトル終了後に登録されたリストの内容は削除されます
+#       2:スキル(アイテム)使用直後に初期化
+#                              ･･･スキル(アイテム)使用直後に敵データを表示させ
+#                                  即アナライズリストを初期化します
+#                                 ※敵データを表示させたい時に随時スキル(アイテム)
+#                            　   を使用する必要があります
+#
+#     敵全体アナライズが可能になりました
+#       メモ欄に「アナライズ」と記入してあるスキル(アイテム)の
+#       効果範囲を敵全体にすれば一度にアナライズリストに登録されます
+#
+#   ・v3.0での追加項目
+#     敵キャラの備考欄表示
+# 　    敵キャラのメモ欄に 備考(またはmemo)(半角スペース)内容 と記入してください
+#       内容に\nと記入することで改行されます
+#       例）備考 アンデッド族
+#           memo 近接攻撃は\nあまり利かないようだ
+#     WEAKPOINT_WORD
+#       項目にエネミー備考欄を追加
+#     ROW_MAX
+#       備考欄の行数を設定できます
+#     VIEW_LINES
+#       項目に該当する番号を括弧内の配列に記入することで
+#       項目表示の有無と表示順序を変更することが出来ます
+#       また、PAGE_MAXを2以上にすることで
+#       2ページ以上の内容を作成することができます
+#       ※敵キャラのパラメータ･備考欄追加
+#     　　v2.1までのSHOW_ENEMY_HP等は廃止しました
+#     WINDOW_EFECT
+#       WINDOW_OPACITYがtrueの場合(ウィンドウ枠を表示させない)
+#       背景色の角に丸みをかけることができます
+#     HIDDEN_NAME
+#       ENEMY_HP等でエネミーID別に表示を禁止している場合
+#       代替で表示させる用語です
+#
+#   ・v2.0での追加項目
+#     USE_ANARAIZ_KEY
+#       ターゲットエネミー選択中、任意のボタンを
+#       押してる間だけ敵データを表示させます
+#     ANARAIZ_SKILL ANARAIZ_ITEM
+#       所持スキルや所持アイテムを条件にして敵データ表示の有無を設定できます
+#     ADJUST_X ADJUST_Y
+#       敵データ表示ウィンドウのX座標とY座標を微調整できます
+#     ADJUST_ENEMY
+#       エネミーID個別でウィンドウのX,Y座標を調整できます
+#
+#===========================================================================
+
+# ZERO_G
+# To use, while selecting enemy in combat hold w key to see a window
+# Seems like ELEMENT_NAME must match the name of the element number set in
+# ELEMENT_SET. So if in the game DB, element 1 is named "Fire", the first
+# string in ELEMENT_NANME must be "Fire" (so translate them both)
+
+#==============================================================================
+# ■ カスタマイズ開始
+#==============================================================================
+module BBL_ENEMY_WEAK
+  
+  # ウィンドウに表示する属性IDです
+  ELEMENT_SET = [ 1, 2, 3, 4, 5, 6, 7 ]
+  
+  # ウィンドウに表示する属性名です
+  # ※データベース側と同じ名称を記入してください
+  # ※ELEMENT_SETと同じ順序で記入してください
+  ELEMENT_NAME = ["Slash", "Outside", "Inside", "Fire", "Water", "Wind", "Earth"]
+  
+  # 弱点、耐性のランクです
+  # "未使用"の部分は編集しないでください (Do not moidfy the fields with "未使用")
+  ELEMENT_RANKS = ["未使用", "◎", "○", "未使用", "△", "×", "ー"]
+#  ELEMENT_RANKS = ["未使用", "200%", "150%", "未使用", "75%", "50%", "25%"]
+
+  # ELEMENT_RANKSを表示する際の文字カラーです
+  # (RED, BLUE, GREEN)
+  ELEMENT_COLOR = ["未使用",
+                  Color.new(255, 128, 128), # 200%
+                  Color.new(255, 255, 128), # 150%
+                  "未使用",                 # 100%
+                  Color.new(128, 255, 128), # 50%
+                  Color.new(128, 128, 255), # 0%
+                  Color.new(255, 128, 255)] # -100%
+                  
+  # ウィンドウに表示する用語です
+  # 左から弱点、耐性、ステート、備考欄の順で記入してください
+  WEAKPOINT_WORD = ["Weakness", "Resist", "Situation", "Remark", "Ability"]
+  
+  # trueにした場合、ターゲットエネミーの選択中
+  # 任意のボタンが押されてる間だけ敵データを表示します
+  USE_ANARAIZ_KEY = true
+  # USE_ANARAIZ_KEYをtrueにした場合は、ボタンを指定してください
+  # ※Input::の後にボタン名を記入(A,B,C,X,Y,Z,L,R等)
+  ANARAIZ_KEY = Input::R
+  
+  # 任意のスキルやアイテムを敵に使用すると敵のデータが見れるようになります
+  # スキル(アイテム)を使用してデータを表示させた敵は
+  # アナライズリストに登録され、以降の敵選択時にデータが表示されます
+  # true : スキル(アイテム)を使用するまでデータは見えません
+  # false: 最初から敵データが見えます
+  # ※trueにした場合は、任意のスキル(アイテム)の
+  #   メモ欄に アナライズ と記入してください
+  ANARAIZ_ENEMY = false
+  
+  # ANARAIZ_ENEMYがtrueの状態で
+  # スキル(アイテム)を使用してアナライズリストに登録させる場合
+  # スキル(アイテム)使用後、アナライズリストの削除を任意の
+  # タイミングで行うことができます
+  #  0:初期化しない         ･･･一度リストに登録されれば同じ敵をアナライズする
+  #                            必要はありません
+  #  1:バトル終了後に初期化 ･･･バトル終了後に登録されたリストの内容は削除されます
+  #  2:スキル(アイテム)使用直後に初期化
+  #                         ･･･スキル(アイテム)使用直後に敵データを表示させ
+  #                            即アナライズリストを初期化します
+  #                            ※敵データを表示させたい時に随時スキル(アイテム)
+  #                            　を使用する必要があります
+  CLEAR_ANARAIZ_LIST_TYPE = 2
+  #--------------------------------------------------------------------------
+  # 以下、CLEAR_ANARAIZ_LIST_TYPEを2にした場合のみ適応
+  #--------------------------------------------------------------------------
+  # 敵データを表示した時に効果音を鳴らすことができます
+  # ※効果音を鳴らしたくない場合は "" としてください
+  ANARAIZ_SOUND = RPG::SE.new("Item1", 80, 100)
+  # 敵データを表示中、任意のボタンでバトルが再開されます
+  ANARAIZ_CANCEL_KEY = Input::B
+  # 敵データ表示後、バトル再開時にはさむウェイトタイムです
+  WAIT_TIME = 30
+  
+  # ANARAIZ_ENEMYをtrueにした場合は
+  # パーティメンバーの状態を条件にして敵データ表示の有無を設定できます
+  # ※この項目は持っているだけ(または装備しているだけ)等で
+  #   アナライズ可能状態にする機能です
+  # ANARAIZ_EQUIP:任意の防具を装備していることが条件
+  # ANARAIZ_STATE:任意のステートになっていることが条件
+  # ANARAIZ_SKILL:任意のスキルを所持していることが条件
+  # ANARAIZ_ITEM :任意のアイテムを所持していることが条件
+  ANARAIZ_EQUIP = []      # アナライズ可能な防具IDの配列
+  ANARAIZ_STATE = []      # アナライズ可能なステートIDの配列
+  ANARAIZ_SKILL = []      # アナライズ可能なスキルIDの配列
+  ANARAIZ_ITEM  = []      # アナライズ可能なアイテムIDの配列
+  
+  # ウィンドウ内のフォントサイズです
+  FONT_SIZE = 13
+
+  # ウィンドウの横幅です
+  # ※縦幅はFONT_SIZEで自動的に変更されます
+  WINDOW_WIDTH = 208
+
+  # ウィンドウ枠を表示させる場合はfalseにしてください
+  WINDOW_OPACITY = true
+
+  # WINDOW_OPACITYをtrueにした場合は背景色を設定できます
+  # (RED, GREEN, BLUE, 不透明度:0～255)
+  BACK_COLOR = Color.new(34, 0, 102, 128)
+  
+  # WINDOW_OPACITYをtrueにした場合は背景色の角に丸みをつけることが出来ます
+  WINDOW_EFECT = true
+  
+  # 敵データウィンドウのX座標を微調整できます
+  ADJUST_X = 0
+  # 敵データウィンドウのY座標を微調整できます
+  ADJUST_Y = 0
+  # エネミーID個別でウィンドウのX,Y座標を調整できます
+  # ※[[エネミーID, X座標, Y座標],[エネミーID, X座標, Y座標]...]
+  # 例) ADJUST_ENEMY = [[1,  0,-50],  #ID1番のエネミーのY座標を-50に微調整
+  #                     [5,-10, 20]]  #ID5番のエネミーのX座標を-10、Y座標を+20に微調整
+  ADJUST_ENEMY = []
+  
+  #--------------------------------------------------------------------------
+  # ウィンドウに表示する内容です
+  #--------------------------------------------------------------------------
+  # ページ数です。ページめくり機能を使いたくない場合は1にしてください
+  PAGE_MAX = 1
+  # ページをめくった際に効果音です
+  # ※効果音を出したくない場合はファイル名を""としてください
+  PAGE_SOUND_FILE = RPG::SE.new("Book", 80, 100)
+  # 次のページを表示させるボタンです
+  NEXT_PAGE_KEY = Input::R
+  # ウィンドウに表示させるボタンの用語です
+  NEXT_PAGE_KEY_NAME = "Push R"
+  
+  # 表示させたい内容の番号と順番を括弧内に記入してください
+  # 1:名前  2:HP　3:能力値　4:弱点･耐性  5:ステート　6:備考欄
+  # VIEW_LINES[ページ数] = [項目, 項目, 項目, 項目]
+  # 例）VIEW_LINES[1] = [2, 5, 3, 4]
+  # ※例の場合、1ページ目には名前と能力値が表示されず
+  #    HP、備考欄、弱点･耐性、ステートの順に表示されます
+  VIEW_LINES = [] #←この行は削除･編集しないこと
+  VIEW_LINES[1] = [1, 2, 4, 5]    # 1ページ目の項目
+  VIEW_LINES[2] = [1, 2, 4, 5]          # 2ページ目の項目
+  
+  ENEMY_HP = []                 # HPを表示させないエネミーのID配列
+  
+  ENEMY_ELEMENT = []            # 弱点･耐性を表示させないエネミーIDの配列
+  NONE_ELEMENT_NAME = ""    # 耐性がC(100％)のみだった場合に表示させる用語
+                                # 表示させない場合は""と記入
+  
+  # 表示させたい能力値の番号と順番を括弧内に記入してください
+  # 1:攻撃力　2:防御力  3:精神力  4:敏捷性  5:回避率  6:命中率
+  PARAM_ID = [1, 2, 3, 4]
+  # PARAM_IDと同じ順序で対応する能力値名を記入してください
+  PARAM_NAME = ["ATK", "DEF", "SPI", "AGI"]
+  ENEMY_PARAMETER = []          # 能力値を表示させないエネミーIDの配列
+                                
+  STATE_MODE = 1                # ステート表示方法　0:テキスト 1:アイコン
+  ENEMY_STATE = []              # ステートを表示させないエネミーIDの配列
+  NONE_STATE = []               # 表示させないステートIDの配列
+
+  # ENEMY_HP, ENEMY_ELEMENT, ENEMY_PARAMETER, ENEMY_STATEを
+  # 指定した場合のウィンドウに表示させる用語です
+  HIDDEN_NAME = "不明"
+  
+  # 敵キャラの備考欄表示
+  # 　敵キャラのメモ欄に 備考(またはmemo)(半角スペース)内容 と記入してください
+  #   内容に\nと記入することで改行されます
+  #   例）備考 アンデッド族
+  #       memo 近接攻撃は\nあまり利かないようだ
+  ROW_MAX = 0                   # 備考欄の行数です
+  
+  
+#==============================================================================
+# ■ カスタマイズ終了
+#==============================================================================
+end
+
+  
+#==============================================================================
+# ■ Game_Party
+#------------------------------------------------------------------------------
+# 　パーティを扱うクラスです。ゴールドやアイテムなどの情報が含まれます。このク
+# ラスのインスタンスは $game_party で参照されます。
+#==============================================================================
+class Game_Party < Game_Unit
+  #--------------------------------------------------------------------------
+  # ● 公開インスタンス変数
+  #--------------------------------------------------------------------------
+  attr_accessor :anaraiz_list             # アナライズ済みエネミーIDの配列
+  #--------------------------------------------------------------------------
+  # ● オブジェクト初期化
+  #--------------------------------------------------------------------------
+  alias initialize_BBL initialize
+  def initialize
+    initialize_BBL
+    @anaraiz_list = []
+  end
+end
+
+#==============================================================================
+# ■ Window_EnemyInfo
+#==============================================================================
+class Window_EnemyInfo < Window_Base
+  FONT_SIZE = BBL_ENEMY_WEAK::FONT_SIZE
+  SH = 8
+  VIEW_LINES = []
+  height_line = []
+  for i in 1..BBL_ENEMY_WEAK::PAGE_MAX
+    lines = BBL_ENEMY_WEAK::VIEW_LINES[i]
+    height = 0
+    # ウィンドウ縦幅とコンテンツ表示有無の処理
+    for line in lines
+      case line
+      when 1;height += FONT_SIZE + 4; SHOW_ENEMY_NAME = true
+      when 2;height += FONT_SIZE * 2; SHOW_ENEMY_HP = true
+      when 3;height += FONT_SIZE * 2; SHOW_ENEMY_PARAMETER = true
+      when 4;height += FONT_SIZE * 4; SHOW_ENEMY_ELEMENT = true
+      when 5;height += FONT_SIZE * 2; SHOW_ENEMY_STATE = true
+      when 6;height += FONT_SIZE * BBL_ENEMY_WEAK::ROW_MAX; SHOW_ENEMY_MEMO = true
+      end
+    end
+    height_line.push(height)
+  end
+  SH += height_line.max
+  SH += 8
+  SH += FONT_SIZE if BBL_ENEMY_WEAK::PAGE_MAX > 1
+  HEIGHT = 32 + SH
+  WIDTH = BBL_ENEMY_WEAK::WINDOW_WIDTH
+  #--------------------------------------------------------------------------
+  # ● オブジェクト初期化
+  #--------------------------------------------------------------------------
+  def initialize
+    super(0, 0, WIDTH, HEIGHT)
+    self.opacity = 0 if BBL_ENEMY_WEAK::WINDOW_OPACITY
+  end
+  #--------------------------------------------------------------------------
+  # ● リフレッシュ
+  #--------------------------------------------------------------------------
+  def refresh(x, y, enemy, mode)
+    self.contents.clear
+    adjust_enemy = BBL_ENEMY_WEAK::ADJUST_ENEMY
+    adjust_x = 0
+    adjust_y = 0
+    unless adjust_enemy.empty?
+      for i in 0...adjust_enemy.size
+        if adjust_enemy[i][0] == enemy.enemy_id
+          adjust_x = adjust_enemy[i][1]
+          adjust_y = adjust_enemy[i][2]
+          break
+        end
+      end
+    end
+    self.x = x + adjust_x
+    self.y = y + adjust_y
+    draw_weakpoint(enemy, mode)
+  end
+  #--------------------------------------------------------------------------
+  # ● エネミーの情報描画
+  #--------------------------------------------------------------------------
+  def draw_weakpoint(enemy, mode)
+    self.contents.font.size = FONT_SIZE
+    create_window_background
+    create_variables(enemy)     # 各変数代入
+    create_skip_flug            # 表示有無フラグ作成
+    create_element_list         # 属性リスト作成
+    create_enemy_info(mode)     # 情報描画
+    self.contents.font.color = system_color
+    if BBL_ENEMY_WEAK::PAGE_MAX > 1
+      key_name = BBL_ENEMY_WEAK::NEXT_PAGE_KEY_NAME
+      text_width = contents.text_size(key_name).width
+      self.contents.draw_text(WIDTH - 48 - text_width, SH - FONT_SIZE - 2, text_width, FONT_SIZE, key_name)
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● ウィンドウ背景作成
+  #--------------------------------------------------------------------------
+  def create_window_background
+    return unless BBL_ENEMY_WEAK::WINDOW_OPACITY
+    color = BBL_ENEMY_WEAK::BACK_COLOR
+    self.contents.fill_rect(0, 0, WIDTH - 32, HEIGHT - 32, color)
+    if BBL_ENEMY_WEAK::WINDOW_EFECT
+      w = WIDTH - 32
+      h = HEIGHT - 32
+      for s in [1, 2, 3, 4]
+        count = 0
+        case s
+        when 1
+          lines = [[0,0],[1,0],[2,0],[3,0],[0,1],[0,2],[0,3],[1,1],[4, 0],[0, 4],[1,2],[2,1]]
+        when 2
+          lines = [[0, h-1], [0, h-2], [0, h-3], [0, h-4], [0, h-5], [1, h-1], [2, h-1], [3, h-1], [4, h-1], [1, h-2], [1, h-3], [2, h-2]]
+        when 3
+          lines = [[w-1, 0], [w-2, 0], [w-3, 0], [w-4, 0], [w-5, 0], [w-1, 1], [w-1, 2], [w-1, 3], [w-1, 4], [w-2, 1], [w-2, 2], [w-3, 1]]
+        when 4
+          lines = [[w-1,h-1],[w-2,h-1],[w-3,h-1],[w-4,h-1],[w-5,h-1],[w-1,h-2],[w-1,h-3],[w-1,h-4],[w-1,h-5],[w-2,h-2],[w-2,h-3],[w-3,h-2]]
+        end
+        for i in lines
+          x = i[0]
+          y = i[1]
+          self.contents.clear_rect(x, y, 1, 1)
+        end
+      end
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● 各変数代入
+  #--------------------------------------------------------------------------
+  def create_variables(enemy)
+    @state_mode = BBL_ENEMY_WEAK::STATE_MODE
+    @enemy = enemy
+    @element_list = []
+    @element_name = BBL_ENEMY_WEAK::ELEMENT_NAME
+    @hidden_name = BBL_ENEMY_WEAK::HIDDEN_NAME
+    @sy = 8
+    @word = BBL_ENEMY_WEAK::WEAKPOINT_WORD
+    @word_width = self.contents.text_size(@word.max).width + 8
+    @text_window_width = WIDTH - (@word_width + 8) - 32
+  end
+  #--------------------------------------------------------------------------
+  # ● 表示させないエネミーIDの配列から表示フラグ作成
+  #--------------------------------------------------------------------------
+  def create_skip_flug
+    @enemy_element_skip = false
+    for enemy_id in BBL_ENEMY_WEAK::ENEMY_ELEMENT
+      @enemy_element_skip = true if enemy_id == @enemy.enemy_id
+    end
+    @enemy_state_skip = false
+    for enemy_id in BBL_ENEMY_WEAK::ENEMY_STATE
+      @enemy_state_skip = true if enemy_id == @enemy.enemy_id
+    end
+    @enemy_parameter_skip = false
+    for enemy_id in BBL_ENEMY_WEAK::ENEMY_PARAMETER
+      @enemy_parameter_skip = true if enemy_id == @enemy.enemy_id
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● エネミーの属性リスト作成
+  #--------------------------------------------------------------------------
+  def create_element_list
+    element_ranks = $data_enemies[@enemy.enemy_id].element_ranks
+    for i in 0...@element_name.size
+      element_id = @element_name[i]
+      element = nil
+      for s in 0...$data_system.elements.size
+        if $data_system.elements[s] == element_id
+          @element_list.push(element_ranks[s])
+        end
+      end
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● コンテンツ表示有無と表示順序作成
+  #--------------------------------------------------------------------------
+  def create_enemy_info(mode)
+    lines = BBL_ENEMY_WEAK::VIEW_LINES[mode + 1]
+    for line in lines
+      case line
+      when 1;draw_enemy_name
+      when 2;draw_enemy_hp
+      when 3;draw_enemy_parameter
+      when 4;draw_enemy_element
+      when 5;draw_enemy_state
+      when 6;draw_enemy_memo
+      end
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● エネミー名表示
+  #--------------------------------------------------------------------------
+  def draw_enemy_name
+    if SHOW_ENEMY_NAME
+      self.contents.font.color = normal_color
+      enemy_name_width = self.contents.text_size(@enemy.name).width
+      self.contents.draw_text(8, @sy, enemy_name_width, FONT_SIZE, @enemy.name)
+      cw = contents.text_size(@enemy.name).width
+      self.contents.fill_rect(8, @sy + FONT_SIZE, cw, 1, normal_color)
+      @sy += FONT_SIZE + 4
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● エネミーHP表示
+  #--------------------------------------------------------------------------
+  def draw_enemy_hp
+    if SHOW_ENEMY_HP
+      self.contents.font.color = normal_color
+      draw_actor_hp(@enemy, 24, @sy, BBL_ENEMY_WEAK::WINDOW_WIDTH - 72)
+      @sy += FONT_SIZE * 2
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● エネミーの能力値表示
+  #--------------------------------------------------------------------------
+  def draw_enemy_parameter
+    if SHOW_ENEMY_PARAMETER
+      param_id = BBL_ENEMY_WEAK::PARAM_ID
+      param_name = BBL_ENEMY_WEAK::PARAM_NAME
+      sx = 0
+      text_width = @text_window_width / param_name.size - 2
+      self.contents.font.color = system_color
+      self.contents.draw_text(8, @sy, @word_width, FONT_SIZE, @word[4])
+      unless @enemy_parameter_skip
+        for id in param_id
+          case id
+          when 1; text = param_name[0]; value = @enemy.atk
+          when 2; text = param_name[1]; value = @enemy.def
+          when 3; text = param_name[2]; value = @enemy.spi
+          when 4; text = param_name[3]; value = @enemy.agi
+          when 5; text = param_name[4]; value = @enemy.eva
+          when 6; text = param_name[5]; value = @enemy.hit
+          when 7; text = param_name[6]; value = @enemy.hp
+          when 8; text = param_name[7]; value = @enemy.mp
+          end
+          self.contents.font.color = system_color
+          self.contents.draw_text(sx + @word_width + 8, @sy, text_width - 4, FONT_SIZE, text)
+          self.contents.font.color = normal_color
+          self.contents.draw_text(sx + @word_width + 8, @sy + FONT_SIZE, text_width - 4, FONT_SIZE, value, 1)
+          sx += text_width
+        end
+      else
+        self.contents.font.color = normal_color
+        text_width = contents.text_size(@hidden_name).width
+        self.contents.draw_text(sx + @word_width + 8, @sy, text_width, FONT_SIZE, @hidden_name)
+      end
+      @sy += FONT_SIZE * 2
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● エネミー弱点表示
+  #--------------------------------------------------------------------------
+  def draw_enemy_element
+    if SHOW_ENEMY_ELEMENT
+      index = 0
+      sx1 = 0
+      sx2 = 0
+      n = 0
+      self.contents.font.color = system_color
+      self.contents.draw_text(8, @sy, @word_width, FONT_SIZE, @word[0])
+      self.contents.draw_text(8, FONT_SIZE * 2 + @sy, @word_width, FONT_SIZE, @word[1])
+      self.contents.font.color = normal_color
+      if @enemy_element_skip
+        self.contents.draw_text(sx1 + @word_width + 8, @sy, width + 16, FONT_SIZE, @hidden_name)
+        self.contents.draw_text(sx2 + @word_width + 8, FONT_SIZE * 2 + @sy, width + 16, FONT_SIZE, @hidden_name)
+        sx1 += 1
+        sx2 += 2
+      else
+        weak_name = BBL_ENEMY_WEAK::ELEMENT_RANKS
+        for i in @element_list
+          if i != 3
+            self.contents.font.color = normal_color
+            color = BBL_ENEMY_WEAK::ELEMENT_COLOR[i]
+            width = self.contents.text_size(@element_name[index]).width
+            if i < 3
+              self.contents.draw_text(sx1 + @word_width, @sy, width + 16, FONT_SIZE, @element_name[index], 1)
+              self.contents.font.color = color
+              self.contents.draw_text(sx1 + @word_width, FONT_SIZE + @sy, width + 16, FONT_SIZE, weak_name[i], 1)
+              sx1 += width + 8
+            else
+              self.contents.draw_text(sx2 + @word_width, FONT_SIZE * 2 + @sy, width + 16, FONT_SIZE, @element_name[index], 1)
+              self.contents.font.color = color
+              self.contents.draw_text(sx2 + @word_width, FONT_SIZE * 3 + @sy, width + 16, FONT_SIZE, weak_name[i], 1)
+              sx2 += width + 8
+            end
+            n += 1
+          end
+          index += 1
+        end
+      end
+      none_text = BBL_ENEMY_WEAK::NONE_ELEMENT_NAME
+      none_text_width = self.contents.text_size(none_text).width
+      self.contents.font.color = normal_color
+      if sx1 == 0
+        self.contents.draw_text(@word_width + 8, @sy, none_text_width + 16, FONT_SIZE, none_text)
+      end
+      if sx2 == 0
+        self.contents.draw_text(@word_width + 8, FONT_SIZE * 2 + @sy, none_text_width + 16, FONT_SIZE, none_text)
+      end
+      @sy += FONT_SIZE * 4
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● エネミーステート表示
+  #--------------------------------------------------------------------------
+  def draw_enemy_state
+    if SHOW_ENEMY_STATE
+      self.contents.font.color = system_color
+      self.contents.draw_text(8, @sy, @word_width, FONT_SIZE, @word[2])
+      if @enemy_state_skip
+        self.contents.font.color = normal_color
+        self.contents.draw_text(@word_width + 8, @sy, @word_width, FONT_SIZE, @hidden_name)
+      else
+        draw_actor_state(@enemy, @word_width + 8, @sy, 0) if @state_mode == 0
+        draw_actor_state(@enemy, @word_width + 8, @sy, 1) if @state_mode == 1
+      end
+      @sy += FONT_SIZE * 2
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● エネミー備考欄表示
+  #--------------------------------------------------------------------------
+  def draw_enemy_memo
+    if SHOW_ENEMY_MEMO
+    enemy = $data_enemies[@enemy.enemy_id]
+    description = enemy.note.scan(/(備考|memo)[ ](\S+)/)
+    text = description[0][1] unless description.empty?
+    # 備考欄のウィンドウ幅
+    self.contents.font.color = system_color
+    self.contents.draw_text(8, @sy, @word_width, FONT_SIZE, @word[3])
+    draw_text_ex(text, @word_width, @sy, @text_window_width)
+    @sy += FONT_SIZE * BBL_ENEMY_WEAK::ROW_MAX
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● テキストの改行処理
+  #--------------------------------------------------------------------------
+  def draw_text_ex(text, word_width, sy, text_window_width)
+    return if text == nil
+    self.contents.font.color = normal_color
+    text_line = text.split(/(?:[|]|\\n)/i)
+    text_line.each_with_index { |text, i|
+      self.contents.draw_text(word_width + 8, i * FONT_SIZE + sy, text_window_width, FONT_SIZE, text)
+    }
+  end
+  #--------------------------------------------------------------------------
+  # ● HP の描画
+  #     actor : アクター
+  #     x     : 描画先 X 座標
+  #     y     : 描画先 Y 座標
+  #     width : 幅
+  #--------------------------------------------------------------------------
+  def draw_actor_hp(actor, x, y, width = 120)
+    self.contents.font.size = BBL_ENEMY_WEAK::FONT_SIZE
+    self.contents.font.color = system_color
+
+    enemy_hp_skip = false
+    for enemy_id in BBL_ENEMY_WEAK::ENEMY_HP
+      enemy_hp_skip = true if enemy_id == actor.enemy_id
+    end
+    if enemy_hp_skip
+      self.contents.draw_text(x, y, 30, WLH, Vocab::hp)
+      xr = x + width
+      self.contents.font.color = normal_color
+      self.contents.draw_text(xr - 40, y, 40, WLH, @hidden_name, 2)
+    else
+      draw_actor_hp_gauge(actor, x, y, width)
+      self.contents.draw_text(x, y, 30, WLH, Vocab::hp_a)
+      self.contents.font.color = hp_color(actor)
+      xr = x + width
+      if width < 120
+        self.contents.draw_text(xr - 40, y, 40, WLH, actor.hp, 2)
+      else
+        self.contents.draw_text(xr - 90, y, 40, WLH, actor.hp, 2)
+        self.contents.font.color = normal_color
+        self.contents.draw_text(xr - 50, y, 10, WLH, "/", 2)
+        self.contents.draw_text(xr - 40, y, 40, WLH, actor.maxhp, 2)
+      end
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● HP ゲージの描画
+  #     actor : アクター
+  #     x     : 描画先 X 座標
+  #     y     : 描画先 Y 座標
+  #     width : 幅
+  #--------------------------------------------------------------------------
+  def draw_actor_hp_gauge(actor, x, y, width = 120)
+    gw = width * actor.hp / actor.maxhp
+    gc1 = hp_gauge_color1
+    gc2 = hp_gauge_color2
+    self.contents.fill_rect(x, y + WLH - 8, width, 6, gauge_back_color)
+    self.contents.gradient_fill_rect(x, y + WLH - 8, gw, 6, gc1, gc2)
+  end
+  #--------------------------------------------------------------------------
+  # ● ステートの描画
+  #     actor : アクター
+  #     x     : 描画先 X 座標
+  #     y     : 描画先 Y 座標
+  #     width : 描画先の幅
+  #--------------------------------------------------------------------------
+  def draw_actor_state(actor, x, y, mode, width = BBL_ENEMY_WEAK::WINDOW_WIDTH)
+    count = 0
+    sx = 0
+    self.contents.font.color = normal_color
+    font_size = BBL_ENEMY_WEAK::FONT_SIZE
+    for state in actor.states
+      skip_state = false
+      for none_state in BBL_ENEMY_WEAK::NONE_STATE
+        skip_state = true if none_state == state.id
+      end
+      unless skip_state
+        if mode == 0
+          width = self.contents.text_size(state.name).width
+          self.contents.draw_text(x + sx, y, width + 8, font_size, state.name)
+          sx += width + 8
+          break if (sx + width > @text_window_width)
+        elsif mode == 1
+          draw_icon(state.icon_index, x + 24 * count, y)
+          count += 1
+          break if (24 * count > @text_window_width - 24)
+        end
+      end
+    end
+  end
+end
+
+
+#==============================================================================
+# ■ Scene_Battle
+#------------------------------------------------------------------------------
+# 　バトル画面の処理を行うクラスです。
+#==============================================================================
+
+class Scene_Battle < Scene_Base
+  #--------------------------------------------------------------------------
+  # ● 対象敵キャラ選択の開始
+  #--------------------------------------------------------------------------
+  alias start_target_enemy_selection_BBL start_target_enemy_selection
+  def start_target_enemy_selection
+    start_target_enemy_selection_BBL
+    @mode = 0
+    @enemy_element_window = Window_EnemyInfo.new
+    @enemy_element_window.visible = false
+    @last_target_enemy_index = 999
+  end
+  #--------------------------------------------------------------------------
+  # ● 対象敵キャラ選択の終了
+  #--------------------------------------------------------------------------
+  alias end_target_enemy_selection_BBL end_target_enemy_selection
+  def end_target_enemy_selection
+    end_target_enemy_selection_BBL
+    @enemy_element_window.dispose
+  end
+  #--------------------------------------------------------------------------
+  # ● 対象敵キャラ選択の更新
+  #--------------------------------------------------------------------------
+  alias update_target_enemy_selection_BBL update_target_enemy_selection
+  def update_target_enemy_selection
+    update_target_enemy_selection_BBL
+    update_enemy_element
+  end
+  #--------------------------------------------------------------------------
+  # ● 対象敵キャラ弱点ウィンドウの更新
+  #--------------------------------------------------------------------------
+  def update_enemy_element
+    if @target_enemy_window != nil
+      if BBL_ENEMY_WEAK::USE_ANARAIZ_KEY
+        unless Input.press?(BBL_ENEMY_WEAK::ANARAIZ_KEY)
+          return @enemy_element_window.visible = false
+        else
+          @enemy_element_window.visible = true
+        end
+      end
+      if @target_enemy_window.index != @last_target_enemy_index
+        @enemy_element_window.visible = false
+        enemy = $game_troop.members[@target_enemy_window.enemy.index]
+        if anaraized?(enemy) || equip_anaraiz?
+        height = @spriteset.enemy_height[@target_enemy_window.index] / 2
+        x = @target_enemy_window.enemy.screen_x
+        y = @target_enemy_window.enemy.screen_y
+        ox = BBL_ENEMY_WEAK::ADJUST_X
+        oy = BBL_ENEMY_WEAK::ADJUST_Y
+        @enemy_element_window.visible = true
+        @enemy_element_window.refresh(x + ox, y - (height + 64) + oy, enemy, @mode)
+        adjust_enemy_info_window
+        end
+        @last_target_enemy_index = @target_enemy_window.index
+      end
+      last_mode = @mode
+      @mode += 1 if Input.trigger?(BBL_ENEMY_WEAK::NEXT_PAGE_KEY)
+      @mode = 0 if @mode > BBL_ENEMY_WEAK::PAGE_MAX - 1
+      if last_mode != @mode
+        @last_target_enemy_index = 999
+        BBL_ENEMY_WEAK::PAGE_SOUND_FILE.play
+        last_mode = @mode
+      end
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● ウィンドウ位置調整
+  #--------------------------------------------------------------------------
+  def adjust_enemy_info_window(flag = false)
+    adjust_x = @enemy_element_window.x + @enemy_element_window.width
+    adjust_under_y = @enemy_element_window.y + @enemy_element_window.height
+    adjust_top_y = @enemy_element_window.y
+    adjust_s = 0
+    adjust_s = 14 if BBL_ENEMY_WEAK::WINDOW_OPACITY
+    @enemy_element_window.x -= adjust_x - 544 - adjust_s if adjust_x > 544
+#~       if adjust_under_y > @target_enemy_window.y
+      if adjust_under_y > @message_window.y
+#~       @enemy_element_window.y -= adjust_under_y - @target_enemy_window.y - adjust_s
+      @enemy_element_window.y -= adjust_under_y - @message_window.y - adjust_s
+      end
+    @enemy_element_window.y = 0 if @enemy_element_window.y < 0
+  end 
+  #--------------------------------------------------------------------------
+  # ● アナライズリストに登録済みか判定
+  #--------------------------------------------------------------------------
+  def anaraized?(enemy)
+    return true unless BBL_ENEMY_WEAK::ANARAIZ_ENEMY
+    enemy_id = enemy.enemy_id
+    list = $game_party.anaraiz_list
+    return false if list[0] == nil
+    for i in list
+      return true if enemy_id == i
+    end
+    return false
+  end
+  #--------------------------------------------------------------------------
+  # ● 戦闘行動の実行 : スキル
+  #--------------------------------------------------------------------------
+  alias execute_action_skill_BBL execute_action_skill
+  def execute_action_skill
+    execute_action_skill_BBL
+    skill = @active_battler.action.skill
+    if skill.note.include?("アナライズ")
+      @anaraiz_turn_count = 0
+      targets = @active_battler.action.make_targets
+      list = $game_party.anaraiz_list
+      $game_party.anaraiz_list.push(targets[0].enemy_id) if list[0] == nil
+      for index in 0..targets.size - 1
+        for i in list
+          unless targets[index].enemy_id == i
+            $game_party.anaraiz_list.push(targets[index].enemy_id)
+          end
+        end
+      end
+      battle_anaraiz if BBL_ENEMY_WEAK::CLEAR_ANARAIZ_LIST_TYPE == 2
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● 戦闘行動の実行 : アイテム
+  #--------------------------------------------------------------------------
+  alias execute_action_item_BBL execute_action_item
+  def execute_action_item
+    execute_action_item_BBL
+    item = @active_battler.action.item
+    if item.note.include?("アナライズ")
+      @anaraiz_turn_count = 0
+      targets = @active_battler.action.make_targets
+      list = $game_party.anaraiz_list
+      $game_party.anaraiz_list.push(targets[0].enemy_id) if list[0] == nil
+      for index in 0..targets.size - 1
+        for i in list
+          unless targets[index].enemy_id == i
+            $game_party.anaraiz_list.push(targets[index].enemy_id)
+          end
+        end
+      end
+      battle_anaraiz if BBL_ENEMY_WEAK::CLEAR_ANARAIZ_LIST_TYPE == 2
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● アナライズ可能判定
+  #--------------------------------------------------------------------------
+  def equip_anaraiz?
+    for actor in $game_party.members
+      for i in BBL_ENEMY_WEAK::ANARAIZ_EQUIP
+        return true if actor.armors.include?($data_armors[i])
+      end
+      for i in BBL_ENEMY_WEAK::ANARAIZ_STATE
+        return true if actor.state?(i)
+      end
+      for i in BBL_ENEMY_WEAK::ANARAIZ_SKILL
+        return true if actor.skills.include?($data_skills[i])
+      end
+    end
+    for i in BBL_ENEMY_WEAK::ANARAIZ_ITEM
+      return true if $game_party.items.include?($data_items[i])
+    end
+    return false
+  end
+  
+  if BBL_ENEMY_WEAK::CLEAR_ANARAIZ_LIST_TYPE == 1
+  #--------------------------------------------------------------------------
+  # ● 戦闘終了
+  #     result : 結果 (0:勝利 1:逃走 2:敗北)
+  #--------------------------------------------------------------------------
+  alias battle_end_BBL battle_end
+  def battle_end(result)
+    battle_end_BBL(result)
+    $game_party.anaraiz_list.clear
+  end
+  end
+
+  if BBL_ENEMY_WEAK::CLEAR_ANARAIZ_LIST_TYPE >= 2
+  #--------------------------------------------------------------------------
+  # ● ターン終了
+  #--------------------------------------------------------------------------
+  alias turn_end_BBL turn_end
+  def turn_end
+    turn_end_BBL
+    @anaraiz_turn_count += 1 if @anaraiz_turn_count != nil
+    if @anaraiz_turn_count == BBL_ENEMY_WEAK::CLEAR_ANARAIZ_LIST_TYPE
+      $game_party.anaraiz_list.clear
+    end
+  end
+  end
+  #--------------------------------------------------------------------------
+  # ● 戦闘行動の実行(アナライズ)
+  #--------------------------------------------------------------------------
+  def battle_anaraiz
+    @mode = 0
+    @enemy_element_window = Window_EnemyInfo.new
+    @last_target_enemy_index = 999
+    enemy = @active_battler.action.make_targets[0]
+    enemy_index = enemy.index
+    proccess_battle_anaraiz(enemy)
+    BBL_ENEMY_WEAK::ANARAIZ_SOUND.play
+      loop do
+        last_mode = @mode
+        @mode += 1 if Input.trigger?(BBL_ENEMY_WEAK::NEXT_PAGE_KEY)
+        @mode = 0 if @mode > BBL_ENEMY_WEAK::PAGE_MAX - 1
+        if last_mode != @mode
+          @last_target_enemy_index = 999
+          BBL_ENEMY_WEAK::PAGE_SOUND_FILE.play
+          proccess_battle_anaraiz(enemy)
+          last_mode = @mode
+        end
+        if Input.trigger?(BBL_ENEMY_WEAK::ANARAIZ_CANCEL_KEY)
+          Sound.play_cancel
+          @enemy_element_window.dispose
+          $game_party.anaraiz_list.clear
+          wait(BBL_ENEMY_WEAK::WAIT_TIME)
+          break
+        end
+        if @active_battler.action.make_targets.size > 1
+          if Input.trigger?(Input::RIGHT) || Input.trigger?(Input::DOWN)
+            Sound.play_cursor
+            enemy_index += 1
+            enemy_index = 0 if enemy_index == $game_troop.members.size
+            enemy = $game_troop.members[enemy_index]
+            proccess_battle_anaraiz(enemy)
+          end
+          if Input.trigger?(Input::LEFT) || Input.trigger?(Input::UP)
+            Sound.play_cursor
+            enemy_index -= 1
+            if enemy_index < 0
+              enemy_index = $game_troop.members.size - 1
+            end
+            enemy = $game_troop.members[enemy_index]
+            proccess_battle_anaraiz(enemy)
+          end
+        end
+        update_basic
+      end
+  end
+  #--------------------------------------------------------------------------
+  # ● 戦闘行動中アナライズ処理
+  #--------------------------------------------------------------------------
+  def proccess_battle_anaraiz(enemy)
+    @last_target_enemy_index = enemy.index
+    if anaraized?(enemy) || equip_anaraiz?
+      height = @spriteset.enemy_height[enemy.index] / 2
+      x = enemy.screen_x
+      y = enemy.screen_y
+      ox = BBL_ENEMY_WEAK::ADJUST_X
+      oy = BBL_ENEMY_WEAK::ADJUST_Y
+      @enemy_element_window.visible = true
+      @message_window.clear
+      @enemy_element_window.refresh(x + ox, y - (height + 64) + oy, enemy, @mode)
+      adjust_enemy_info_window(true)
+    end
+  end
+end
+
+#==============================================================================
+# ■ Spriteset_Battle
+#------------------------------------------------------------------------------
+# 　バトル画面のスプライトをまとめたクラスです。このクラスは Scene_Battle クラ
+# スの内部で使用されます。
+#==============================================================================
+
+class Spriteset_Battle
+  #--------------------------------------------------------------------------
+  # ● バトラー画像の縦幅取得
+  #--------------------------------------------------------------------------
+  def enemy_height
+    result = []
+    for sprite in @enemy_sprites
+      result.push(sprite.height)
+    end
+    result.reverse! 
+    return result
+  end
+end
+
+

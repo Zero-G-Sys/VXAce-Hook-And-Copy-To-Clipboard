@@ -1,0 +1,3 @@
+modify plugin to store read text in a global variable (instead of a local variable, look for a global var plugin for this), so its read from another new game
+
+alternatevly can use nwjs file to save to json, so it saved live and not when you save (better but only for pc)

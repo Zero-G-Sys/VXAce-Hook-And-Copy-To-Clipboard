@@ -1,0 +1,24 @@
+Read OBJ: 13.4521484375ms
+
+Read MAP: 15.97998046875ms
+
+Test getting from obj succ: 0.260009765625ms
+
+Test getting from obj fail: 0.005859375ms
+
+Test getting from MAP succ: 0.177734375ms
+
+Test getting from MAP fail: 0.0029296875ms
+
+Add to OBJ: 0.003662109375ms
+
+Write OBJ: 7.075927734375ms
+
+Add to MAP: 0.003173828125ms
+
+Write MAP: 15.237060546875ms
+
+
+--------------
+
+As setClipboardText does a LOT of write to JSON, using Maps is not efficient

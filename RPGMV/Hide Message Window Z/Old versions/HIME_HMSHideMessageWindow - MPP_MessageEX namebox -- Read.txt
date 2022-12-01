@@ -1,0 +1,15 @@
+For MPP_MessageEX namebox
+Need to comment/delete 
+
+"(function() {" 
+
+and its closing bracket 
+
+"})();"
+
+so MPP_MessageEX isn't in an anonymous function (can't access its functions otherwise)
+
+
+------------
+Ok this method did not give problems so far, but if it does give problems in the future, a way to modify a function inside an annonymous function would be to store that function in a $.variable, then access that variable from outside.
+Would need to modify all the calls to that function in that script, and it's not tested.

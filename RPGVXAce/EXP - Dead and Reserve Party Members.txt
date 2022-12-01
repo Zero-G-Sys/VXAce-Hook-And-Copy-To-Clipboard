@@ -1,0 +1,23 @@
+-For full exp to reserve members:
+depending on plugin search for
+def final_exp_rate
+and make it return "exr" (without the ") only
+
+-For dead party members function should be
+return 1.0 if exr == 0
+return exr
+
+-may also need to activate in System menu > (check) Reserve Members' EXP
+
+
+
+--------------Plugin ver
+
+#Zero_G normal exp for dead and reserve party members
+
+class Game_Actor < Game_Battler
+  def final_exp_rate
+    return 1.0 if exr == 0 
+    return exr
+  end
+end

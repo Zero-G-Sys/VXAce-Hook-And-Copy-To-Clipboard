@@ -1,0 +1,52 @@
+#==============================================================================
+# Auto-Battle (Only Fight)
+# Author: Zero_G
+#==============================================================================
+# Create an action in party battle menu, to make all party members attack
+# for one turn.
+#
+#==============================================================================
+
+module ZERO
+  AUTO_COMMAND_NAME      = "Auto-Combat"
+end
+
+# Custom action to force attack
+class Game_Battler < Game_BattlerBase
+    def force_attack
+    clear_actions
+    action = Game_Action.new(self, true)
+    action.set_skill(1)
+    action.target_index = 1
+    @actions.push(action)
+  end
+end
+
+class Window_PartyCommand < Window_Command
+    alias _make_command_list_auto_battle make_command_list
+  def make_command_list
+    _make_command_list_auto_battle()
+    
+    if ZERO::AUTO_COMMAND_NAME
+      add_command(ZERO::AUTO_COMMAND_NAME,:auto_battle_start)
+    end
+  end
+end
+
+class Scene_Battle < Scene_Base
+  def auto_battle_start_handler
+    $game_party.alive_members.each(&:force_attack)
+    
+    turn_start()
+  end
+
+  alias _create_party_command_window_auto_battle create_party_command_window
+  def create_party_command_window
+    _create_party_command_window_auto_battle()
+    
+    if ZERO::AUTO_COMMAND_NAME
+      @party_command_window.set_handler(:auto_battle_start,
+                                          ->{auto_battle_start_handler()})
+    end
+  end
+end

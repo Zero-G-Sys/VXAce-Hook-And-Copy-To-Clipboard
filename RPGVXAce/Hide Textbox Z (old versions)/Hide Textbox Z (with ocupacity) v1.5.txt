@@ -1,0 +1,135 @@
+=begin
+===============================================================================
+ Hide textbox2 (with ocupacity) v5
+ Message Visibility by efeberk (Mod by Zero_G)
+ Version: RGSS3
+===============================================================================
+ This script will allow to player sets message window visible or unvisible with 
+ a key.
+ And toogle window ocupacy (make it transparent) while displaying text
+ with another key. In case the message displayed used a dim background, 
+ it will make it transparent in the next message.
+ 
+ KEY is for hiding the window.
+ 
+ KEY2 is for returing visibility of text box on next page, default C (z).
+
+ KEY3 is for hiding the textbox but not the text (borderless).
+ 
+ Example : 
+ -Press "D" to hide message window and repress "D" to show message 
+ window.
+ -Press "C" to turn message window transparent and repress "C" to set default
+ ocupacy.
+ 
+ Possible key bindings: A B C X Y Z L R, 
+ SHIFT CTRL ALT (these are defualt keyboard bindings)
+ Functions Keys use: Input::F# (ex: Input::F5) [F1-4 can't be used]
+ Gamepad = Keboard key
+ A = shift
+ B = x
+ C = z
+ X = a
+ Y = s
+ Z = d
+ L = q
+ R = w
+ 
+ Changelog
+ v5 Added the functionality of hiding dim backgrounds (on next message)
+ v4 Fixed the problem where an effect would reset the background ocupacy
+    reverted v3 changes, as they are not necessary
+ v3 Added functionality of both v1 and v2
+ v2 Changed back ocupacy to whole window ocupacy (no window borders)
+ v1 Added back ocupacy
+--------------------------------------------------------------------------------
+=end
+
+module EFE
+  
+  KEY = :Z    # Set hide textbox window and text button
+  KEY2 = :C   # Set defualt ok button (show next message)
+  KEY3 = :Y   # Set hide textbox window while displaying text button
+  DEFAULT_OCUPACITY = 255  # Set default window ocupacy 255 is opaque
+
+end
+
+# Global var used for toggling the ocupacy and setting Game_Interpreter
+# default window display (needed for dim background)
+$globalVar = 0 
+$dimBackgroundDisplayed = false
+
+class Window_Message < Window_Base
+  
+  alias efeberk_window_message_update update
+  def update
+    efeberk_window_message_update
+    
+    # Waits for intput and changes ocupacity of window
+    # default ocupacity is stored in a constant in case a game doesn't use
+    # the default (255). Also sets the global variable for hiding dim backgrounds
+    if Input.trigger?(EFE::KEY3)
+      if $globalVar == 0
+        self.opacity = 0
+        $globalVar = 1
+      elsif $globalVar == 1
+        if !$dimBackgroundDisplayed # don't restore ocupacity if it was dim
+          self.opacity = EFE::DEFAULT_OCUPACITY
+        end
+        $globalVar = 0
+      end
+    end
+    
+    # Hides textbox completly, makes it visible with same button press
+    # or with ok button
+    if Input.trigger?(EFE::KEY)
+      self.visible = !self.visible
+    end
+    if Input.press?(EFE::KEY2)
+      self.visible = true
+    end
+    
+  end
+  
+end
+
+
+# Dim backgrounds don't have a transparency feature, so there is a need to
+# modify the core display in the next message via a global variable
+class Game_Interpreter
+
+  def command_101
+    wait_for_message
+    $game_message.face_name = @params[0]
+    $game_message.face_index = @params[1]
+    $game_message.background = @params[2]
+    
+    if $game_message.background == 1 || $game_message.background == 0
+      $dimBackgroundDisplayed = true
+    else
+      $dimBackgroundDisplayed = false
+    end
+    if $globalVar == 1 # Check if toogled
+    	$game_message.background = 2 # Make text window transparent
+    end
+    
+    $game_message.position = @params[3]
+    while next_event_code == 401       # Text data
+      @index += 1
+      $game_message.add(@list[@index].parameters[0])
+    end
+    case next_event_code
+    when 102  # Show Choices
+      @index += 1
+      setup_choices(@list[@index].parameters)
+    when 103  # Input Number
+      @index += 1
+      setup_num_input(@list[@index].parameters)
+    when 104  # Select Item
+      @index += 1
+      setup_item_choice(@list[@index].parameters)
+    end
+    wait_for_message
+  end
+  
+end

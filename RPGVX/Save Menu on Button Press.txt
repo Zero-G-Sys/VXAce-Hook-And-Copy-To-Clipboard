@@ -1,0 +1,82 @@
+=begin
+===============================================================================
+ Save Menu on button press (by Zero_G)
+ Version: RGSS2
+===============================================================================
+   ==  Description ==
+ This script will open the save/load window on a button press.
+ 
+ Canceling load screen from battle will trigger the battle from the beggining.
+
+ More actions for buttons can be done.
+ 
+ == Terms of Use ==
+ - Free for use in non-commercial projects with credits
+ - Free for use in commercial projects
+ - Please provide credits to Zero_G
+
+ == Changelog ==
+ v1.1 - Fix loading from battle
+ v1.0 - Initial
+ 
+ == Usage ==
+ Just add the plugin before main.
+-------------------------------------------------------------------------------
+=end
+
+module ZERO
+  
+  SAVE_KEY = Input::L
+  LOAD = true    #Activate or deactivate load function
+  LOAD_KEY = Input::F6
+  
+end
+
+# Call scene load and scene save when button is pressed
+class Scene_Map
+  alias zero_update update
+  def update
+    zero_update
+    
+    if Input.trigger?(ZERO::SAVE_KEY)
+      call_save
+    end
+    
+    if Input.trigger?(ZERO::LOAD_KEY) && ZERO::LOAD
+      $game_player.straighten
+      $game_temp.next_scene = nil
+      $scene = Scene_File.new(false, false, true)
+    end
+  end
+end
+
+class Scene_Battle
+  alias save_battle_update update
+  def update
+    if Input.trigger?(ZERO::LOAD_KEY) && ZERO::LOAD
+      $game_player.straighten
+      $game_temp.next_scene = nil
+      $game_temp.in_battle = false
+      $scene = Scene_File.new(false, false, false)
+    end
+    save_battle_update
+  end
+end 
+
+# Return to battle when cancel load
+if ZERO::LOAD
+  # Overwrite
+  class Scene_File < Scene_Base
+    def return_scene
+      if @from_title
+        $scene = Scene_Title.new
+      elsif @from_event
+        $scene = Scene_Map.new
+      elsif @saving
+        $scene = Scene_Menu.new(4)
+      else
+        $scene = Scene_Battle.new
+      end
+    end
+  end
+end

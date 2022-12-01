@@ -1,0 +1,139 @@
+=begin
+===============================================================================
+ Text Speed
+ Change text speed by Zero_G v1.4
+ Version: RGSS3
+===============================================================================
+ == Description ==
+ This script will allow you to change the speed the text is displayed.
+ Text can be slowed down, speed up or to displayed instantly.
+
+ == Terms of Use ==
+ - Free for use in non-commercial projects.
+ - Free for use in commercial projects.
+ - Please provide credits to Zero_G.
+
+ == Credits ==
+ No one.
+
+ == Usage ==
+ Just add the plugin before main.
+ 
+ == Changelog ==
+ v1.4 Add support for namewindow from tamura—l
+ v1.3 Add option to set an instant text key toggle
+ v1.2 Add pause workaournd and combat log speed
+ v1.1 Fix for window message reopening after each message
+--------------------------------------------------------------------------------
+=end
+
+module ZERO
+	# Speed of text, values -1, 0 and 1 for default speed
+	# 2 for double speed, 3 triple speed, ...
+	# -2 for half speed, -3 for 1/3 speed, ...
+	TEXT_SPEED = 3
+	
+	# Display text instantly, will ignore text speed
+  # Set to false for default, true for instant text
+	INSTANT_SPEED = false
+
+  # Adjust Combat Log Speed?
+  COMBAT_LOG = true
+  COMBAT_LOG_SEPEED = 40 # Original is 20 (greater is lower speed)
+  
+  # Set instant text toggle with a key
+  INSTANT_TEXT = true
+  INSTANT_TEXT_KET = :_f
+end
+####################### End of manual configuration ############################
+
+class Window_Message < Window_Base
+  @@instant_text = false
+  
+  # Disable no pause messages (workaround as some special characters are ignored)
+  # First fiber reads special character, but the second one processes the next character,
+  # ignoring the command of the first one, this happens for line waits, etc.
+  alias zero_process_escape_character process_escape_character
+  def process_escape_character(code, text, pos)
+    zero_process_escape_character(code, text, pos)
+    @pause_skip = false
+  end
+
+	# Overwrite update_fiber
+	# Faster text
+  def update_fiber
+    if @fiber
+      @fiber.resume
+      for i in 2..ZERO::TEXT_SPEED
+      	@fiber.resume unless @fiber.nil?
+			end
+    elsif $game_message.busy? && !$game_message.scroll_mode
+      @fiber = Fiber.new { fiber_main }
+      @fiber.resume
+    else
+      $game_message.visible = false
+    end
+  end
+  
+  # Overwrite fiber_main
+	# Faster text
+  def fiber_main
+    $game_message.visible = true
+    update_background
+    update_placement
+    loop do
+      process_all_text if $game_message.has_text?
+      process_input
+      $game_message.clear
+      @gold_window.close
+      Fiber.yield
+      process_hold if defined?(MESFONT_MAKE)
+      for i in 2..ZERO::TEXT_SPEED # Balance the fiber resumes
+      	Fiber.yield 
+			end
+      break unless text_continue?
+    end
+    close_and_wait
+    $game_message.visible = false
+    @fiber = nil
+  end
+  alias :fiber_main_namewin_default :fiber_main if defined?(MESFONT_MAKE)
+  alias :fiber_main :fiber_main_namewin if defined?(MESFONT_MAKE)
+
+  # Alias wait_for_one_character
+  # Slower text
+  alias zero_wait_for_one_character wait_for_one_character
+  def wait_for_one_character
+    zero_wait_for_one_character
+    for i in ZERO::TEXT_SPEED..-2
+    	Fiber.yield unless @show_fast || @line_show_fast
+  	end
+  end
+  
+  # Overwrite update_show_fast
+  # Instant text
+  alias zero_update_show_fast update_show_fast
+  def update_show_fast
+    if ZERO::INSTANT_SPEED || @@instant_text
+      @show_fast = true
+    else
+      zero_update_show_fast
+    end
+  end
+  
+  alias zero_save_update_text_speed update
+  def update
+    zero_save_update_text_speed
+    if Input.trigger?(ZERO::INSTANT_TEXT_KET ) && ZERO::INSTANT_TEXT 
+      @@instant_text = !@@instant_text
+    end
+  end
+end # Window_message
+
+if ZERO::COMBAT_LOG == true
+  class Window_BattleLog
+    def message_speed
+      return ZERO::COMBAT_LOG_SEPEED
+    end
+  end
+end

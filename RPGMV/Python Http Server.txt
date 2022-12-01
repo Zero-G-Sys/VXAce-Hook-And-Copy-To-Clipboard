@@ -1,0 +1,5 @@
+#Use this python_server.py custom script that doesn't cache
+py python_server.py
+
+#Don't use this one, as it caches the files
+python -m http.server

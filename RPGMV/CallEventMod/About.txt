@@ -1,0 +1,11 @@
+This will let you call events from diferent maps (or same map) by eventId and page
+
+The mod lets you call an event as parallel. This is important when you need an animation ocurring while text is showing.
+
+Ex: during the main event when you want an animation to start, call another event as parallel. That other event should be in a loop with an if looking for a switch, if its of break the loop, see image as example
+
+More in-depth explanation: Look for the event that you want to add a loop, add a new page for the animation (ex in 'Animations.png'). Lock its with a switch that will always be off. Out the animations inside a loop and inside, and if a switch is on (AnimationOnOff). Else break loop
+
+In the event, (see 'Animations2.png) you wan to replace all the animations in between text (if the game did that) with a call to the page we did before using this script (as a parallel event), putting the switch AnimationOnOff in 'on' when the animations should start. Now you can make all the msg boxes you want and the animation loop will be going alongside. To stop the animation loop, just flip the switch AnimationOnOff to 'off'.
+
+Script call example:  CallEvent 8, Map 38, Page 7, parallel

@@ -1,0 +1,64 @@
+=begin
+===============================================================================
+ Message Visibility by efeberk
+ Version: RGSS3
+===============================================================================
+ This script will allow to player sets message window visible or unvisible with 
+ a key.
+ 
+ KEY2 is for returing visibility of text box on next page, default C (z)
+
+ KEY3 is for ocupacity toogle. 
+ You will need to define the value for DEFAULT_OCUPACITY , to do this, open the game with console and use this command inside that if (replace of comment everything inside that if): 
+ print self.back_opacity
+ see value displayed in console and put it in DEFAULT_OCUPACITY
+ 
+ Example : Press CTRL to hide message window and repress CTRL to show message 
+ window.
+ 
+ Possible key bindings: A B C X Y Z L R, 
+ SHIFT CTRL ALT (these are direct keyboard bindings)
+ Gamepad = Keboard key
+ A = shift
+ B = x
+ C = z
+ X = a
+ Y = s
+ Z = d
+ L = q
+ R = w
+--------------------------------------------------------------------------------
+=end
+
+
+
+module EFE
+  
+  KEY = :X
+  KEY2 = :C
+  KEY3 = :Y
+  DEFAULT_OCUPACITY = 255
+
+end
+
+class Window_Message < Window_Base
+  
+  alias efeberk_window_message_update update
+  def update
+    efeberk_window_message_update
+    if Input.trigger?(EFE::KEY3)
+      if self.opacity == EFE::DEFAULT_OCUPACITY
+        self.opacity = 0
+      elsif self.opacity == 0
+        self.opacity = EFE::DEFAULT_OCUPACITY
+      end
+    end
+    if Input.trigger?(EFE::KEY)
+      self.visible = !self.visible
+    end
+    if Input.press?(EFE::KEY2)
+      self.visible = true
+    end
+  end
+  
+end

@@ -1,0 +1,854 @@
+#==============================================================================
+# ■ RMVXAce Font Effects in XP
+# Author: ルファー (Lufar)
+#------------------------------------------------------------------------------
+# Few font features from RPG Maker VX (Ace) can be used in RPG Maker XP/VX.
+#==============================================================================
+
+=begin
+
+
+= How to install this in RPG Maker XP
+
+Create a new section at the top and copy this script to it
+
+= How to install this in RPG Maker VX (Ace)
+
+Paste this script above Main.
+
+= Customization
+
+
+[FONT_DEFAULTSHADOW]
+  Whether or not to draw shadows on the text.
+  This may not work in some situations.
+
+
+[FONT_DEFAULTOUTLINE]
+  Whether or not to draw a border around the letters.
+  This may not work in some situations.
+
+
+[FONT_DEFAULTOUTCOLOR]
+  The color of the text edge.
+
+  
+= How to determine the version of RPG Maker
+
+
+[Lufar::VXAceCompat::IS_RPGXP]
+[Lufar::VXAceCompat::IS_RPGVX]
+[Lufar::VXAceCompat::IS_RPGVXACE]
+  True when the execution environment is each RPG Maker.
+
+[Lufar::VXAceCompat.rgss_major_version]
+  Returns an integer between 1 and 3, depending on version of RPG Maker.
+
+
+= How to use the compatibility function
+
+When defining classes and modules in other scripts
+include Lufar::VXAceCompat in the module (class).
+The following compatibility features will be enabled.
+
+
+- rgss_stop method
+- msgbox method
+- msgbox_p method
+- IS_RPGXP constant
+  (module name can be omitted)
+- IS_RPGVX constant
+  (module name can be omitted)
+- IS_RPGVXACE constant
+  (module name can be omitted)
+- IS_TEST constant
+  (Determine if it is a test play or not)
+- RGSSReset constant
+  (Refers to ::Reset or ::RGSSReset depending on RPG Maker version)
+
+
+= Ported method, properties
+
+- Bitmap#gradient_fill_rect
+- Bitmap#clear_rect
+- Bitmap#draw_text
+  (str として文字列以外を渡すと to_s で自動変換する機能と、影付きと縁取りの移植)
+- Bitmap#text_size
+  (str として文字列以外を渡すと to_s で自動変換する機能の移植)
+- Color.new
+  (引数無のとき全部 0 で初期化する機能)
+- Color#set
+  (他の Color を引数に丸投げでコピーする機能)
+- Font#shadow
+- Font#shadow=
+- Font.default_shadow
+- Font.default_shadow=
+- Font#outline
+- Font#outline=
+- Font.default_outline
+- Font.default_outline=
+- Font#out_color
+- Font#out_color=
+- Font.default_out_color
+- Font.default_out_color=
+- Graphics.wait
+- Graphics.brightness
+- Graphics.brightness=
+- Graphics.fadein
+- Graphics.fadeout
+- Graphics.width
+- Graphics.height
+- Input.press?
+  (シンボルも引数に渡せる機能を移植)
+- Input.repeat?
+  (シンボルも引数に渡せる機能を移植)
+- Input.trigger?
+  (シンボルも引数に渡せる機能を移植)
+- Rect#initialize
+  (引数無のとき全部 0 で初期化する機能)
+- Rect#set
+  (他の Rect を引数に丸投げでコピーする機能)
+- Sprite#viewport
+- Sprite#width
+- Sprite#height
+- Tilemap#viewport
+- Tone#initialize
+  (引数無のとき全部 0 で初期化する機能)
+- Tone#set
+  (他の Tone を引数に丸投げでコピーする機能)
+- Window#initialize
+  (VX 固有のコンストラクターを XP と VXAce に移植)
+- Window#viewport
+- Window#move
+- RPG::Sprite#damage
+
+
+= クレジット
+
+作者      :: ルファー (Twitter @tkooler_lufar)
+バージョン:: 1.1
+
+= Update log
+
+[Ver. 1.1]
+I realized that I needed to support VXAce, so I rushed (see below).
+Window.new can pass a viewport even in VXAce.
+Removed Plane#viewport since it doesn't seem to need to be redefined.
+Changed a specification that the border for damage display is drawn twice
+
+=end
+
+# Multiple definitions prevention
+unless defined? Lufar::VXAceCompat and Lufar::VXAceCompat.version >= 1
+  module Lufar
+    module VXAceCompat
+      #----------------------------------------------------------------------
+      # ● カスタマイズconstant (スクリプト素材ユーザーが自由に変えてよい)
+      #----------------------------------------------------------------------
+      FONT_DEFAULTSHADOW = false                      # 文字の影を描くかどうか
+      FONT_DEFAULTOUTLINE = true                      # 文字の縁を描くかどうか
+      FONT_DEFAULTOUTCOLOR = Color.new(0, 0, 0, 128)  # 文字の縁の既定色
+      #----------------------------------------------------------------------
+      # ● constant
+      #----------------------------------------------------------------------
+      TRANSPARENT_COLOR = Color.new(0, 0, 0, 0).freeze    # 透明色
+      IS_RPGXP = !!defined? RPG::Cache                    # RPGXP かどうか
+      IS_RPGVX = RUBY_VERSION == '1.8.1' && !IS_RPGXP     # RPGVX かどうか
+      IS_RPGVXACE = RUBY_VERSION == '1.9.2'               # RPGVXAce かどうか
+      IS_TEST = IS_RPGXP ? $DEBUG : $TEST                 # テストプレイかどうか
+      #----------------------------------------------------------------------
+      # ● このスクリプト素材のバージョン (mix-in を防ぐため特異methodで定義)
+      #----------------------------------------------------------------------
+      def self.version
+        1
+      end
+      #----------------------------------------------------------------------
+      # ● このスクリプト素材のリビジョン (mix-in を防ぐため特異methodで定義)
+      #----------------------------------------------------------------------
+      def self.revision
+        1
+      end
+      #----------------------------------------------------------------------
+      # ● 引数の数がおかしいエラーの定型文
+      #----------------------------------------------------------------------
+      def self.assert_arguments_number(min, max, actual)
+        if actual < min
+          raise ArgumentError,
+            "wrong number of arguments(#{actual} for #{min})", caller(2)
+        elsif max < actual
+          raise ArgumentError,
+            "wrong number of arguments(#{actual} for #{max})", caller(2)
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● 引数の型がおかしいエラーの定型文
+      #----------------------------------------------------------------------
+      def self.assert_type(expected, obj)
+        unless obj.is_a?(expected)
+          raise TypeError,
+            "cannot convert #{expected} into #{obj.class}", caller(2)
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● RGSS のメジャーバージョンの取得
+      #----------------------------------------------------------------------
+      def self.rgss_major_version
+        return 1 if IS_RPGXP
+        return 2 if IS_RPGVX
+        RGSS_VERSION =~ /^\d+/
+        $&.to_i(10)
+      end
+      ################# ここから最後まで mix-in 用互換機能 #################
+      #----------------------------------------------------------------------
+      # ● リセット (F12) 時に発生する例外
+      #----------------------------------------------------------------------
+      if defined? ::RGSSReset
+        RGSSReset = ::RGSSReset
+      else
+        class ::Reset < Exception
+        end
+        RGSSReset = ::Reset
+      end
+      unless Lufar::VXAceCompat::IS_RPGVXACE
+        #--------------------------------------------------------------------
+        # ● 実行停止
+        #--------------------------------------------------------------------
+        unless defined? rgss_stop
+          def rgss_stop
+            loop { Graphics.update }
+          end
+          private :rgss_stop
+        end
+        #--------------------------------------------------------------------
+        # ● メッセージボックスに出力
+        #--------------------------------------------------------------------
+        alias msgbox print unless defined? msgbox
+        #--------------------------------------------------------------------
+        # ● 人間に読みやすい形でメッセージボックスに出力
+        #--------------------------------------------------------------------
+        alias msgbox_p p unless defined? msgbox_p
+      end
+    end
+  end
+  # ここから VXAce では無視
+  unless Lufar::VXAceCompat::IS_RPGVXACE
+    class Bitmap
+      #----------------------------------------------------------------------
+      # ● オブジェクト初期化
+      #----------------------------------------------------------------------
+      unless private_method_defined?(:_Lufar_VXAceCompat_initialize)
+        alias _Lufar_VXAceCompat_initialize initialize
+        def initialize(*args)
+          _Lufar_VXAceCompat_initialize(*args)
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● グラデーション矩形の描画
+      #     (形式1)
+      #     x        : 描画先 X 座標
+      #     y        : 描画先 Y 座標
+      #     width    : 描画範囲の幅
+      #     height   : 描画範囲の高さ
+      #     color1   : 矩形左 (ないし上) 端の色
+      #     color2   : 矩形右 (ないし下) 端の色
+      #     vertical : 色の変化の向き (真⇒上から下へ、偽⇒左から右へ。既定は横)
+      #     (形式2)
+      #     rect     : 描画範囲
+      #     color1   : 矩形左 (ないし上) 端の色
+      #     color2   : 矩形右 (ないし下) 端の色
+      #     vertical : 色の変化の向き (真⇒上から下へ、偽⇒左から右へ。既定は横)
+      #----------------------------------------------------------------------
+      def gradient_fill_rect(*args)
+        if args[0].is_a?(Rect)
+          # 引数が rect, color1, color2, vertical の場合
+          Lufar::VXAceCompat.assert_arguments_number(3, 4, args.length)
+          rect, color1, color2 = args
+          vertical = args[3]
+          Lufar::VXAceCompat.assert_type(Rect, rect)
+          Lufar::VXAceCompat.assert_type(Color, color1)
+          Lufar::VXAceCompat.assert_type(Color, color2)
+          x, y, width, height = rect.x, rect.y, rect.width, rect.height
+          # 引数を破壊するとバグるのでコピーを使う
+          slice_rect = rect.dup
+        else
+          # 引数が x, y, width, height, color1, color2, vertical の場合
+          Lufar::VXAceCompat.assert_arguments_number(6, 7, args.length)
+          x, y, width, height, color1, color2 = args
+          vertical = args[6]
+          Lufar::VXAceCompat.assert_type(Numeric, x)
+          Lufar::VXAceCompat.assert_type(Numeric, y)
+          Lufar::VXAceCompat.assert_type(Numeric, width)
+          Lufar::VXAceCompat.assert_type(Numeric, height)
+          Lufar::VXAceCompat.assert_type(Color, color1)
+          Lufar::VXAceCompat.assert_type(Color, color2)
+          slice_rect = Rect.new(x, y, width, height)
+        end
+        # ループ回数、スライス矩形のサイズ、
+        # ループごとのスライス矩形移動処理を決定
+        if vertical
+          origin = y
+          count = height
+          slice_rect.height = 1
+          move_rect_method = slice_rect.method(:y=)
+        else
+          origin = x
+          count = width
+          slice_rect.width = 1
+          move_rect_method = slice_rect.method(:x=)
+        end
+        # 厚さ 1px ごとにスライスした矩形で少しずつ描画
+        slice_color = color1.dup
+        max_i = count - 1
+        # ゼロ除算対策…グラデの長さが1なら何も描かない
+        return if max_i == 0
+        count.times do |i|
+          move_rect_method.call(origin + i)
+          slice_color.set(
+            (color1.red   * (max_i - i) + color2.red   * i) / max_i,
+            (color1.green * (max_i - i) + color2.green * i) / max_i,
+            (color1.blue  * (max_i - i) + color2.blue  * i) / max_i,
+            (color1.alpha * (max_i - i) + color2.alpha * i) / max_i
+          )
+          self.fill_rect(slice_rect, slice_color)
+        end
+      end unless method_defined?(:gradient_fill_rect)
+      #----------------------------------------------------------------------
+      # ● 矩形のクリア
+      #----------------------------------------------------------------------
+      def clear_rect(*args)
+        self.fill_rect(*(args + [Lufar::VXAceCompat::TRANSPARENT_COLOR]))
+      end unless method_defined?(:clear_rect)
+      #----------------------------------------------------------------------
+      # ● テキストの描画
+      #     (形式1)
+      #     x        : 描画先 X 座標
+      #     y        : 描画先 Y 座標
+      #     width    : 描画範囲の幅
+      #     height   : 描画範囲の高さ
+      #     str      : 描画する文字列
+      #     align    : 文字列の揃え方 (0⇒左、1⇒中央、2⇒右。既定は左)
+      #     (形式2)
+      #     rect     : 描画範囲
+      #     str      : 描画する文字列
+      #     align    : 文字列の揃え方 (0⇒左、1⇒中央、2⇒右。既定は左)
+      #----------------------------------------------------------------------
+      unless method_defined?(:_Lufar_VXAceCompat_draw_text)
+        alias _Lufar_VXAceCompat_draw_text draw_text
+        def draw_text(*args)
+          if args[0].is_a?(Rect)
+            # 引数が rect, str, align の場合
+            Lufar::VXAceCompat.assert_arguments_number(2, 3, args.length)
+            rect = args[0]
+            str = args[1].to_s
+            align = args[2] || 0
+            Lufar::VXAceCompat.assert_type(Rect, rect)
+            Lufar::VXAceCompat.assert_type(Integer, align)
+            x, y, width, height = rect.x, rect.y, rect.width, rect.height
+          else
+            # 引数が x, y, width, height, str, align の場合
+            Lufar::VXAceCompat.assert_arguments_number(5, 6, args.length)
+            x, y, width, height = args
+            str = args[4].to_s
+            align = args[5] || 0
+            Lufar::VXAceCompat.assert_type(Numeric, x)
+            Lufar::VXAceCompat.assert_type(Numeric, y)
+            Lufar::VXAceCompat.assert_type(Numeric, width)
+            Lufar::VXAceCompat.assert_type(Numeric, height)
+            Lufar::VXAceCompat.assert_type(Integer, align)
+          end
+          # 縁取り
+          if self.font.outline
+            # 文字列を一時ビットマップに1回書き、それを4回 blt する
+            outline_bitmap = Bitmap.new(width, height)
+            begin
+              outline_bitmap.font = self.font.dup
+              outline_bitmap.font.color = Color.new(
+                self.font.out_color.red,
+                self.font.out_color.green,
+                self.font.out_color.blue,
+                self.font.out_color.alpha * self.font.color.alpha / 255.0
+              )
+              outline_bitmap.font.shadow = false
+              outline_bitmap._Lufar_VXAceCompat_draw_text(
+                outline_bitmap.rect, str, align
+              )
+              self.blt(x-1, y-1, outline_bitmap, outline_bitmap.rect)
+              self.blt(x+1, y-1, outline_bitmap, outline_bitmap.rect)
+              self.blt(x-1, y+1, outline_bitmap, outline_bitmap.rect)
+              self.blt(x+1, y+1, outline_bitmap, outline_bitmap.rect)
+            ensure
+              outline_bitmap.dispose
+            end
+          end
+          # 影付き
+          if Lufar::VXAceCompat::IS_RPGXP and self.font.shadow
+            body_color = self.font.color.dup
+            begin
+              self.font.color.red   = 0
+              self.font.color.green = 0
+              self.font.color.blue  = 0
+              self._Lufar_VXAceCompat_draw_text(
+                x + 1, y + 1, width, height, str, align)
+            ensure
+              self.font.color.set(body_color)
+            end
+          end
+          # 本文
+          self._Lufar_VXAceCompat_draw_text(x, y, width, height, str, align)
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● テキストの描画幅
+      #----------------------------------------------------------------------
+      if Lufar::VXAceCompat::IS_RPGXP and
+         not method_defined?(:_Lufar_VXAceCompat_text_size)
+        alias _Lufar_VXAceCompat_text_size text_size
+        def text_size(str)
+          _Lufar_VXAceCompat_text_size(str.to_s)
+        rescue
+          $@ = caller
+          raise
+        end
+      end
+    end
+    class Font
+      #----------------------------------------------------------------------
+      # ● 公開インスタンス変数
+      #----------------------------------------------------------------------
+      # 影付き
+      if Lufar::VXAceCompat::IS_RPGXP
+        def shadow
+          @_Lufar_VXAceCompat_shadow
+        end
+        def shadow=(value)
+          @_Lufar_VXAceCompat_shadow = !!value
+        end
+      end
+      # 縁取り
+      def outline
+        @_Lufar_VXAceCompat_outline
+      end
+      def outline=(value)
+        @_Lufar_VXAceCompat_outline = !!value
+      end
+      # 縁の色
+      def out_color
+        @_Lufar_VXAceCompat_out_color
+      end
+      def out_color=(color)
+        # 現在の値と同一ならそもそも代入しない
+        return color if @_Lufar_VXAceCompat_out_color.equal?(color)
+        # 後で set されても引数が破壊されないよう dup して使う
+        @_Lufar_VXAceCompat_out_color = color.dup
+      end
+      #----------------------------------------------------------------------
+      # ● 公開クラス変数
+      #----------------------------------------------------------------------
+      # 既定で影を付けるかどうか
+      if Lufar::VXAceCompat::IS_RPGXP
+        def self.default_shadow
+          @@Lufar_VXAceCompat_default_shadow
+        end
+        def self.default_shadow=(value)
+          @@Lufar_VXAceCompat_default_shadow = !!value
+        end
+      end
+      if not Lufar::VXAceCompat::FONT_DEFAULTSHADOW.nil?
+        self.default_shadow = Lufar::VXAceCompat::FONT_DEFAULTSHADOW
+      elsif Lufar::VXAceCompat::IS_RPGXP
+        self.default_shadow = false
+      end
+      # 既定で縁を描くかどうか
+      def self.default_outline
+        @@Lufar_VXAceCompat_default_outline
+      end
+      def self.default_outline=(value)
+        @@Lufar_VXAceCompat_default_outline = !!value
+      end
+      self.default_outline = Lufar::VXAceCompat::FONT_DEFAULTOUTLINE
+      # 既定の縁の色
+      def self.default_out_color
+        @@Lufar_VXAceCompat_default_out_color
+      end
+      def self.default_out_color=(color)
+        Lufar::VXAceCompat.assert_type(Color, color)
+        # これは RPGVXAce だとなぜか dup してない
+        @@Lufar_VXAceCompat_default_out_color = color
+      end
+      self.default_out_color = Lufar::VXAceCompat::FONT_DEFAULTOUTCOLOR
+      #----------------------------------------------------------------------
+      # ● オブジェクト初期化
+      #----------------------------------------------------------------------
+      unless private_method_defined?(:_Lufar_VXAceCompat_initialize)
+        alias _Lufar_VXAceCompat_initialize initialize
+        def initialize(*args)
+          _Lufar_VXAceCompat_initialize(*args)
+          if Lufar::VXAceCompat::IS_RPGXP
+            self.shadow = self.class.default_shadow
+          end
+          self.outline = self.class.default_outline
+          # 縁の色は既定値を dup して使う
+          self.out_color = self.class.default_out_color
+        rescue
+          $@ = caller
+          raise
+        end
+      end
+    end
+    module Graphics
+      #----------------------------------------------------------------------
+      # ● ウェイト
+      #     duration : ウェイトするフレーム数
+      #----------------------------------------------------------------------
+      def self.wait(duration)
+        Lufar::VXAceCompat::assert_type(Integer, duration)
+        duration.times { self.update }
+      end unless defined? wait
+      unless defined? brightness
+        #--------------------------------------------------------------------
+        # ● 明るさを演出するためのスプライト
+        #--------------------------------------------------------------------
+        def self._Lufar_VXAceCompat_brightness_sprite
+          if !(defined? @@Lufar_VXAceCompat_brightness_sprite) or
+             @@Lufar_VXAceCompat_brightness_sprite.disposed?
+            @@Lufar_VXAceCompat_brightness_sprite = Sprite.new
+            @@Lufar_VXAceCompat_brightness_sprite.z = 0x7fffffff
+            @@Lufar_VXAceCompat_brightness_sprite.zoom_x = 640.0
+            @@Lufar_VXAceCompat_brightness_sprite.zoom_y = 480.0
+            @@Lufar_VXAceCompat_brightness_sprite.visible = false
+          end
+          if @@Lufar_VXAceCompat_brightness_sprite.bitmap.nil? or
+             @@Lufar_VXAceCompat_brightness_sprite.bitmap.disposed?
+            @@Lufar_VXAceCompat_brightness_sprite.bitmap = Bitmap.new(1, 1)
+            @@Lufar_VXAceCompat_brightness_sprite.bitmap.set_pixel(
+              0, 0, Color.new(0, 0, 0)
+            )
+          end
+          @@Lufar_VXAceCompat_brightness_sprite
+        end
+        #--------------------------------------------------------------------
+        # ● 明るさの取得
+        #--------------------------------------------------------------------
+        def self.brightness
+          if !(defined? @@Lufar_VXAceCompat_brightness_sprite) or
+             @@Lufar_VXAceCompat_brightness_sprite.disposed?
+            return 0xff
+          end
+          0xff - @@Lufar_VXAceCompat_brightness_sprite.opacity
+        end
+        #--------------------------------------------------------------------
+        # ● 明るさの設定
+        #     value : 明るさ
+        #--------------------------------------------------------------------
+        def self.brightness=(value)
+          Lufar::VXAceCompat.assert_type(Integer, value)
+          # 不必要に黒マスクを作らないようにする
+          return value if value == 0xff and self.brightness == 0xff
+          _Lufar_VXAceCompat_brightness_sprite.opacity = 0xff - value
+          _Lufar_VXAceCompat_brightness_sprite.visible = value != 0xff
+          0xff - _Lufar_VXAceCompat_brightness_sprite.opacity
+        end
+        #--------------------------------------------------------------------
+        # ● フェードアウト
+        #     duration : 所要フレーム数
+        #--------------------------------------------------------------------
+        def self.fadeout(duration)
+          Lufar::VXAceCompat.assert_type(Integer, duration)
+          initial_brightness = self.brightness
+          duration.times do |i|
+            self.brightness = initial_brightness * (duration - i) / duration
+            self.update
+          end
+        end
+        #--------------------------------------------------------------------
+        # ● フェードイン
+        #     duration : 所要フレーム数
+        #--------------------------------------------------------------------
+        def self.fadein(duration)
+          Lufar::VXAceCompat.assert_type(Integer, duration)
+          initial_brightness = self.brightness
+          gain_brightness = 0xff - initial_brightness
+          duration.times do |i|
+            self.brightness =
+              initial_brightness + gain_brightness * i / duration
+            self.update
+          end
+        end
+        #--------------------------------------------------------------------
+        # ● 画面の固定
+        #--------------------------------------------------------------------
+        unless defined? _Lufar_VXAceCompat_freeze
+          instance_eval { alias _Lufar_VXAceCompat_freeze freeze }
+          @@Lufar_VXAceCompat_need_transition = false
+          def self.freeze(*args)
+            @@Lufar_VXAceCompat_need_transition = true
+            _Lufar_VXAceCompat_freeze(*args)
+          end
+        end
+        #--------------------------------------------------------------------
+        # ● トランジション
+        #--------------------------------------------------------------------
+        unless defined? _Lufar_VXAceCompat_transition
+          instance_eval { alias _Lufar_VXAceCompat_transition transition }
+          def self.transition(*args)
+            return unless @@Lufar_VXAceCompat_need_transition
+            self.brightness = 0xff
+            _Lufar_VXAceCompat_transition(*args)
+          end
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● 画面の幅の取得
+      #----------------------------------------------------------------------
+      def width
+        640
+      end unless defined? width
+      #----------------------------------------------------------------------
+      # ● 画面の高さの取得
+      #----------------------------------------------------------------------
+      def height
+        480
+      end unless defined? height
+    end
+    class Sprite
+      unless Sprite.method_defined?(:viewport)
+        #--------------------------------------------------------------------
+        # ● オブジェクト初期化
+        #--------------------------------------------------------------------
+        unless private_method_defined?(:_Lufar_VXAceCompat_initialize)
+          alias _Lufar_VXAceCompat_initialize initialize
+          def initialize(*args)
+            _Lufar_VXAceCompat_initialize(*args)
+            @@Lufar_VXAceCompat_viewport = args[0]
+          end
+        end
+        #--------------------------------------------------------------------
+        # ● 親ビューポートの取得
+        #--------------------------------------------------------------------
+        def viewport
+          @@Lufar_VXAceCompat_viewport
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● 幅の取得
+      #----------------------------------------------------------------------
+      def width
+        src_rect.width
+      end unless method_defined?(:width)
+      #----------------------------------------------------------------------
+      # ● 高さの取得
+      #----------------------------------------------------------------------
+      def height
+        src_rect.height
+      end unless method_defined?(:height)
+    end
+    unless Tilemap.method_defined?(:viewport)
+      class Tilemap
+        #--------------------------------------------------------------------
+        # ● オブジェクト初期化
+        #--------------------------------------------------------------------
+        unless private_method_defined?(:_Lufar_VXAceCompat_initialize)
+          alias _Lufar_VXAceCompat_initialize initialize
+          def initialize(*args)
+            _Lufar_VXAceCompat_initialize(*args)
+            @@Lufar_VXAceCompat_viewport = args[0]
+          end
+        end
+        #--------------------------------------------------------------------
+        # ● 親ビューポートの取得
+        #--------------------------------------------------------------------
+        def viewport
+          @@Lufar_VXAceCompat_viewport
+        end
+      end
+    end
+    class Color
+      #----------------------------------------------------------------------
+      # ● オブジェクト初期化
+      #----------------------------------------------------------------------
+      unless private_method_defined?(:_Lufar_VXAceCompat_initialize)
+        alias _Lufar_VXAceCompat_initialize initialize
+        def initialize(*args)
+          return _Lufar_VXAceCompat_initialize(0, 0, 0, 0) if args.empty?
+          _Lufar_VXAceCompat_initialize(*args)
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● 色の設定
+      #----------------------------------------------------------------------
+      unless method_defined?(:_Lufar_VXAceCompat_set)
+        alias _Lufar_VXAceCompat_set set
+        def set(*args)
+          if args[0].is_a?(Color)
+            return _Lufar_VXAceCompat_set(
+              args[0].red,
+              args[0].green,
+              args[0].blue,
+              args[0].alpha)
+          end
+          _Lufar_VXAceCompat_set(*args)
+        end
+      end
+    end
+    module Input
+      #----------------------------------------------------------------------
+      # ● ボタンが押されているかどうかの判定
+      #     num : ボタン番号、またはボタンを示すシンボル
+      #----------------------------------------------------------------------
+      unless defined? _Lufar_VXAceCompat_press?
+        instance_eval { alias _Lufar_VXAceCompat_press? press? }
+        def press?(num)
+          _Lufar_VXAceCompat_press?(
+            num.is_sym? ? const_get(num) : num)
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● ボタンが押されてたかどうかの判定
+      #     num : ボタン番号、またはボタンを示すシンボル
+      #----------------------------------------------------------------------
+      unless defined? _Lufar_VXAceCompat_trigger?
+        instance_eval { alias _Lufar_VXAceCompat_trigger? trigger? }
+        def trigger(num)
+          _Lufar_VXAceCompat_trigger?(
+            num.is_sym? ? const_get(num) : num)
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● ボタンが押し続けられているかどうかの判定
+      #     num : ボタン番号、またはボタンを示すシンボル
+      #----------------------------------------------------------------------
+      unless defined? _Lufar_VXAceCompat_repeat?
+        instance_eval { alias _Lufar_VXAceCompat_repeat? repeat? }
+        def repeat?(num)
+          _Lufar_VXAceCompat_repeat?(
+            num.is_sym? ? const_get(num) : num)
+        end
+      end
+    end
+    class Rect
+      #----------------------------------------------------------------------
+      # ● オブジェクト初期化
+      #----------------------------------------------------------------------
+      unless private_method_defined?(:_Lufar_VXAceCompat_initialize)
+        alias _Lufar_VXAceCompat_initialize initialize
+        def initialize(*args)
+          return _Lufar_VXAceCompat_initialize(0, 0, 0, 0) if args.empty?
+          _Lufar_VXAceCompat_initialize(*args)
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● 矩形の設定
+      #----------------------------------------------------------------------
+      unless method_defined?(:_Lufar_VXAceCompat_set)
+        alias _Lufar_VXAceCompat_set set
+        def set(*args)
+          if args[0].is_a?(Rect)
+            return _Lufar_VXAceCompat_set(
+              args[0].x,
+              args[0].y,
+              args[0].width,
+              args[0].height)
+          end
+          _Lufar_VXAceCompat_set(*args)
+        end
+      end
+    end
+    class Tone
+      #----------------------------------------------------------------------
+      # ● オブジェクト初期化
+      #----------------------------------------------------------------------
+      unless private_method_defined?(:_Lufar_VXAceCompat_initialize)
+        alias _Lufar_VXAceCompat_initialize initialize
+        def initialize(*args)
+          return _Lufar_VXAceCompat_initialize(0, 0, 0, 0) if args.empty?
+          _Lufar_VXAceCompat_initialize(*args)
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● 色の設定
+      #----------------------------------------------------------------------
+      unless method_defined?(:_Lufar_VXAceCompat_set)
+        alias _Lufar_VXAceCompat_set set
+        def set(*args)
+          if args[0].is_a?(Tone)
+            return _Lufar_VXAceCompat_set(
+              args[0].red,
+              args[0].green,
+              args[0].blue,
+              args[0].gray)
+          end
+          _Lufar_VXAceCompat_set(*args)
+        end
+      end
+    end
+    class ::RPG::Sprite
+      #----------------------------------------------------------------------
+      # ● ダメージ値のポップアップ開始
+      #     value    : ダメージ値 (負の数なら回復)
+      #     critical : クリティカルかどうか
+      #----------------------------------------------------------------------
+      unless method_defined?(:_Lufar_VXAceCompat_damage)
+        alias _Lufar_VXAceCompat_damage damage
+        def damage(value, critical)
+          # ダメージスプライトを作る過程でのテキスト描画時
+          # 影や縁の描画を無効化する
+          # (method内で描画しちゃってるため)
+          shadow  = Font.default_shadow
+          outline = Font.default_outline
+          Font.default_shadow  = false
+          Font.default_outline = false
+          begin
+            _Lufar_VXAceCompat_damage(value, critical)
+          ensure
+            Font.default_shadow  = shadow
+            Font.default_outline = outline
+          end
+        end
+      end
+    end if defined? ::RPG::Sprite
+  end
+  # ここまで VXAce では無視
+  class Window
+    if Lufar::VXAceCompat::IS_RPGVXACE or not method_defined?(:viewport)
+      #----------------------------------------------------------------------
+      # ● オブジェクト初期化
+      #----------------------------------------------------------------------
+      unless private_method_defined?(:_Lufar_VXAceCompat_initialize)
+        alias _Lufar_VXAceCompat_initialize initialize
+        # XP と VXAce で VX 形式の引数を有効化
+        if Lufar::VXAceCompat::IS_RPGXP
+            def initialize(*args)
+            _Lufar_VXAceCompat_initialize(*args)
+            @@Lufar_VXAceCompat_viewport = args[0]
+          end
+        else
+          def initialize(*args)
+            if args.size == 1
+              Lufar::VXAceCompat.assert_type(Viewport, args[0])
+              _Lufar_VXAceCompat_initialize()
+              self.viewport = args[0]
+              return
+            end
+            _Lufar_VXAceCompat_initialize(*args)
+          end
+        end
+      end
+      #----------------------------------------------------------------------
+      # ● 親ビューポートの取得
+      #----------------------------------------------------------------------
+      def viewport
+        @@Lufar_VXAceCompat_viewport
+      end unless method_defined?(:viewport)
+    end
+    #------------------------------------------------------------------------
+    # ● ウィンドウの移動とリサイズ
+    #     x      : X 座標
+    #     y      : Y 座標
+    #     width  : 幅
+    #     height : 高さ
+    #------------------------------------------------------------------------
+    def move(x, y, width, height)
+      self.x, self.y, self.width, self.height = x, y, width, height
+    end unless method_defined?(:move)
+  end
+end

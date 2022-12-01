@@ -1,0 +1,6 @@
+I set some customization to avoid using the name handling if needed.
+
+when there are no names, or the names arent' enclosed (name: or [name]) you can't know when the first word is a name or not, so it won't work well
+
+
+TODO: you can fix this if you determine if there is a \n after the first or second word.

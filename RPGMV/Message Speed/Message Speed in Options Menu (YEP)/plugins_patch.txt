@@ -1,0 +1,1 @@
+{"name":"YEP_X_MessageSpeedOpt","status":true,"description":"v1.00 (Requires YEP_MessageCore.js) Let your places adjust the\nspeed the message window displays text.","parameters":{"OptionsCommand":"Message Speed","DefaultSpeed":"8","InstantText":"No Wait"}}

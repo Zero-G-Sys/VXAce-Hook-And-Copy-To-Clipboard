@@ -1,0 +1,2 @@
+1. The screen freezes at random times but the game continues running in the background
+The cause is probably best described here https://github.com/rpgtkoolmv/corescript/pull/191

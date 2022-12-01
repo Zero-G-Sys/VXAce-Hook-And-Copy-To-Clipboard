@@ -1,0 +1,9 @@
+#Access Switch Var Editor outside of gametest
+
+class Scene_Map < Scene_Base
+  def update_call_debug
+    if Input.press?(Input::F9) 
+      $game_temp.next_scene = "debug"
+    end
+  end
+end
