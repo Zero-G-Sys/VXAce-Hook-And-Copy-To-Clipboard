@@ -1,0 +1,23 @@
+/*
+/*/
+
+!.gitignore
+
+!/RPGMV/
+/RPGMV/_Nw.js/
+/RPGMV/schach-pathfinding/
+/RPGMV/typescript-plugin-archetype/
+/RPGMV/_Project1/
+
+!/RPGMZ/
+/RPGMZ/_Project1/
+
+!/RPGVX/
+/RPGVX/Project1
+
+!/RPGVXAce/
+/RPGVXAce/_Optimize image size/FileOptimizer/
+/RPGVXAce/Project1/
+
+!/RPGXP/
+/RPGXP/Project1
