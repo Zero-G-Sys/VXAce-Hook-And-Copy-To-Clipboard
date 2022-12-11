@@ -1,7 +1,7 @@
 =begin
 ===============================================================================
  Text Speed
- Change text speed by Zero_G v1.4
+ Change text speed by Zero_G v1.5
  Version: RGSS3
 ===============================================================================
  == Description ==
@@ -20,6 +20,8 @@
  Just add the plugin before main.
  
  == Changelog ==
+ v1.5 Fixed a bug where it would process a character after a new page
+      This fixes a bug on ChoiceEX where it would sometimes skip choices
  v1.4 Add support for namewindow from tamura—l
  v1.3 Add option to set an instant text key toggle
  v1.2 Add pause workaournd and combat log speed
@@ -47,8 +49,11 @@ module ZERO
 end
 ####################### End of manual configuration ############################
 
+$choice_ex = WdTk.const_defined?(:ChoiceEX) if defined?(WdTk)
+
 class Window_Message < Window_Base
   @@instant_text = false
+  @@newpage_wait = false
   
   # Disable no pause messages (workaround as some special characters are ignored)
   # First fiber reads special character, but the second one processes the next character,
@@ -58,15 +63,15 @@ class Window_Message < Window_Base
     zero_process_escape_character(code, text, pos)
     @pause_skip = false
   end
-
+@@count = 0
 	# Overwrite update_fiber
 	# Faster text
   def update_fiber
     if @fiber
       @fiber.resume
       for i in 2..ZERO::TEXT_SPEED
-      	@fiber.resume unless @fiber.nil?
-			end
+        @fiber.resume unless @fiber.nil? or @@newpage_wait
+      end
     elsif $game_message.busy? && !$game_message.scroll_mode
       @fiber = Fiber.new { fiber_main }
       @fiber.resume
@@ -83,14 +88,17 @@ class Window_Message < Window_Base
     update_placement
     loop do
       process_all_text if $game_message.has_text?
+      @@newpage_wait = true
       process_input
       $game_message.clear
       @gold_window.close
       Fiber.yield
       process_hold if defined?(MESFONT_MAKE)
       for i in 2..ZERO::TEXT_SPEED # Balance the fiber resumes
-      	Fiber.yield 
-			end
+        puts 
+        Fiber.yield 
+      end
+      @@newpage_wait = false
       break unless text_continue?
     end
     close_and_wait
