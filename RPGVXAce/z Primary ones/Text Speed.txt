@@ -95,8 +95,8 @@ class Window_Message < Window_Base
       Fiber.yield
       process_hold if defined?(MESFONT_MAKE)
       for i in 2..ZERO::TEXT_SPEED # Balance the fiber resumes
-        puts 
         Fiber.yield 
+        Fiber.yield if $game_message.choice?
       end
       @@newpage_wait = false
       break unless text_continue?
