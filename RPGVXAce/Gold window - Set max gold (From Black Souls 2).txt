@@ -1,0 +1,40 @@
+# This is yet untested
+# What I think this script does is, when you get a numeric input,
+# pressing down will get you the max value possible (ie your gold).
+# In BS2 when you are leveling and trying to pay with souls you see
+# this behaviour.
+# This is useful in games that have a bank or similar and you want
+# to desposit or extract the max value without putting it manually
+
+class Game_Interpreter
+  def set_number_range(min, max)
+    Window_NumberInput.set_range(min, max)
+  end
+end
+
+class Window_NumberInput
+  alias refresh_unmodified refresh
+  def refresh
+    begin
+      @number = @@min if @@min && @number < @@min
+      @number = @@max if @@max && @number > @@max
+    rescue
+    end
+    refresh_unmodified
+  end #lala
+
+  alias process_ok_unmodified process_ok
+  def process_ok
+    @@min = nil
+    @@max = nil
+    process_ok_unmodified
+  end
+
+  def self.set_range(min, max)
+    min = 0 if min < 0
+    max = 0 if max < 0
+    max = min if min > max
+    @@min = min
+    @@max = max
+  end
+end

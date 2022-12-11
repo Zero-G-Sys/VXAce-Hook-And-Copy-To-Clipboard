@@ -1,0 +1,8 @@
+mod to let names with _ be replaced with a space
+ex: Hero_House -> Hero House
+
+This plugin is mostly used for puting names above the houses door, to translate them you must global search on maps this
+
+<namePop:
+
+and translate manually, better translate one, then global search the translated in case there are repetitions

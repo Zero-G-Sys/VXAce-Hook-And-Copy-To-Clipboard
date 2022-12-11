@@ -9,7 +9,7 @@
 -We will search for アリサさん (Arisa-san) and replace the JP text, and the ENG name, that doesn't have the san
 
 -In regex replace use this:
-  +Search: JPname.(.*)EngName(suffix)?
+  +Search: JPnameWithSuffix(.*)EngName(EngSuffix)?
   -アリサさん(.*)(Arisa|Alisa)(-san)?
   +Replace with: ProperName$1ProperName
   -Alisa-san$1Alisa-san
@@ -19,3 +19,4 @@
 So do a ReplaceAll of -san-san to -san
 
 -Repeat for all other important suffixes (chan, sama, etc)
+

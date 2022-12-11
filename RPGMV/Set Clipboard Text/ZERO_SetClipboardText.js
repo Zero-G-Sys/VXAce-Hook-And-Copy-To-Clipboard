@@ -44,6 +44,7 @@
  == Changelog ==
  1.15.1  -Added some more replacement fixes to romaji conversion
          -Fixed wordwraper out of bounds when there was a heart double space character (may need to add more characters)
+         -Fix a bug where the script would get stuck when selecting a choice fast
          -Typo Hearth -> Heart
  1.15.0  -Added romaji convertion with kuromoshi library, to setup you need to copy two files to the lib folder, and modify 
           index.html. For now it overwrites the text in a window (and the stored cache) with romaji when pressing a key.
@@ -853,6 +854,22 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       }, 500);
     }
   }
+
+  // Reset variables one a choice is selected, normally done automaticlly, but if choice
+  // is selected before translation or proceced it will break
+  var ZERO_Window_Selectable_processOk = Window_Selectable.prototype.processOk;
+  Window_Selectable.prototype.processOk = function() {
+    ZERO_Window_Selectable_processOk.call(this);
+    startChoiceReplaceNormal = false;
+    startChoiceReplaceStored = false;
+  };
+
+  var ZERO_Window_Selectable_processCancel = Window_Selectable.prototype.processCancel;
+  Window_Selectable.prototype.processCancel = function() {
+    ZERO_Window_Selectable_processCancel.call(this);
+    startChoiceReplaceNormal = false;
+    startChoiceReplaceStored = false;
+  };
   // ***** End Choices Replace ***** //
 
   // Promise for romaji converting
@@ -933,26 +950,27 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             // Replacements
             text = processTextBetweenParentheses(text);
             text = text.replace(/　/g,' ');                       // Replace JP spaces with normal ones (mainly for wordwrap)
-            text = text.replace(/tsu(?![a-z])/gi, '~');           // っ , will fuck up some works, but this functions is to be used on sex lines monstly so it's fine (Tried to fix it with negative lookahead)
+            text = text.replace(/tsu((?![a-z])|(?=tsu))/gi, '~'); // っ , will fuck up some works, but this functions is to be used on sex lines monstly so it's fine (Tried to fix it with negative lookahead)
             text = text.replace(/ ~/gi, '~');
             text = text.replace(/ ?… ?/g, '...');                 // Fix spaces
             text = text.replace(/ ?\./g, '.');
             text = text.replace(/ , /g, ', ');
             text = text.replace(/ !/g, '!');
             text = text.replace(/ \?/g, '?');
+            text = text.replace(/ - /g, '-');
             text = text.replace(/\% ?23/g, heartCharacter);
             text = text.replace(/ā/g, 'aa');                      // Long vowels
             text = text.replace(/ī/g, 'ii');
             text = text.replace(/ū/g, 'uu');
             text = text.replace(/ē/g, 'ei');
             text = text.replace(/ō/g, 'ou');
-            
+                        
             // Fix lone characters 'mate e' -> 'matee'; 'e etto' -> 'eetto'
-            text = text.replace(/(?<![a-z])([a-z])(?![a-z]) ([a-z]~?)/g, '$1$2');
             text = text.replace(/([a-z]) (?<![a-z])([a-z])(?![a-z])/g, '$1$2');
+            text = text.replace(/(?<![a-z])([a-z])(?![a-z]) ([a-z]~?)/g, '$1$2');
 
             // Capitalize first letter
-            text = text.charAt(0).toUpperCase() + text.slice(1);  
+            text = text.charAt(0).toUpperCase() + text.slice(1);
 
             text = text.trim();
 
