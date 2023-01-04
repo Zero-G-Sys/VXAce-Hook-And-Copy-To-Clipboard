@@ -19,7 +19,7 @@
 //=============================================================================
 
 /* -------------------------------/
-/* Changes done by Zero_G v1.13.5 /
+/* Changes done by Zero_G v1.13.9 /
 /*--------------------------------/
  !!! Important !!! 
   SetClipboardText and (if used) HideMessageWindowZ_NameMod must be loaded before this script
@@ -38,7 +38,7 @@
    translated/replaced text to clipboard) 
 - Added checking choices block for ingore regex (with toggle var, default true)
 v1.12 - Added remove tranlsated names if they are defined in HideMessageWindowZ files modification
-      - Handle hearts ♥ ♡ in text better (code also changed in SetClipboardText)
+      - Handle hearts ♥ ♡ ❤ in text better (code also changed in SetClipboardText)
       - Add option to disable clipboard during battles (can be toggle mid battle with 't')
 v1.13 - Remove color codes from imported names from translated names added in HideMessageWindowZ
       - Add variables for text that starts with ... and when text is in between parentheses (to be handled by SetClipboardText)
@@ -53,6 +53,8 @@ v1.13.6 - Add variable to let SetClipbardText to hook text during battles.
 v1.13.7 - Added names honorifics (created a new object for name replacements)
 v1.13.8 - Replaced how it checks for nameboxes to ignore them, now it loads the savedNames.json each time (deprecated code commented)
         - Added, disable map name window (when entering maps)
+v1.13.9 - Added ❤ and ♪ symbols to replace
+
 */
 
 // Zero_G Variables (configure)
@@ -134,6 +136,7 @@ var textToSend = '';
 var drawExTimer = null; // for storing a setTimeout
 var translationSent = false; // Used in SetClipboardText
 var hasHeartCharacter = false; // Used in SetClipboardText
+var hasMusicNoteCharacter = false; // Used in SetClipboardText
 var textInBetweenParentheses = false; // Used in SetClipboardText
 var textStartsWithDots = false; // Used in SetClipboardText
 /*------------------------------------------------------------------*/
@@ -437,11 +440,18 @@ function ClipTimerSend() {
     MemText = MemText.replace(/(\r\n|\n|\r)/gm,' ');
 
     // If text has hearts replace them and switch variable to notify it
-    if(MemText.includes('♡') || MemText.includes('♥')){
+    if(MemText.includes('♡') || MemText.includes('♥') || MemText.includes('❤')){
       MemText = MemText.replace(/♡/g,'%23'); // %23 is urlURI code for #
       MemText = MemText.replace(/♥/g,'%23');
+	  MemText = MemText.replace(/❤/g,'%23');
       hasHeartCharacter = true; 
     }else hasHeartCharacter = false;
+
+	// If text has music notes replace them and switch variable to notify it
+    if(MemText.includes('♪')){
+		MemText = MemText.replace(/♪/g,'@');
+		hasMusicNoteCharacter = true; 
+	}else hasMusicNoteCharacter = false;
 
     // Replace names with honorifics first
     for (const [key, value] of Object.entries(nameReplacementsWitHonorifics)) {

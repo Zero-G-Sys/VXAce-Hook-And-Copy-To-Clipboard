@@ -1,0 +1,14 @@
+class << BattleManager
+  def set_battle_condition
+    if @run_event && @run_event.symbol_encount
+      @run_event.set_contact_condition
+      case @run_event.contact_condition
+      when 1
+        @preemptive = true
+#     when 2
+#       @surprise = true
+      end
+    end
+    @run_event = nil
+  end
+end

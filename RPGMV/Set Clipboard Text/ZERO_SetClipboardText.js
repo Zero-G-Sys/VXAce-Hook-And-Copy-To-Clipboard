@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.15.1
+ * @version 1.15.2
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -42,6 +42,7 @@
  - Please provide credits to Zero_G
 
  == Changelog ==
+ 1.15.2  -Added ❤ and ♪ symbols to replace
  1.15.1  -Added some more replacement fixes to romaji conversion
          -Fixed wordwraper out of bounds when there was a heart double space character (may need to add more characters)
          -Fix a bug where the script would get stuck when selecting a choice fast
@@ -84,7 +85,7 @@
  1.13   -Modify/handle text when it's surronded by parentheses or it starts with '...' (corrections for DeepL)
  1.12   -Ditched plugin parameters, replaced for manual configuration variables
         -Added option to store/cache translations on a file
-        -Handle hearts ♥ ♡ in text better (code in clipboard_llule also changed)
+        -Handle hearts ♥ ♡ ❤ in text better (code in clipboard_llule also changed)
         -Add button to auto advance text (for storing scenes to cache to watch them later)
         -Added post translation replacements
  1.11.4 -Send choices to DeepL with []. and split translated ones with '].' (Fix problems in case the choices
@@ -257,7 +258,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // Currently always does it despite variable (TODO)
  $.replaceHeartCaratcters = true
  // Heart character to restore (This works)
- heartCharacter = '\\c[27]♥\\c[0]' // options ♡ ♥ or with pink color \\c[27]♥\\c[0]
+ heartCharacter = '\\c[27]❤\\c[0]' // options ♡ ♥ ❤ or with pink color \\c[27]♥\\c[0]
 
  // This will disable the ! RPG Maker text function, that waits for an input before displaying 
  // the full text of a textbox. Should be disabled otherwise text isn't sent correctly to clipboard
@@ -335,7 +336,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     'Â': '♪',
     'Virgin membrane': 'Hymen',
     'virgin membrane': 'hymen',
-    'Baboon': 'Hihi'
+    'Baboon': 'Hihi',
+	'Hexenbiest': 'Monster',
+	'hexenbiest': 'monster',
+	'　': ' ',
  }
 
  /*--------------------------------------------------------------------------------------*/
@@ -1135,12 +1139,18 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       //console.log('After wordwrap: ' + text);
 
       // Restore heart to text
-      if(hasHeartCharacter && (!text.includes('#') && !text.includes('%23') && !text.includes('♡') && !text.includes('♥'))){
+      if(hasHeartCharacter && (!text.includes('#') && !text.includes('%23') && !text.includes('♡') && !text.includes('♥') && !text.includes('❤'))){
         text = text + heartCharacter; 
-      } 
-      else {
+      } else {
         text = text.replace(/#/g, heartCharacter);
         text = text.replace(/%23/g, heartCharacter);
+      }
+
+	  // Restore music note to text
+      if(hasMusicNoteCharacter && (!text.includes('@') && !text.includes('♪'))){
+        text = text + '♪'; 
+      } else {
+        text = text.replace(/@/g, '♪');
       }
     }
 
@@ -1440,13 +1450,23 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
   function replaceHeartCharacter(text){
     // If text has hearts replace them and switch variable to notify it
-    if(text.includes('♡') || text.includes('♥')){
+    if(text.includes('♡') || text.includes('♥') || text.includes('❤')){
       text = text.replace(/♡/g,'%23'); // %23 is urlURI code for #
       text = text.replace(/♥/g,'%23');
+	  text = text.replace(/❤/g,'%23');
       if(typeof hasHeartCharacter !== 'undefined') hasHeartCharacter = true;
     }else{
       if(typeof hasHeartCharacter !== 'undefined') hasHeartCharacter = false;
     }
+
+	// Restore music note (lazy, don't want to implement another function)
+	if(text.includes('♪')){
+	  text = text.replace(/♪/g,'@');
+	  if(typeof hasMusicNoteCharacter !== 'undefined') hasMusicNoteCharacter = true;
+	}else{
+	  if(typeof hasMusicNoteCharacter !== 'undefined') hasMusicNoteCharacter = false;
+	}
+
     return text
   }
 
