@@ -1,3 +1,4 @@
+// Replacer and Reviver are required functions to convert maps to and from json
 function JSONreplacer(key, value) {
     if(value instanceof Map) {
         return {
@@ -70,7 +71,10 @@ console.time('Read MAP');
 var storedTranslationsMAP = readFileTestMAP('translationsCacheMAP')
 console.timeEnd('Read MAP');
 
+// Convert Object to Map
 // This is here only for the first time this test is done, as we don't have a MAP stored as JSON
+// And we need a full map to test (using an already filled translationCache file that was
+// stored as simple Json)
 storedTranslationsMAP = new Map(Object.entries(storedTranslationsOBJ)); 
 
 let textTest = 'ズドーン！';

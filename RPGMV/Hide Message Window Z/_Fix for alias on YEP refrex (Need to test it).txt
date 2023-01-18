@@ -1,0 +1,10 @@
+// Instead of doing a normal alias, do it to a var and return that var (this is what yanfly does in another of his own scripts
+
+var ZERO_Window_NameBox_prototype_refresh = Window_NameBox.prototype.refresh;
+Window_NameBox.prototype.refresh = function(text, position) {
+  var text = ZERO_Window_NameBox_prototype_refresh.call(this, text, position);
+
+  // do custom code here
+
+  return text;
+}

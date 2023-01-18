@@ -6,7 +6,7 @@
 * @plugindesc Hide textbox or make textbox invisible while showing text.
 * @title Hide Message Window Z
 * @author Zero_G
-* @version 2.2.2
+* @version 2.2.3
 * @filename ZERO_HideMessageWindowZ.js
 * @help 
 -------------------------------------------------------------------------------
@@ -53,8 +53,10 @@ HideMessageWindowZ_Lunatlazur = Window_ActorName;
 - Please provide credits to HimeWorks
 
 == Change Log ==
-TODO in 2.2.1
+TODO in 2.2.1 notes
 
+2.2.3
+ - Change YEP Window Namebox from overwrite to alias (new alias that fixes 'undefined' bug).
 2.2.2
  - Changed all hide nameboxes variables to a global one instead of a local
 2.2.1
@@ -216,28 +218,13 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     };
     
     // Prevent new namebox from regaining opacity after scene change
-    // Overwrite refresh (while an alias could be used, it generates an 'undefined' text)
+	var ZERO_Window_NameBox_prototype_refresh = Window_NameBox.prototype.refresh;
     Window_NameBox.prototype.refresh = function(text, position) {
-      if (isHiddenOpacity) this.opacity = 0;
+		var text = ZERO_Window_NameBox_prototype_refresh.call(this, text, position);
 
-      // Original code
-      this._text = Yanfly.Param.MSGNameBoxText + text;
-      this._position = position;
-      this.width = this.windowWidth();
-      this.createContents();
-      this.contents.clear();
-      this.resetFontSettings();
-      this.changeTextColor(this.textColor(Yanfly.Param.MSGNameBoxColor));
-      var padding = eval(Yanfly.Param.MSGNameBoxPadding) / 2;
-      this.drawTextEx(this._text, padding, 0, this.contents.width);
-      this._parentWindow.adjustWindowSettings();
-      this._parentWindow.updatePlacement();
-      this.adjustPositionX();
-      this.adjustPositionY();
-      this.open();
-      this.activate();
-      this._closeCounter = 4;
-      return '';
+		if (isHiddenOpacity) this.opacity = 0;
+  
+		return text;
     }
   }
 

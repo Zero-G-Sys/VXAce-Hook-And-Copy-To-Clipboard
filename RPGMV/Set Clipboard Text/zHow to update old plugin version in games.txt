@@ -1,0 +1,5 @@
+As some games have custom modifications to the plugin
+
+open game plugin and the updated version, select newer version for compare and compare with older version
+
+use gui merge to update old plugin with newer plugin lines

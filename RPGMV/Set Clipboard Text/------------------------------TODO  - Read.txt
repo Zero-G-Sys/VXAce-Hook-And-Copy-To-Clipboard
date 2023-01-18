@@ -1,4 +1,4 @@
-Make clipboardLlule to directly ignore the text of nameboxes, get rid of my over complicated exchange of names from script to script
+Make clipboardLlule to directly ignore the text of nameboxes, get rid of my over complicated exchange of names from script to script (done)
 
 Disadvantage of this is that you won't get translations when names arent translated. So maybe give a choice of using my overcomplicated method, or this new method (the one that i have to program)
 
@@ -6,6 +6,8 @@ Disadvantage of this is that you won't get translations when names arent transla
 Way to stop the replace function when changing text (so previous text doesn't show in new one)
 
 one idea is to put all of it in a setTimer, with 1ms, and destroy it on startText function
+
+(Re reading this, I don't know what I ment, may have been fixed since then)
 
 -----------------------------------
 Ignore DeepL plugin if translated text is in cache needs a way to check the cache before sending text to clipboard. To do that it needs either the merge with clipboardIlule or/and a custom hook method (copy the text of the textbox directly, another todo, that lets the user select how the text is hooked)

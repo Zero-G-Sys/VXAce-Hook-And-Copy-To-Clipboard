@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.15.2
+ * @version 1.15.5
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -42,6 +42,20 @@
  - Please provide credits to Zero_G
 
  == Changelog ==
+ 1.15.5  -Fix some bugs when choice replace wasn't triggering properly (sometiems )when there was an empty text window.
+         -Fix a bug where choices weren't replaced when there was text (bug introduced when in 1.15.3 when the wait
+			was removed for auto insert)
+		 -Fix bug introduced in 1.15.3 when var 'jpTextSentToMem' was introduced that broke translation for combat text
+		    fixed by reseting vars in start message before processing battle text.
+ 1.15.4  -Added bgm volume control midgame/scenes (set to numpad 6-9)
+		 -Fix icons in losing the \\ after translation
+		 -Strip " from beggingin and end on romaji
+ 1.15.3  -Added keyevent (numeric pad) to send text from vaiables to memory
+		  Used for sending text found in erostate. Must be manually configured
+ 		 -Change variable name from 'translationSent' to 'jpTextSentToMem'
+         -Trying to fix bug where cached text is not displayed until translation deepl is stopped
+		   -Added a check to not try to use deepL text if processing cache
+		   -Auto insert (deepL) translation now waits properly for clipboardLulle (wait removed)
  1.15.2  -Added ❤ and ♪ symbols to replace
  1.15.1  -Added some more replacement fixes to romaji conversion
          -Fixed wordwraper out of bounds when there was a heart double space character (may need to add more characters)
@@ -485,6 +499,77 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       storedTranslations = readFile('translationsCache');
       SceneManager.callPopup('Cached Translations Reloaded', 'bottomLeft', 200);
     }
+
+	/** 
+	 * Show text from Ero Status. Simply copy to memory the text of determined variables 
+	 * To configure just check what variables are relevant and you want to copy to memory
+	 * Variables can be found in erostate config, or search for jp text and see what var 
+	 * is being written, should be the first 2 number. Ex: [23,23,0,0 'jp text'] is var 23
+	 * 
+	 * This was a lazy approach, could be better done in when showing the erostate screen
+	 * instead of manually calling it with numpad numbers
+	 */
+	// Delete previous numpad key bindings
+	delete Input.keyMapper[98];
+	delete Input.keyMapper[100];
+	delete Input.keyMapper[102];
+	delete Input.keyMapper[104];
+	// Panel 1
+	if (event.code == 'NumpadDivide'){
+		//let text = $gameVariables.value(19);
+		//clipboard.set(text, 'text');
+	}
+	// Panel 2
+	if (event.code == 'Numpad7'){
+		//let text = $gameVariables.value(15);
+		//text += ' ' + $gameVariables.value(16);
+		//clipboard.set(text, 'text');
+	}
+	// Panel 3
+	if (event.code == 'Numpad4'){
+		// let text = 'Bound Partner: ' + $gameVariables.value(4) + '.';
+		// text += $gameVariables.value(17);
+		// text += ' ' + $gameVariables.value(18);
+		// clipboard.set(text, 'text');
+	}
+	// Panel 4
+	if (event.code == 'NumpadMultiply'){
+		// let text = $gameVariables.value(39);
+		// clipboard.set(text, 'text');
+	}
+	// Panel 5
+	if (event.code == 'Numpad8'){
+		// let text = $gameVariables.value(35);
+		// text += ' ' + $gameVariables.value(36);
+		// clipboard.set(text, 'text');
+	}
+	// Panel 6
+	if (event.code == 'Numpad5'){
+		// let text = 'Bound Partner: ' + $gameVariables.value(24) + '.';
+		// text += $gameVariables.value(37);
+		// text += ' ' + $gameVariables.value(38);
+		// clipboard.set(text, 'text');
+	}
+
+	/**
+	 * Change bgm volume midgame
+     */ 
+	// Up volume
+	if (event.code == 'Numpad9'){
+		let offset = 5;
+		let value = ConfigManager['bgmVolume'];
+		value += offset;
+		value = value.clamp(0,100);
+		ConfigManager['bgmVolume'] = value;
+	}
+	// down volume
+	if (event.code == 'Numpad6'){
+		let offset = 5;
+		let value = ConfigManager['bgmVolume'];
+		value -= offset;
+		value = value.clamp(0,100);
+		ConfigManager['bgmVolume'] = value;
+	}
   })
 
   // Pause clipboard 
@@ -500,6 +585,14 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   // Prepare for next text
   var ZERO_Window_Message_prototype_startMessage = Window_Message.prototype.startMessage
   Window_Message.prototype.startMessage = function() {
+	// Reset variables for translation flow
+    if($.useTranslationCache) processCache = true;
+    textOverflowed = false;
+    $.escapeText = true;
+    $.replacingChoicesStopIlule = false;
+    stopDrawingText = false;
+	jpTextSentToMem = false;
+
     if(clipboardDisabledBattle){ // ClipboardIllule disabled during battle, send text manually
       let text = this.convertEscapeCharacters($gameMessage.allText());
       if(text !== '' && isJapaneseRegex.test(text)){  // Check that text is in JP
@@ -544,15 +637,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         text = text.replace(//g,'');
         clipboard.set(text, 'text');
         LastMemTextSend = text; // This var is normally filled by ClipboardLulle, but it's used when storing translation cache, as we are overriding/not-using clipboardLulle, we need to set it with jp text
-        translationSent = true; // badly named var, it means that JP text was sent to clipboard
+        jpTextSentToMem = true;
       }
     }
 
-    if($.useTranslationCache) processCache = true;
-    textOverflowed = false;
-    $.escapeText = true;
-    $.replacingChoicesStopIlule = false;
-    stopDrawingText = false;
     messageCounter++;
     
     // prevent from setting wait to false if next in game message was shown before
@@ -585,6 +673,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   /------------------------*/
 
   var startChoiceReplaceNormal = false;
+  // Variable created so the startChoiceReplaceNormal doesn't run multiple times as it is in an update
+  // method, and can't use the var 'startChoiceReplaceNormal' as it is used later on other parts (bad design)
+  var startChoiceReplaceNormalLocal = false;
   var startChoiceReplaceStored = false;
   var choiceProcessing = false;
   var translatedChoices = [];
@@ -708,6 +799,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         clipboard.set(text, 'text');
 
         startChoiceReplaceNormal = true; 
+		startChoiceReplaceNormalLocal = true; 
       }
     }
   }
@@ -718,7 +810,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   Window_Selectable.prototype.update = function() {
     if (startChoiceReplaceStored) this.replaceChoices(storedTranslations[previousClipboardText]);
 
-    if (startChoiceReplaceNormal) {
+    if (startChoiceReplaceNormal && startChoiceReplaceNormalLocal) {
       clipboardText = clipboard.get('text'); 
       
       // Enter only when clipboard changes and it's a translated text 
@@ -726,6 +818,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       && clipboardText.includes('[') // Translated text should have a separator
       && previousClipboardText.localeCompare(clipboardText)
       && clipboardText.localeCompare('') != 0){
+		startChoiceReplaceNormalLocal = false; // Stop entering previous block (as it is an update function)
         // Post-translation replacements
         for (const [key, value] of Object.entries(postTranslationReplacements)) {
           let re = new RegExp(key,'g'); // Create regex with variable
@@ -837,13 +930,17 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     this.updateCursor(); 
 
     // If there is a text window replace that text after replacing choices
-    if($gameMessage._texts.length){ 
+    //if($gameMessage._texts.length){ // This was generating an error when sometimes it detected text in $gameMessage._texts when there was none, probably from another plugin or another window, like names or gold
+	if(translatedWindowText !== ''){
       // If window_message.prototype.update is disabled or gives problems 
       // an alternate method of showing the message can be trying to push (MV function) new text window
 
       // This will trigger code in Window_Message update, translated text is in global var translatedWindowText
-      windowTextWithChoices = true;
-      textOverflowed = false;
+	  // Don't know why but it textReplace triggers first, choices won't be replaced, so we add a wait
+	  setTimeout(() => {
+        windowTextWithChoices = true;
+      	textOverflowed = false;
+      }, 300);
     }
     
     startChoiceReplaceNormal = false; // end choice script
@@ -859,7 +956,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
   }
 
-  // Reset variables one a choice is selected, normally done automaticlly, but if choice
+  // Reset variables once a choice is selected, normally done automaticlly, but if choice
   // is selected before translation or proceced it will break
   var ZERO_Window_Selectable_processOk = Window_Selectable.prototype.processOk;
   Window_Selectable.prototype.processOk = function() {
@@ -919,6 +1016,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     // If there was a text window with the choices this code will be triggered after processing choices
     if (windowTextWithChoices){
       this.replaceText(translatedWindowText);
+	  translatedWindowText = ''; // Reset var
       windowTextWithChoices = false; // reset var
     }
 
@@ -939,6 +1037,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         clipboard.set(text, 'text');
         textOverflowed = false; // Discard rest of text if it was overflowed
         $.escapeText = true; // trigger/allow replaceText
+		jpTextSentToMem = true; // Allow replaceText
         //console.log('send text: ' + text);
       }
       
@@ -956,13 +1055,14 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             text = text.replace(/　/g,' ');                       // Replace JP spaces with normal ones (mainly for wordwrap)
             text = text.replace(/tsu((?![a-z])|(?=tsu))/gi, '~'); // っ , will fuck up some works, but this functions is to be used on sex lines monstly so it's fine (Tried to fix it with negative lookahead)
             text = text.replace(/ ~/gi, '~');
+			text = text.replace(/゛/gi, '~');					  // Could cause conflicts, check
             text = text.replace(/ ?… ?/g, '...');                 // Fix spaces
             text = text.replace(/ ?\./g, '.');
             text = text.replace(/ , /g, ', ');
             text = text.replace(/ !/g, '!');
             text = text.replace(/ \?/g, '?');
             text = text.replace(/ - /g, '-');
-            text = text.replace(/\% ?23/g, heartCharacter);
+            text = text.replace(/\% ?23/g, '#');                  // Heart character
             text = text.replace(/ā/g, 'aa');                      // Long vowels
             text = text.replace(/ī/g, 'ii');
             text = text.replace(/ū/g, 'uu');
@@ -978,6 +1078,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
             text = text.trim();
 
+			// Remove " from start and end if there are any
+			text = text.replace(/^"(.*)"$/g, '$1');
+
             // Modify savedCache
             storedTranslations[currentText] = text;
             writeFile('translationsCache', storedTranslations);
@@ -990,16 +1093,16 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
       // Check the translation cache
       // If the text is cached, display it, without waiting for deepl
-      if(this.isOpen() && translationSent && !cacheOverwrite && processCache){ // Check if message window is opened
+      if(this.isOpen() && jpTextSentToMem && !cacheOverwrite && processCache){ // Check if message window is opened
         // Once clipboardIllule script is merged and or a custom text hook is made add here
         // a check to add the special character to ignore text in the DeepL plugin
         // need to check if the text is cached before copying it to clipboard
         // can't be done now, as this is getting the text already from the clipboard
 
         processCache = false; // This is here so this block is processed once per textbox
+		$.escapeText = false; // Stop trying to translate text (while it's searching for cache)
         clipboardText = clipboard.get('text'); // Gets clipbard_llule jp text, not the translated one
         //textCached = clipboardText; // store it for romaji
-        //clipboardText = clipboard.get('text'); // Gets clipbard_llule jp text, not the translated one
         if($.alwaysLoadCacheTranslations) storedTranslations = readFile('translationsCache');
 
         if(storedTranslations[clipboardText] !== undefined){ // If translation found
@@ -1017,12 +1120,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         } else if (skipCachedText) { // text in cache not found and skipping cached text enabled. Stop skipping
           SceneManager.callPopup('Skip Disabled', 'bottomLeft', 200);
           skipCachedText = false;
+		  $.escapeText = true; // Enable trying to display translated text
+        } else $.escapeText = true; // Enable trying to display translated text 
         }
 
-        translationSent = false;
-      }
-      
-      if (this.isOpen() && $.autoInsert && $.escapeText){
+      if (this.isOpen() && $.autoInsert && $.escapeText && jpTextSentToMem){
         // Get text from clipboard, this must be here otherwise replaceText function may pick up other text when it runs
         clipboardText = clipboard.get('text'); 
 
@@ -1034,16 +1136,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         
         if (!isJapaneseRegex.test(clipboardText) // Enter only on translated text
         && previousClipboardText.localeCompare(clipboardText) // Compare that previous clipboard text is different
-        && clipboardText.localeCompare('') != 0 // Check if text is empty
-        && $.escapeText){ // Stop entering if replacing text function was called (once debugging is done, this should be erased and only use the upper one)
-          if(wait){
-            // delay replacing text to give Clipboard_llule time to copy orig text to clipboard, should enter once per textbox
-            if(timeout == null) timeout = setTimeout(() => { wait = false; }, 300); // if null condition to only create the timeout once as it will loop and enter here various times
-          }else{
-            // destroy timeout
-            clearTimeout(timeout);
-            timeout = null;
-
+        && clipboardText.localeCompare('') != 0){ // Check if text is empty
             // Post translation replacements
             for (const [key, value] of Object.entries(postTranslationReplacements)) {
               let re = new RegExp(key,"g"); // Create regex with variable
@@ -1073,8 +1166,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
               this.replaceText(clipboardText, messageCounter);
             }
           }
-        }   
-      }
+        }
 
       // Call function manually with button, or use it when text is overflowed
       if ((Input.isTriggered($.textButton)) && this.isOpen()) {
@@ -1111,6 +1203,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
         
     stopDrawingText = true;
+
+	// Restore icons (would like to do this before it is being sent here
+	//  so it's stored in cache but can't put it choice replace, look into it) 
+	if(text.includes('i[') && text[text.indexOf('i[')-1] !== '\\')
+		text = text.replace(/i\[/g, '\\i[')
     
 	  // Get text from clipboard or if text overflowed rest of the text
     if (textOverflowed) {
@@ -1206,6 +1303,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         }, $.autoAdvanceTextWait);
       }
     }
+
+	// Finished text replacing, reset clipboarLulle flag
+	jpTextSentToMem = false;
   }
 
   // **** MessageWindowPopup handle START
@@ -1271,7 +1371,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       // Each loop adds a word to the line, until line is full or no more text
       while(line.replace(colorRegex, '').length < localWidth && text.length > 0){
         // Reduce line lenght if there is a special double width character
-        localWidth -= (text[0].match(/❤|♥|♡/g)|| []).length;
+        localWidth -= (text[0].match(/❤|♥|♡|★/g)|| []).length;
 
         // Check if next word isn't longer than width, else split it
         if(text[0].replace(colorRegex,'').length >= localWidth) text = wordWarpSingleWord(text, line, localWidth);

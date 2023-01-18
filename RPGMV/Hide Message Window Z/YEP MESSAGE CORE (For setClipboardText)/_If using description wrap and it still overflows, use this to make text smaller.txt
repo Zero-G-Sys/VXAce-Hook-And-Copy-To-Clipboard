@@ -2,3 +2,20 @@ in YEP_MessageCore.js
 go to line 972 and change it for this (just added a 'make font smaller' code in item description)
 
 this.setText(item ? '<WordWrap>' + '\\}' + item.description : '');
+
+
+------------------
+better only reduce size when text overflows (already modded in the script in this folder)
+
+Yanfly.Message.Window_Help_setItem = Window_Help.prototype.setItem;
+Window_Help.prototype.setItem = function(item) {
+		if (eval(Yanfly.Param.MSGDescWrap)) {
+			// Zero_G mod, reduce size of text if it overflows the window
+			if(item && item.description.length >= 105)
+				this.setText('<WordWrap>' + '\\}' + item.description);	
+			else
+				this.setText(item ? '<WordWrap>' + item.description : '');
+		} else {
+			Yanfly.Message.Window_Help_setItem.call(this, item);
+		}
+};

@@ -19,7 +19,7 @@
 //=============================================================================
 
 /* -------------------------------/
-/* Changes done by Zero_G v1.13.9 /
+/* Changes done by Zero_G v1.13.11 /
 /*--------------------------------/
  !!! Important !!! 
   SetClipboardText and (if used) HideMessageWindowZ_NameMod must be loaded before this script
@@ -54,6 +54,9 @@ v1.13.7 - Added names honorifics (created a new object for name replacements)
 v1.13.8 - Replaced how it checks for nameboxes to ignore them, now it loads the savedNames.json each time (deprecated code commented)
         - Added, disable map name window (when entering maps)
 v1.13.9 - Added ❤ and ♪ symbols to replace
+v1.13.10 - Change variable name from 'translationSent' to 'jpTextSentToMem'
+v1.13.11 - Add another check to not send text when there are choices (first one is in SetClipboardText and most times will trigger
+	       don't really know if it ever failed, but for sanity it's here)
 
 */
 
@@ -78,6 +81,7 @@ const replacements = {
   '^\\. *': '', // Text starts with dot (remove)
   // General replacements
   'お兄さん': 'Oniisan',
+  '兄さん': 'Niisan',
   '後輩': 'Kouhai',
   'パイズリ': 'Paizuri',
   '爺さん': 'Jiisan',
@@ -92,6 +96,7 @@ const replacements = {
   '親父': 'Oyaji',
   'お嬢ちゃん': 'Ojouchan',
   'お嬢さん': 'Ojousan',
+  'お嬢様': 'Ojousama',
   'お姉さま': 'Onesama',
   'おねえさま': 'Onesama',
   'お姉さん': 'Onesan',
@@ -122,6 +127,20 @@ const replacements = {
   'むにゅ': 'Munyu',
   '巫女': 'Miko',
   '嬢ちゃん': 'Jou-chan',
+  '退魔師': 'Exorcist',
+  'お札': 'Talisman',
+  'ふふふ': 'Fufufu',
+  'ふふ': 'Fufu',
+  'ｹｹｹ': 'Kekeke',
+  'ｹｹ': 'Keke',
+  '^(「|（|\\()?あらあら': 'Ara ara',
+  'あらあら': 'Ara ara',
+  'お母様': 'Okaasama',
+  'お母さま': 'Okaasama',
+  '淫魔': 'Succubus',
+  'エロガキ': 'Erokid',
+  '全く': 'Mattaku',
+  'オヤジ': 'Oyaji',
 }
 
 // Put names to be replaced here, this will add to each name the suffixes/honorifics [san, sama, chan, kun]
@@ -134,7 +153,7 @@ var clipboardDisabled = false; // for switching sending text to clipboard
 var clipboardDisabledBattle = clipboardDisabledBattle || false; // for disabling in battle and letting SetClipboardText hangle the hooking
 var textToSend = '';
 var drawExTimer = null; // for storing a setTimeout
-var translationSent = false; // Used in SetClipboardText
+var jpTextSentToMem = false; // Used in SetClipboardText
 var hasHeartCharacter = false; // Used in SetClipboardText
 var hasMusicNoteCharacter = false; // Used in SetClipboardText
 var textInBetweenParentheses = false; // Used in SetClipboardText
@@ -202,7 +221,7 @@ for (let [key, value] of Object.entries(nameReplacements)) {
   nameReplacementsWitHonorifics[(key + 'せんせい')] = (value + '-sensei');
   nameReplacementsWitHonorifics[(key + 'おねえちゃん')] = (value + '-onechan');
   nameReplacementsWitHonorifics[(key + 'お姉ちゃん')] = (value + '-onechan');
-  nameReplacementsWitHonorifics[(key + 'リン')] = (value + 'rin');
+  nameReplacementsWitHonorifics[(key + 'リン')] = (value + 'rin');  
   nameReplacementsWitHonorifics[(key + '姉様')] = (value + '-anesama');
   nameReplacementsWitHonorifics[(key + 'お兄様')] = (value + '-onisama');
 }
@@ -505,10 +524,12 @@ function ClipTimerSend() {
     MemText = MemText.replace(/！{2,}/g, '！');
 
     if (!LastMemTextSend.startsWith(MemText)){ // IF clause to fix repeating text when a choice window is displayed. May break if previous memtext start the same
-      //console.log(MemText); // Text sent to clipboard
-      clipboard.set(MemText, 'text');
-      LastMemTextSend = MemText;
-      translationSent = true;
+		if(!$gameMessage.isChoice()){ //Don't send on choice text (handled by SetClipboardText)
+			//console.log(MemText); // Text sent to clipboard
+			clipboard.set(MemText, 'text');
+			LastMemTextSend = MemText;
+			jpTextSentToMem = true;
+		}
     }
   }
   ClipTimerOn = false;

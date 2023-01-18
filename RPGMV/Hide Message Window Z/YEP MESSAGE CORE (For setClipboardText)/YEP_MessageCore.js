@@ -969,7 +969,11 @@ Window_Base.prototype.textWidthExCheck = function(text) {
 Yanfly.Message.Window_Help_setItem = Window_Help.prototype.setItem;
 Window_Help.prototype.setItem = function(item) {
 		if (eval(Yanfly.Param.MSGDescWrap)) {
-			this.setText(item ? '<WordWrap>' + item.description : '');
+			// Zero_G mod, reduce size of text if it overflows the window
+			if(item && item.description.length >= 105)
+				this.setText('<WordWrap>' + '\\}' + item.description);	
+			else
+				this.setText(item ? '<WordWrap>' + item.description : '');
 		} else {
 			Yanfly.Message.Window_Help_setItem.call(this, item);
 		}
