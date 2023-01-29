@@ -83,6 +83,7 @@ const replacements = {
   'お兄さん': 'Oniisan',
   '兄さん': 'Niisan',
   '後輩': 'Kouhai',
+  'パイズリフェラ': 'Paizuri Blowjob',
   'パイズリ': 'Paizuri',
   '爺さん': 'Jiisan',
   'じいさん': 'Jiisan',
