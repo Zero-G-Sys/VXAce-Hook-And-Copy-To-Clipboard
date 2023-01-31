@@ -264,6 +264,18 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
   // Remove 'alt' key from mappings
   delete Input.keyMapper[18];
+  // Remove 'control' and replace it with left control only
+  delete Input.keyMapper[17];
+  var ZERO_Input__onKeyDown = Input._onKeyDown;
+  Input._onKeyDown = function(event) {
+    ZERO_Input__onKeyDown.call(this, event);
+	if(event.code === 'ControlLeft') this._currentState['control'] = true;
+  };
+  var ZERO_Input__onKeyUp = Input._onKeyUp
+  Input._onKeyUp = function(event) {
+    ZERO_Input__onKeyUp.call(this, event);
+	if(event.code === 'ControlLeft') this._currentState['control'] = false;
+  };
 
   /* ---------------------------------------------------------------------------- */
   /* Add nameboxes /
