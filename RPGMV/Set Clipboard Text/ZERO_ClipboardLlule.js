@@ -142,6 +142,7 @@ const replacements = {
   'エロガキ': 'Erokid',
   '全く': 'Mattaku',
   'オヤジ': 'Oyaji',
+  'ショタコン': 'Shotacon',
 }
 
 // Put names to be replaced here, this will add to each name the suffixes/honorifics [san, sama, chan, kun]
