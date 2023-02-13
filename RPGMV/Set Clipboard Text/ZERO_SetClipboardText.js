@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.15.5
+ * @version 1.15.6
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -37,11 +37,10 @@
  explanation in the configuration variables.
 
  == Terms of Use ==
- - Free for use in non-commercial projects with credits
- - Free for use in commercial projects
- - Please provide credits to Zero_G
+ - Free for use
 
  == Changelog ==
+ 1.15.6  -Implemented YEP_WordWrap and setted as default word wrapper
  1.15.5  -Fix some bugs when choice replace wasn't triggering properly (sometiems )when there was an empty text window.
          -Fix a bug where choices weren't replaced when there was text (bug introduced when in 1.15.3 when the wait
 			was removed for auto insert)
@@ -163,11 +162,21 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  //* Default: 'r'
  $.copyChoicesButton = 'r';
 
+ //* Description: Select type of WordWrap. 
+ // YEP: Yanfly automatic word wrap. Automatic, preferred.
+ // ZERO: Legacy word wrap. Must input max characters manually.
+ // If text is longer than textbox lines selected it will overflow and mark it with a '*' at the end
+ // press the text button (Default 's') to see overflowed text
+ //* Default; 'YEP'
+ $.wordWrap = 'YEP';
+
  //* Description: Number of characters per line in a textbox with a face image. For use in wordwrap
+ // For use on ZERO word wrap. Ignore is usin YEP one
  //* Default: 45
  $.maxWidth = 45;
 
  //* Description: Number of characters per line in a textbox without a face image. For use in wordwrap
+ // For use on ZERO word wrap. Ignore is usin YEP one
  //* Default: 55 
  $.maxWidthWithoutFace = 55;
 
@@ -370,8 +379,13 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var clipboard = gui.Clipboard.get();
 
   // Local variables
+    // Word Wrapping
   var textOverflowed = false;
   var overflowedText = '';
+  var wordWarpLinesCount;
+  var overflowedTextState; // Save TextState of overflowed text (with updated index)
+  var wordWrap = false;
+
   var previousClipboardText = clipboard.get('text'); 
   var clipboardText = '';
   var wait = true;
@@ -385,6 +399,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var processCache = false;
   var autoSelectChoice = false;
   var skipChoice = false;
+
   // used to know if replace is replacing the correct textbox
   // will increase on each message, and if replace recives a different value
   // of the current counter, it stops
@@ -592,6 +607,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     $.replacingChoicesStopIlule = false;
     stopDrawingText = false;
 	jpTextSentToMem = false;
+	wordWarpLinesCount = 0; 
+	wordWrap = false;
 
     if(clipboardDisabledBattle){ // ClipboardIllule disabled during battle, send text manually
       let text = this.convertEscapeCharacters($gameMessage.allText());
@@ -939,7 +956,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	  // Don't know why but it textReplace triggers first, choices won't be replaced, so we add a wait
 	  setTimeout(() => {
         windowTextWithChoices = true;
-      	textOverflowed = false;
+      	if($.wordWrap == 'ZERO') textOverflowed = false;
       }, 300);
     }
     
@@ -1008,7 +1025,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         }
 
         clipboard.set(text, 'text');
-        textOverflowed = false; // Discard rest of text if it was overflowed
+        if($.wordWrap == 'ZERO') textOverflowed = false; // Discard rest of text if it was overflowed
         $.escapeText = true; // trigger/allow replaceText
       }
     }
@@ -1035,7 +1052,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         text = text + String.fromCharCode(12301);                            // Add Block separator right
         text = replaceHeartCharacter(text);                                  // Replace heart characters
         clipboard.set(text, 'text');
-        textOverflowed = false; // Discard rest of text if it was overflowed
+        if($.wordWrap == 'ZERO') textOverflowed = false; // Discard rest of text if it was overflowed
         $.escapeText = true; // trigger/allow replaceText
 		jpTextSentToMem = true; // Allow replaceText
         //console.log('send text: ' + text);
@@ -1208,69 +1225,66 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	//  so it's stored in cache but can't put it choice replace, look into it) 
 	if(text.includes('i[') && text[text.indexOf('i[')-1] !== '\\')
 		text = text.replace(/i\[/g, '\\i[')
+
+	// Restore heart to text
+	if(hasHeartCharacter && (!text.includes('#') && !text.includes('%23') && !text.includes('♡') && !text.includes('♥') && !text.includes('❤'))){
+		text = text + heartCharacter; 
+	} else {
+		text = text.replace(/#/g, heartCharacter);
+		text = text.replace(/%23/g, heartCharacter);
+	}
+	
+		// Restore music note to text
+	if(hasMusicNoteCharacter && (!text.includes('@') && !text.includes('♪'))){
+		text = text + '♪'; 
+	} else {
+		text = text.replace(/@/g, '♪');
+	}	
     
-	  // Get text from clipboard or if text overflowed rest of the text
-    if (textOverflowed) {
-      text = overflowedText;
-      //console.log('text overflowed');
-    } else {
-      previousClipboardText = text;
+	// Word Wrap Selection
+	if($.wordWrap == 'YEP'){
+		wordWrap = true;
+	} 
+	// ZERO Legacy Wrapper
+	else { 
+		// Get text from clipboard or if text overflowed rest of the text
+		if (textOverflowed) text = overflowedText;
+		else previousClipboardText = text;
 
-      //console.log('Before wordwrap: ' + text);
-      // Wordwrap text
-      let wordWrapWidth = $.maxWidth;
-      if ($gameMessage._faceName == '') {
-        wordWrapWidth = $.maxWidthWithoutFace;
-      }
-      
-      // As heart characters use 2 spaces, and can't really be quantified correctly
-      // in the word wrapp, substract some characters of maxium width
-      // Minimum or 4 heart on sentence to enter.
-      // Deprecated moved restore heart to after wordwrap
-      /*if(hasHeartCharacter){
-        let count = (text.match(/(♡|♥)/g) || []).length;
-        if(count > 3) wordWrapWidth = wordWrapWidth - 8 
-      } */
+		//console.log('Before wordwrap: ' + text);
+		let wordWrapWidth = $.maxWidth;
+		if ($gameMessage._faceName == '') wordWrapWidth = $.maxWidthWithoutFace;
 
-      text = wordWrapper(text, wordWrapWidth);
-      //console.log('After wordwrap: ' + text);
+		text = wordWrapper(text, wordWrapWidth);
+		//console.log('After wordwrap: ' + text);
 
-      // Restore heart to text
-      if(hasHeartCharacter && (!text.includes('#') && !text.includes('%23') && !text.includes('♡') && !text.includes('♥') && !text.includes('❤'))){
-        text = text + heartCharacter; 
-      } else {
-        text = text.replace(/#/g, heartCharacter);
-        text = text.replace(/%23/g, heartCharacter);
-      }
-
-	  // Restore music note to text
-      if(hasMusicNoteCharacter && (!text.includes('@') && !text.includes('♪'))){
-        text = text + '♪'; 
-      } else {
-        text = text.replace(/@/g, '♪');
-      }
-    }
-
-    // Check if text overflows from page
-    if (isOverflowing(text)) {
-      textOverflowed = true;
-      
-      // Split text
-      let p = getPosition(text, '\n', $.textboxLines);
-      overflowedText = text.substring(p+1);
-      text = text.substring(0, p) + '*'; // Add marker
-    }else{
-		  textOverflowed = false;
-    }
+		// Check if text overflows from page
+		if (isOverflowing(text)) {
+			textOverflowed = true;
+			
+			// Split text
+			let p = getPosition(text, '\n', $.textboxLines);
+			overflowedText = text.substring(p+1);
+			text = text.substring(0, p) + '*'; // Add marker
+		}else{
+			textOverflowed = false;
+		}
+	}
     
     // Process colors and other special characters in new text (must be manually added)
     text = this.convertEscapeCharacters(text);
-	  // Prepare text for textbox
-    this._textState1 = {};
-    this._textState1.index = 0;
-    this._textState1.line = 1;
-    //console.log('text to display: ' + text);
-    this._textState1.text = text;
+	
+	// Prepare text for textbox
+	if(textOverflowed && $.wordWrap == 'YEP' ){
+		this._textState1 = overflowedTextState;
+	} else{
+		this._textState1 = {};
+		this._textState1.index = 0;
+		this._textState1.line = 1;
+		//console.log('text to display: ' + text);
+		this._textState1.text = text;
+	}
+    
     this.newPage(this._textState1);
     if($.fontSize != 0) this.contents.fontSize = $.fontSize;
     
@@ -1357,7 +1371,94 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   }
   // **** MessageWindowPopup handle END
 
-  // Function for wordwraping text
+	/**
+	 *  YEP Wordwrap
+	 */
+	// Edit YEP_WordWrap so it knows and saves the state of overflowing text
+	ZERO_Window_Base_prototype_processNormalCharacter = Window_Base.prototype.processNormalCharacter;
+	Window_Base.prototype.processNormalCharacter = function(textState) {
+		if (this.checkWordWrap2(textState)) { // lala
+			wordWarpLinesCount++;
+			// Text overflowed?
+			if(wordWarpLinesCount == $.textboxLines){
+				textOverflowed = true;
+				overflowedTextState = { ...textState }; // clone object
+				overflowedTextState.index = textState.index; // Save index from where it overflowed, so we can start here next time
+				textState.index = 9999; // Trigger end of text
+
+				// Draw * at end
+				var w = this.textWidth('*');
+				let xPossition = textState.x;
+				if (textState.x+w > this.contents.width) xPossition = xPossition - w; // Prevent * to go past window if last word was at the very border
+				this.contents.drawText('*', xPossition, textState.y, w * 2, textState.height);
+
+				return;
+			}
+			return this.processNewLine(textState);
+		}
+		ZERO_Window_Base_prototype_processNormalCharacter.call(this, textState);
+	};
+
+	Window_Base.prototype.checkWordWrap2 = function(textState) {
+		if (!textState) return false;
+		if (!wordWrap) return false;
+		if (textState.text[textState.index] === ' ') {
+			var nextSpace = textState.text.indexOf(' ', textState.index + 1);
+			var nextBreak = textState.text.indexOf('\n', textState.index + 1);
+			if (nextSpace < 0) nextSpace = textState.text.length + 1;
+			if (nextBreak > 0) nextSpace = Math.min(nextSpace, nextBreak);
+			var word = textState.text.substring(textState.index, nextSpace);
+			var size = this.textWidthExCheck2(word);
+		}
+		return (size + textState.x > this.wordwrapWidth2());
+	};
+
+	Window_Base.prototype.wordwrapWidth2 = function(){
+		return this.contents.width;
+	};
+
+	Window_Base.prototype.textWidthExCheck2 = function(text) {
+    	wordWrap = false;
+		this.saveCurrentWindowSettings2();
+		var value = this.drawTextEx(text, 0, this.contents.height);
+		this.restoreCurrentWindowSettings2();
+		this.clearCurrentWindowSettings2();
+		wordWrap = true;
+		return value;
+	};
+
+	Window_Base.prototype.saveCurrentWindowSettings2 = function(){
+		this._saveFontFace = this.contents.fontFace;
+		this._saveFontSize = this.contents.fontSize;
+		this._savetextColor = this.contents.textColor;
+		this._saveFontBold = this.contents.fontBold;
+		this._saveFontItalic = this.contents.fontItalic;
+		this._saveOutlineColor = this.contents.outlineColor;
+		this._saveOutlineWidth = this.contents.outlineWidth;
+	};
+
+	Window_Base.prototype.restoreCurrentWindowSettings2 = function(){
+		this.contents.fontFace = this._saveFontFace;
+		this.contents.fontSize = this._saveFontSize;
+		this.contents.textColor = this._savetextColor;
+		this.contents.fontBold = this._saveFontBold;
+		this.contents.fontItalic = this._saveFontItalic;
+		this.contents.outlineColor = this._saveOutlineColor;
+		this.contents.outlineWidth = this._saveOutlineWidth;
+	};
+
+	Window_Base.prototype.clearCurrentWindowSettings2 = function(){
+		this._saveFontFace = undefined;
+		this._saveFontSize = undefined;
+		this._savetextColor = undefined;
+		this._saveFontBold = undefined;
+		this._saveFontItalic = undefined;
+		this._saveOutlineColor = undefined;
+		this._saveOutlineWidth = undefined;
+	};
+	// END OF YEP WORD WRAPPING
+
+  // Function for wordwraping text (Legacy)
   function wordWrapper(str, width){
     // Split all text into words
     let text = str.split(' ');
