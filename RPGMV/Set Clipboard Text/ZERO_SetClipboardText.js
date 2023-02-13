@@ -163,20 +163,20 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  $.copyChoicesButton = 'r';
 
  //* Description: Select type of WordWrap. 
- // YEP: Yanfly automatic word wrap. Automatic, preferred.
+ // YEP: Yanfly MessageCore word wrap. Automatic, preferred.
  // ZERO: Legacy word wrap. Must input max characters manually.
  // If text is longer than textbox lines selected it will overflow and mark it with a '*' at the end
- // press the text button (Default 's') to see overflowed text
+ // press the text replace button (Default 's') to see overflowed text
  //* Default; 'YEP'
  $.wordWrap = 'YEP';
 
- //* Description: Number of characters per line in a textbox with a face image. For use in wordwrap
- // For use on ZERO word wrap. Ignore is usin YEP one
+ //* Description: Number of characters per line in a textbox with a face image. For use in legacy 
+ // wordwrap. Ignore if using YEP one
  //* Default: 45
  $.maxWidth = 45;
 
- //* Description: Number of characters per line in a textbox without a face image. For use in wordwrap
- // For use on ZERO word wrap. Ignore is usin YEP one
+ //* Description: Number of characters per line in a textbox without a face image. For use in legacy 
+ // wordwrap. Ignore if using YEP one
  //* Default: 55 
  $.maxWidthWithoutFace = 55;
 
