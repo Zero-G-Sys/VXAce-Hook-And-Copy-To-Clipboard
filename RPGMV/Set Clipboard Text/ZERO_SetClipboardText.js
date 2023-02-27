@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.15.6
+ * @version 1.15.7
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -40,6 +40,8 @@
  - Free for use
 
  == Changelog ==
+ 1.15.7  -Added option to change font size if textwindow has a face
+         -Added making font smaller or bigger if original text started with a size modifier (\{ or \})
  1.15.6  -Implemented YEP_WordWrap and setted as default word wrapper
  1.15.5  -Fix some bugs when choice replace wasn't triggering properly (sometiems )when there was an empty text window.
          -Fix a bug where choices weren't replaced when there was text (bug introduced when in 1.15.3 when the wait
@@ -168,7 +170,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // If text is longer than textbox lines selected it will overflow and mark it with a '*' at the end
  // press the text replace button (Default 's') to see overflowed text
  //* Default; 'YEP'
- $.wordWrap = 'YEP';
+ $.wordWrapType = 'YEP';
 
  //* Description: Number of characters per line in a textbox with a face image. For use in legacy 
  // wordwrap. Ignore if using YEP one
@@ -188,6 +190,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // * Description: Change font size of translated text. Most games use 28, leave at 0 to use game default.
  // * Defualt 0
  $.fontSize = 0;
+
+ // * Description: Decrease the font size when it's a textbox with a face (Only if font size wans't overriden)
+ $.decreaseFontFaceWindow = true;
+ $.decreaseFontAmountFaceWindow = 3;
 
  //* Description: Auto insert translated text without manual button press. Recommended to on
  //* Default: true
@@ -471,6 +477,12 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     ZERO_Window_Base_prototype_initialize.apply(this, arguments);
     this.__text = '';
   }
+
+  // Delete previous numpad key bindings
+	delete Input.keyMapper[98];
+	delete Input.keyMapper[100];
+	delete Input.keyMapper[102];
+	delete Input.keyMapper[104];
   
   // Key Event Listeners
   document.addEventListener('keydown', event => {
@@ -524,11 +536,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	 * This was a lazy approach, could be better done in when showing the erostate screen
 	 * instead of manually calling it with numpad numbers
 	 */
-	// Delete previous numpad key bindings
-	delete Input.keyMapper[98];
-	delete Input.keyMapper[100];
-	delete Input.keyMapper[102];
-	delete Input.keyMapper[104];
 	// Panel 1
 	if (event.code == 'NumpadDivide'){
 		//let text = $gameVariables.value(19);
@@ -607,8 +614,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     $.replacingChoicesStopIlule = false;
     stopDrawingText = false;
 	jpTextSentToMem = false;
-	wordWarpLinesCount = 0; 
-	wordWrap = false;
 
     if(clipboardDisabledBattle){ // ClipboardIllule disabled during battle, send text manually
       let text = this.convertEscapeCharacters($gameMessage.allText());
@@ -862,10 +867,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   };
 
   Window_Selectable.prototype.replaceChoices = function(text){
-    text = text.replace(/\] *\. *\[?/g, '].['); // Make variations of '] . [' to '].['
+    text = text.replace(/\] *\. *\.* *\[?/g, '].['); // Make variations of '] . [' to '].['
     text = text.replace(/\[ /g, ''); // Make variations of '] . [' to '].['
     text = text.replace(/(\[|\])\1+/g, '$1') // Remove repetitions of [ or ]
     text = text.replace(/\] *\[/g, '].['); // If separation came without dot add it
+	text = text.replace(/(?<!\.{2,3})\.\] \.?/g, '].'); // There's a . inside a choice at the end, put it ouside (Ignore is choice has ...)
 
     // Replace [] in icons and color codes to {} (otherwise they get in the way of the split of choices)
     text = text.replace(/(\\|)?(i|I|c|C)\[(\d{1,2})\]/g, '$2{$3}');
@@ -922,7 +928,12 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
 
     // Resize choice window with choice with max lenght or max game window size
+	if($.wordWrapType == 'YEP'){
+		var wordWrapState = wordWrap;
+		wordWrap = false;
+	}
     let width = Math.min(this.textWidthEx(maxWidth) + this.padding * 3 , Graphics.boxWidth);
+	if($.wordWrapType == 'YEP') wordWrap = wordWrapState;
     if(isNaN(width)){
       let bitmap = new Bitmap();
       width = bitmap.measureTextWidth(maxWidth);
@@ -956,7 +967,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	  // Don't know why but it textReplace triggers first, choices won't be replaced, so we add a wait
 	  setTimeout(() => {
         windowTextWithChoices = true;
-      	if($.wordWrap == 'ZERO') textOverflowed = false;
+      	if($.wordWrapType == 'ZERO') textOverflowed = false;
       }, 300);
     }
     
@@ -1025,7 +1036,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         }
 
         clipboard.set(text, 'text');
-        if($.wordWrap == 'ZERO') textOverflowed = false; // Discard rest of text if it was overflowed
+        if($.wordWrapType == 'ZERO') textOverflowed = false; // Discard rest of text if it was overflowed
         $.escapeText = true; // trigger/allow replaceText
       }
     }
@@ -1052,7 +1063,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         text = text + String.fromCharCode(12301);                            // Add Block separator right
         text = replaceHeartCharacter(text);                                  // Replace heart characters
         clipboard.set(text, 'text');
-        if($.wordWrap == 'ZERO') textOverflowed = false; // Discard rest of text if it was overflowed
+        if($.wordWrapType == 'ZERO') textOverflowed = false; // Discard rest of text if it was overflowed
         $.escapeText = true; // trigger/allow replaceText
 		jpTextSentToMem = true; // Allow replaceText
         //console.log('send text: ' + text);
@@ -1072,7 +1083,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             text = text.replace(/　/g,' ');                       // Replace JP spaces with normal ones (mainly for wordwrap)
             text = text.replace(/tsu((?![a-z])|(?=tsu))/gi, '~'); // っ , will fuck up some works, but this functions is to be used on sex lines monstly so it's fine (Tried to fix it with negative lookahead)
             text = text.replace(/ ~/gi, '~');
-			text = text.replace(/゛/gi, '~');					  // Could cause conflicts, check
+			      text = text.replace(/゛/gi, '~');					  // Could cause conflicts, check
             text = text.replace(/ ?… ?/g, '...');                 // Fix spaces
             text = text.replace(/ ?\./g, '.');
             text = text.replace(/ , /g, ', ');
@@ -1103,6 +1114,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             writeFile('translationsCache', storedTranslations);
 
             // Send to textbox
+			textOverflowed = false; // Reset overflow (YEP)
             this.replaceText(text);
           });
         }
@@ -1242,8 +1254,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	}	
     
 	// Word Wrap Selection
-	if($.wordWrap == 'YEP'){
+	if($.wordWrapType == 'YEP'){
 		wordWrap = true;
+		wordWarpLinesCount = 0;
+		text = this.processLongWords(text);
 	} 
 	// ZERO Legacy Wrapper
 	else { 
@@ -1275,7 +1289,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     text = this.convertEscapeCharacters(text);
 	
 	// Prepare text for textbox
-	if(textOverflowed && $.wordWrap == 'YEP' ){
+	if(textOverflowed && $.wordWrapType == 'YEP' ){
 		this._textState1 = overflowedTextState;
 	} else{
 		this._textState1 = {};
@@ -1287,6 +1301,22 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     
     this.newPage(this._textState1);
     if($.fontSize != 0) this.contents.fontSize = $.fontSize;
+    else if ($.decreaseFontFaceWindow && $gameMessage._faceName !== '') // Decrese font for textboxes with face
+      this.contents.fontSize -= $.decreaseFontAmountFaceWindow; 
+
+    // Increase or decrease fontsize by one step if text started with { or } (original escape characters to change font size)
+    if(/^\\n/i.test($gameMessage._texts[0])){ // Text has namebox
+      // Make font smaller
+      if(/>.?}/.test($gameMessage._texts[0])) this.contents.fontSize -= 12; // command for font size is at start (after namebox command)
+      else if(/^}/i.test($gameMessage._texts[1])) this.contents.fontSize -= 12; // rare but command for font size is on second line
+      // Make font bigger
+      if(/>.?{/.test($gameMessage._texts[0])) this.contents.fontSize += 12; 
+      else if(/^{/i.test($gameMessage._texts[1])) this.contents.fontSize += 12;
+    } else{
+      // Normal text (without namebox)
+      if($gameMessage._texts[0].startsWith('\\}')) this.contents.fontSize -= 12;
+      if($gameMessage._texts[0].startsWith('\\{')) this.contents.fontSize += 12;
+    }
     
     // If MessageWindowPopup plugin is used, resize popup window for new translated text
     if (PluginManager.isLoadedPlugin('MessageWindowPopup')) {
@@ -1319,6 +1349,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
 
 	// Finished text replacing, reset clipboarLulle flag
+	if($.wordWrapType == 'YEP') wordWrap = false;
 	jpTextSentToMem = false;
   }
 
@@ -1377,13 +1408,12 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	// Edit YEP_WordWrap so it knows and saves the state of overflowing text
 	ZERO_Window_Base_prototype_processNormalCharacter = Window_Base.prototype.processNormalCharacter;
 	Window_Base.prototype.processNormalCharacter = function(textState) {
-		if (this.checkWordWrap2(textState)) { // lala
+		if (this.checkWordWrap2(textState)) {
 			wordWarpLinesCount++;
 			// Text overflowed?
 			if(wordWarpLinesCount == $.textboxLines){
 				textOverflowed = true;
-				overflowedTextState = { ...textState }; // clone object
-				overflowedTextState.index = textState.index; // Save index from where it overflowed, so we can start here next time
+				overflowedTextState = { ...textState }; // clone object (will maintain index to resume overflowed text only)
 				textState.index = 9999; // Trigger end of text
 
 				// Draw * at end
@@ -1456,6 +1486,34 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 		this._saveOutlineColor = undefined;
 		this._saveOutlineWidth = undefined;
 	};
+
+	/**
+	 * Split words longer than the current textbox
+	 */
+	 Window_Base.prototype.processLongWords = function(text){
+		// Split all word into array (ignoring \n shouldn't be a problem)
+		let wordArr = text.split(' ');
+		let textboxSize = this.wordwrapWidth2();
+
+		for(let i = 0; i < wordArr.length; i++){
+			let wordLength = this.textWidthExCheck2(wordArr[i]);
+			// If word is longer that textbox
+			if(wordLength > textboxSize){
+				// Calculate how long the word can be
+				let letterWidth = this.textWidthExCheck2(wordArr[i][1]);
+				let maxLength = Math.trunc(textboxSize / letterWidth);
+				// Separate words
+				let splitWord1 = wordArr[i].substring(0, maxLength-2);
+				let splitWord2 = wordArr[i].substring(maxLength-2);
+				splitWord1 = splitWord1 + '-';
+				// Modify current array
+				wordArr[i] = splitWord1;
+				wordArr.splice(i+1, 0, splitWord2);
+			}
+		}
+
+		return wordArr.join(' ');
+	}
 	// END OF YEP WORD WRAPPING
 
   // Function for wordwraping text (Legacy)

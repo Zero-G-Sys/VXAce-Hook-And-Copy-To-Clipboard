@@ -6,7 +6,7 @@
 * @plugindesc Hide textbox or make textbox invisible while showing text.
 * @title Hide Message Window Z
 * @author Zero_G
-* @version 2.3.11 alt
+* @version 2.3.12 alt
 * @filename ZERO_HideMessageWindowZ.js
 * @help 
 -------------------------------------------------------------------------------
@@ -48,6 +48,9 @@ and the closing of the anonymous function (line 2074)
 == Change Log ==
 TODO: Implement changes from main script, original forked at v2.1, currently is at v2.2.2)
 
+2.3.12 alt
+ - Converted Window_NameBox.prototype.refresh into an alias. This was the main reson all translation logic is in this script
+   later all this can be moved to setClipboardText, and stop using this modified script
 2.3.11 alt
  - Improved forceNameboxMethod1
 2.3.10.3 alt
@@ -617,44 +620,25 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
     
     // Prevent new namebox from regaining opacity after scene change
-    // Overwrite refresh (while an alias could be used, it generates an 'undefined' text)
+    // Alt: Replace names with translated ones
+    var MSGNameBoxText = Yanfly.Param.MSGNameBoxText; // Alt save state of "Name Box Added Text"
+    Yanfly.Param.MSGNameBoxText = ''; // Prevent changes to replacedName after being replaced
+    var ZERO_Window_NameBox_prototype_refresh = Window_NameBox.prototype.refresh;
     Window_NameBox.prototype.refresh = function(text, position) {
-      if (isHiddenOpacity) {
-        this.opacity = 0;
-      }
+      if (isHiddenOpacity) this.opacity = 0;
 
-      // RJ295434 needed lines
-      this.show();
-      this._lastNameText = text;
+      // Add YEP added text now, before doing sending my text to replaced names
+      // Own YEP will be ignored (as it was set to an empty string)
+      text = MSGNameBoxText + text;
 
-      // Original code
-      this._text = Yanfly.Param.MSGNameBoxText + text;
-      
-      //console.log(this._text);
       // Replace names with entries in savedNames.json and $.replacements
-      let replacedName = replaceNames(this._text);
-      if(replacedName !== '') this._text = replacedName;
-
+      let replacedName = replaceNames(text);
+      if(replacedName !== '') text = replacedName;
       // Add unknown name to file with translation from clipboard
-      if(replacedName === '') saveNewName(this._text);
+      else saveNewName(text);
 
-      // Original code
-      this._position = position;
-      this.width = this.windowWidth();
-      this.createContents();
-      this.contents.clear();
-      this.resetFontSettings();
-      this.changeTextColor(this.textColor(Yanfly.Param.MSGNameBoxColor));
-      var padding = eval(Yanfly.Param.MSGNameBoxPadding) / 2;
-      this.drawTextEx(this._text, padding, 0, this.contents.width);
-      this._parentWindow.adjustWindowSettings();
-      this._parentWindow.updatePlacement();
-      this.adjustPositionX();
-      this.adjustPositionY();
-      this.open();
-      this.activate();
-      this._closeCounter = 4;
-      return '';
+      var text = ZERO_Window_NameBox_prototype_refresh.call(this, text, position);
+      return text;
     }
   }
 

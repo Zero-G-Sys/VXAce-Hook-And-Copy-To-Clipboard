@@ -6,7 +6,7 @@
 * @plugindesc Hide textbox or make textbox invisible while showing text.
 * @title Hide Message Window Z
 * @author Zero_G
-* @version 2.2.3
+* @version 2.2.4
 * @filename ZERO_HideMessageWindowZ.js
 * @help 
 -------------------------------------------------------------------------------
@@ -55,6 +55,8 @@ HideMessageWindowZ_Lunatlazur = Window_ActorName;
 == Change Log ==
 TODO in 2.2.1 notes
 
+2.2.4
+ - Added a modded version of MPP_MessageEX
 2.2.3
  - Change YEP Window Namebox from overwrite to alias (new alias that fixes 'undefined' bug).
 2.2.2
@@ -274,6 +276,8 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
   // Check if MPP plugin exists
   if (typeof HideMessageWindowZ_Lunatlazur !== 'undefined'){
+    // Unmodded version
+    /*
     var ZERO_HideMessageWindowZ_Lunatlazur_prototype_update = HideMessageWindowZ_Lunatlazur.prototype.update;
     HideMessageWindowZ_Lunatlazur.prototype.update = function () {
       ZERO_HideMessageWindowZ_Lunatlazur_prototype_update.call(this);
@@ -286,6 +290,57 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       if (isHiddenOpacity) this.opacity = 0;
       else this.opacity = 255;
     }
+    */
+
+    // Mod script so namewindows don't constantly close and open everytime textwindow changes
+    Window_MessageName.prototype.initialize = function(messageWindow) {
+      this._messageWindow = messageWindow;
+      Window_Base.prototype.initialize.call(this, 0, 0, 0, this.fittingHeight(1));
+      this.openness = 0;
+      this._name = null;
+      this.deactivate();
+    };
+
+    Window_MessageName.prototype.setName = function(name, colorIndex) {
+      this.open();
+      this.activate();
+      this._name = name;
+      var width = this.textWidth(name) + this.textPadding() * 2;
+      this.width = width + this.standardPadding() * 2;
+      this.createContents();
+      this.resetFontSettings();
+      this.changeTextColor(this.textColor(colorIndex));
+      this.drawText(name, this.textPadding(), 0, width);
+      this._needOpen = true;
+      if ($gameMessage.positionType() === 0) {
+          var y = this._messageWindow.y - MPPlugin.nameWindow.y;
+          this._messageWindow.y = Math.max(y, 0);
+      }
+      this.x = this._messageWindow.x + MPPlugin.nameWindow.x;
+      this.y = this._messageWindow.y + MPPlugin.nameWindow.y;
+    };
+
+    // Mod and hide namebox
+    Window_MessageName.prototype.update = function() {
+      Window_Base.prototype.update.call(this);
+
+      if (this.isClosed() || this.isClosing()) {
+        return;
+      }
+
+      if (Input.isTriggered($.buttonHide) && this.isOpen()) {
+        isHiddenNamebox = !isHiddenNamebox;
+
+        if (isHiddenNamebox) this.visible = false;
+        else this.visible = true;
+      }
+      if (isHiddenOpacity) this.opacity = 0;
+      else this.opacity = 255;
+
+      if (this.active) return;
+
+      this.close();
+    };
   }
 
   /* ---------------------------------------------------------------------------- */

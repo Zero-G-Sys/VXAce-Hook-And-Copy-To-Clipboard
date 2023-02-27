@@ -143,6 +143,7 @@ const replacements = {
   '全く': 'Mattaku',
   'オヤジ': 'Oyaji',
   'ショタコン': 'Shotacon',
+  'もう！(！+)?': 'Mou!$1 ',
 }
 
 // Put names to be replaced here, this will add to each name the suffixes/honorifics [san, sama, chan, kun]
@@ -176,8 +177,8 @@ BloctextSeparator = true;
 IgnoreRepeatablebloc = true;
 var IgnoreRegExtextbloc = [
   /^\d\d:\d\d($|.$|。$)/,
-  /(^([,.\d]+)([,.]\d+)?)(\uFF27($|。$)|G($|。$)|$|。$)/,
-  /^(\uFF27($|。$)|G($|。$))/,
+  /(^([,.\d]+)([,.]\d+)?)(\uFF27($|。$)|(G|Ｇ)($|。$)|$|。$)/,
+  /^(\uFF27($|。$)|(G|Ｇ)($|。$))/,
   /Auto Insert (Enabled|Disabled).*/, // Textpopup from setClipboardText
   /Clipboard (Enabled|Disabled).*/, // Textpopup to enable/disable this script
   /Auto Replace Choices (Enabled|Disabled).*/, // Textpopup from setClipboardText
@@ -226,6 +227,8 @@ for (let [key, value] of Object.entries(nameReplacements)) {
   nameReplacementsWitHonorifics[(key + 'リン')] = (value + 'rin');  
   nameReplacementsWitHonorifics[(key + '姉様')] = (value + '-anesama');
   nameReplacementsWitHonorifics[(key + 'お兄様')] = (value + '-onisama');
+  nameReplacementsWitHonorifics[(key + '姉ちゃん')] = (value + '-neechan');
+  nameReplacementsWitHonorifics[(key + '兄ちゃん')] = (value + '-niichan');
 }
 
 let fs = require('fs');

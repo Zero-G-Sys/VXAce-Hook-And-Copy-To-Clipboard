@@ -17,3 +17,11 @@ and save all the text now split into lines into a new text variable, so it's use
 ---
 
 Seems that this is also being called when doing choice replace so may need to test if choice replaces work fine afterwards
+
+
+----------02-2023 Done
+
+Implemented by copying the required functions from YEP into my script.
+Left my word wrap intact and made it selectable.
+A flag 'wordWrap' triggers the functionality (instead of putting <WordWrap> at beginning of text)
+Handling of overflowed text is done by putting a count (wordWarpLinesCount) each time there is a line break, at max line breaks it makes a clone of textState with its index already advanced, on next time it tries to show text, it will use that cloned textState with the index already advance where it needs to start the overflowed text
