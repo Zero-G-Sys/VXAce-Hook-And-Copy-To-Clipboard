@@ -17,7 +17,7 @@ class Game_Battler < Game_BattlerBase
     clear_actions
     action = Game_Action.new(self, true)
     action.set_skill(1)
-    action.target_index = 1
+    action.target_index = 0
     @actions.push(action)
   end
 end

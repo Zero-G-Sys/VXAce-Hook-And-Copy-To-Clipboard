@@ -846,6 +846,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
           let re = new RegExp(key,'g'); // Create regex with variable
           clipboardText = clipboardText.replace(re, value); // Use regular expresion to replace all values and not the first one only
         }
+        // Remove "" if there wasn't 『|』on text
+        if(!/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
+
         // Restore heart characters (must escape code manually)
         clipboardText = clipboardText.replace(/#/g, 'c{27}♥c{0}'); 
         clipboardText = clipboardText.replace(/%23/g, 'c{27}♥c{0}');
@@ -1171,6 +1174,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
               let re = new RegExp(key,"g"); // Create regex with variable
               clipboardText = clipboardText.replace(re, value); // Use regular expresion to replace all values and not the first one only
             }
+            // Remove "" if there wasn't 『|』on text
+            if(!/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
 
             clipboardText = processTextStartsWithDots(clipboardText);
             clipboardText = processTextBetweenParentheses(clipboardText);
@@ -1308,10 +1313,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     if(/^\\n/i.test($gameMessage._texts[0])){ // Text has namebox
       // Make font smaller
       if(/>.?}/.test($gameMessage._texts[0])) this.contents.fontSize -= 12; // command for font size is at start (after namebox command)
-      else if(/^}/i.test($gameMessage._texts[1])) this.contents.fontSize -= 12; // rare but command for font size is on second line
+      else if(/^\\}/.test($gameMessage._texts[1])) this.contents.fontSize -= 12; // rare but command for font size is on second line
       // Make font bigger
       if(/>.?{/.test($gameMessage._texts[0])) this.contents.fontSize += 12; 
-      else if(/^{/i.test($gameMessage._texts[1])) this.contents.fontSize += 12;
+      else if(/^\\{/.test($gameMessage._texts[1])) this.contents.fontSize += 12;
     } else{
       // Normal text (without namebox)
       if($gameMessage._texts[0].startsWith('\\}')) this.contents.fontSize -= 12;

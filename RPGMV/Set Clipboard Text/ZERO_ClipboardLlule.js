@@ -144,6 +144,11 @@ const replacements = {
   'オヤジ': 'Oyaji',
   'ショタコン': 'Shotacon',
   'もう！(！+)?': 'Mou!$1 ',
+  //'^(（|「)?まったく': '$1Mataku',  // Deactivated until tested that works
+  '(『|』)': '\"', // Set " for important words (Needs filter rules in firefox plugin deactivated and custom code on SetClipboardText), so not compatible with older caches
+  'うひひ': 'Uhihi',
+  'マ〇コ': 'マンコ', // katakana for manko (pussy) will also work for オマ〇コ -> オマンコ (omanko)
+  'チ〇ポ': 'チンポ', // Katakana for chinpo (penis)
 }
 
 // Put names to be replaced here, this will add to each name the suffixes/honorifics [san, sama, chan, kun]
