@@ -1,0 +1,81 @@
+<body id="main">
+  <div id="textboxes">
+    <label for="origText" id="origTextLabel">Original Text</label>
+    <textarea id="origText" cols="30" rows="4"></textarea>
+
+    <div> <!-- Enclosed on a div so it can be counted as one item in the column -->
+      <label for="deepL" id="deepLLabel">DeepL</label>
+      <button id="buttonGetDeepL">Get</button>
+    </div>
+    <textarea id="deepL" cols="30" rows="4"></textarea>
+
+    <label for="romaji" id="romajiLabel">Romaji</label>
+    <textarea id="romaji" cols="30" rows="4"></textarea>
+    
+    <div>
+      <label for="current" id="currentLabel">Current</label>
+      <button id="buttonSetDeepL">Set DeepL</button>
+      <button id="buttonRomaji">Set Romaji</button>
+      <button id="buttonHerShe">Her-She</button>
+    </div>
+    <textarea id="current" cols="30" rows="4"></textarea>
+  </div>
+
+  <div id="buttons">
+    <button id="buttonSave">Save</button>
+    <button id="buttonDiscard">Discard</button>
+  </div>
+</body>
+
+<style>
+  #main {
+    background-color: #222;
+    color: #dadada;
+  }
+
+  #textboxes {
+    display: flex;
+    flex-direction: column;
+  }
+
+  textarea {
+    background-color: #333;
+    color: #dadada;
+    margin-bottom: 10px;
+  }
+
+  #buttons {
+    display: flex;
+  }
+
+  #buttonSave {
+    background-color: #3ba858;
+  }
+
+  #buttonDiscard {
+    margin-left: 10px;
+    background-color: #999;
+  }
+
+  button {
+    width: 50%;
+    height: 10vh;
+    font-weight: bold;
+    border: black;
+  }
+  
+  #buttonGetDeepL,
+  #buttonSetDeepL,
+  #buttonRomaji,
+  #buttonHerShe{
+    width: 18%;
+    position: relative;
+    float: right;
+    height: 25px;
+    background-color: #999;
+  }
+
+  label {
+    font-weight: bold;
+  }
+</style>

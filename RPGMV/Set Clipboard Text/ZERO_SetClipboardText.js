@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.15.7
+ * @version 1.16.0
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -40,17 +40,19 @@
  - Free for use
 
  == Changelog ==
+ 1.16.0  -Added TranslationWindow, a new window that opens on key press and lets you modify the current saved cache
+          for the current line (shows translation, romaji, current and original)
  1.15.7  -Added option to change font size if textwindow has a face
          -Added making font smaller or bigger if original text started with a size modifier (\{ or \})
  1.15.6  -Implemented YEP_WordWrap and setted as default word wrapper
  1.15.5  -Fix some bugs when choice replace wasn't triggering properly (sometiems )when there was an empty text window.
          -Fix a bug where choices weren't replaced when there was text (bug introduced when in 1.15.3 when the wait
-			was removed for auto insert)
-		 -Fix bug introduced in 1.15.3 when var 'jpTextSentToMem' was introduced that broke translation for combat text
-		    fixed by reseting vars in start message before processing battle text.
+          was removed for auto insert)
+        -Fix bug introduced in 1.15.3 when var 'jpTextSentToMem' was introduced that broke translation for combat text
+            fixed by reseting vars in start message before processing battle text.
  1.15.4  -Added bgm volume control midgame/scenes (set to numpad 6-9)
-		 -Fix icons in losing the \\ after translation
-		 -Strip " from beggingin and end on romaji
+        -Fix icons in losing the \\ after translation
+        -Strip " from beggingin and end on romaji
  1.15.3  -Added keyevent (numeric pad) to send text from vaiables to memory
 		  Used for sending text found in erostate. Must be manually configured
  		 -Change variable name from 'translationSent' to 'jpTextSentToMem'
@@ -235,7 +237,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  $.ignoreJapText = true;
 
  //* Description: Add translated text to YEP_Backlog extension (a modified YEP_Backlog must be loaded first).
- //* Default: false
+ //* Default: true
  $.useBacklog = true;
 
  //* Description: Create a json file and store translations, if a translation is stored it will read 
@@ -324,6 +326,12 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // Or you can use a fixed folder in your system so every game looks for them there
  const kuromoshiDictPath = 'I:/_/dict';
 
+ // Translation Window. Open a new window that displays various translations options and lets you
+ // make corrections to the saved cached version
+ $.translationWindowKey = '3';
+ // Show a textbox with the original text?
+ $.showOriginalText = false;
+
  //* Description: Replacements to be made to text after translation. Left if text to be replaced
  // right is replacement. Left accepts regex, be careful, as it is a string and it will
  // need (two) \\ instead of (one) \ . Also don't replace special characteres ex: []
@@ -385,7 +393,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var clipboard = gui.Clipboard.get();
 
   // Local variables
-    // Word Wrapping
+  // Word Wrapping
   var textOverflowed = false;
   var overflowedText = '';
   var wordWarpLinesCount;
@@ -442,6 +450,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   $.reloadCachedTranslationsButton = addKeyMapping($.reloadCachedTranslationsButton);
   $.replaceToRomajiButton = addKeyMapping($.replaceToRomajiButton);
   $.replaceToRomajiButton2 = addKeyMapping($.replaceToRomajiButton2);
+  $.translationWindowKey = addKeyMapping($.translationWindowKey);
 
   // Load kuroshiro romaji converter
   if($.replaceToRomaji){
@@ -607,13 +616,14 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   // Prepare for next text
   var ZERO_Window_Message_prototype_startMessage = Window_Message.prototype.startMessage
   Window_Message.prototype.startMessage = function() {
-	// Reset variables for translation flow
+	  // Reset variables for translation flow
     if($.useTranslationCache) processCache = true;
     textOverflowed = false;
     $.escapeText = true;
     $.replacingChoicesStopIlule = false;
     stopDrawingText = false;
-	jpTextSentToMem = false;
+	  jpTextSentToMem = false;
+    gettingTranslationWindowDeepL = false;
 
     if(clipboardDisabledBattle){ // ClipboardIllule disabled during battle, send text manually
       let text = this.convertEscapeCharacters($gameMessage.allText());
@@ -1004,6 +1014,142 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   };
   // ***** End Choices Replace ***** //
 
+  /* ----------------------------------------------------------------------------------
+  /*  Start Translation Window  /
+  /---------------------------*/
+
+  var translationWindow;
+  var gameWindow = nw.Window.get();
+  var JPTextInTranslationWindow = '';
+  var intervalTranslationWindow;
+
+  var ZERO_WindowMessage_updateTranslationWindow = Window_Message.prototype.update;
+  Window_Message.prototype.update = function () {
+    if (Input.isTriggered($.translationWindowKey) && this.isOpen()){
+        if(!translationWindow){
+            createTranslationWindow(this);
+        } else {
+            translationWindow.show();
+            translationWindow.focus();
+            populateTranslationWindow();
+        }
+    }
+    return ZERO_WindowMessage_updateTranslationWindow.call(this);
+  }
+
+  function createTranslationWindow(windowMessage){
+    let absolutePath = process.cwd();
+    if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
+    nw.Window.open(absolutePath + '\\js\\plugins\\translation.html', {}, function(newTranslationWindow) {
+        //console.log('Translation window created');
+        translationWindow = newTranslationWindow;
+        newTranslationWindow.width = 800;
+        newTranslationWindow.height = 445;
+
+        // Prevent user from closing the translation window, closing it will instead hide it
+        newTranslationWindow.on('close', function () {
+            newTranslationWindow.hide();
+            gameWindow.focus();
+        });        
+
+        // Force close the translation (bypass close event) when main game window is closed
+        gameWindow.on('close', function () {
+            newTranslationWindow.close(true);
+            this.close(true);
+        });
+
+        // Add events to buttons and populate for the frist time
+        newTranslationWindow.window.onload = () => {
+            //console.log('loaded');
+            newTranslationWindow.window.document.querySelector('#buttonSave').addEventListener('click', () => {translationWindowSave(windowMessage)});
+            newTranslationWindow.window.document.querySelector('#buttonDiscard').addEventListener('click', translationWindowDiscard);
+            newTranslationWindow.window.document.querySelector('#buttonGetDeepL').addEventListener('click', getTranslationWindowDeepLTranslation);
+            newTranslationWindow.window.document.querySelector('#buttonSetDeepL').addEventListener('click', setDeepLInCurrent);
+            newTranslationWindow.window.document.querySelector('#buttonRomaji').addEventListener('click', setRomajiInCurrent);
+            newTranslationWindow.window.document.querySelector('#buttonHerShe').addEventListener('click', convertToSheHer);
+
+            populateTranslationWindow();
+
+            // Hide Fields
+            if(!$.showOriginalText){
+              newTranslationWindow.window.document.querySelector('#origTextLabel').style.display = 'none';
+              newTranslationWindow.window.document.querySelector('#origText').style.display = 'none';
+              newTranslationWindow.height -= 140;
+            }
+        };
+    });
+  }
+
+  function populateTranslationWindow(){
+    //console.log('Populate translation window');
+    JPTextInTranslationWindow = LastMemTextSend;
+    if($.showOriginalText) translationWindow.window.document.querySelector('#origText').value = $gameMessage._texts.join(' ');
+    kuroshiroInstance.convert(JPTextInTranslationWindow, {to: "romaji", mode: "spaced"})
+        .then(text => {
+          text = postProcessRomaji(text);
+          translationWindow.window.document.querySelector('#romaji').value = text;
+        });
+    translationWindow.window.document.querySelector('#current').value = storedTranslations[JPTextInTranslationWindow];
+    // Clear current text if there is no translation
+    if(translationWindow.window.document.querySelector('#current').value == 'undefined')
+      translationWindow.window.document.querySelector('#current').value = '';
+  }
+
+  function translationWindowSave(windowMessage){
+    //console.log('Saved');
+    let text = translationWindow.window.document.querySelector('#current').value;
+    // Modify savedCache
+    storedTranslations[JPTextInTranslationWindow] = text;
+    writeFile('translationsCache', storedTranslations);
+
+    // Send to textbox
+    textOverflowed = false; // Reset overflow (YEP)
+    windowMessage.replaceText(text);
+
+    clearInterval(intervalTranslationWindow);
+    translationWindow.hide();
+    gameWindow.focus();
+  }
+
+  function translationWindowDiscard(){
+    //console.log('Discarded');
+    clearInterval(intervalTranslationWindow);
+    translationWindow.hide();
+    gameWindow.focus();
+  }
+
+  function getTranslationWindowDeepLTranslation(){
+    gettingTranslationWindowDeepL = true;
+    clipboard.set(JPTextInTranslationWindow+'.' , 'text');
+    intervalTranslationWindow = setInterval(() => {
+      if(clipboard.get('text') !== JPTextInTranslationWindow+'.'){
+        clearInterval(intervalTranslationWindow);
+        translationWindow.window.document.querySelector('#deepL').value = clipboard.get('text');
+      }
+    }, 500);
+  }
+
+  function setDeepLInCurrent(){
+    translationWindow.window.document.querySelector('#current').value = translationWindow.window.document.querySelector('#deepL').value;
+  }
+
+  function setRomajiInCurrent(){
+    translationWindow.window.document.querySelector('#current').value = translationWindow.window.document.querySelector('#romaji').value;
+  }
+
+  function convertToSheHer(){
+    let text = translationWindow.window.document.querySelector('#current').value;
+    text = text.replace(/\bhe\b/g, 'she');
+    text = text.replace(/\bHe\b/g, 'She');
+    text = text.replace(/\bhis\b/g, 'her');
+    text = text.replace(/\bHis\b/g, 'Her');
+    translationWindow.window.document.querySelector('#current').value = text;
+  }
+
+  /* End Translation Window */
+  /* ----------------------------------------------------------------------------------*/
+
+
   // Promise for romaji converting
   //var kuroshiro = new Kuroshiro(); // Giving problmens if they both are not redefined each time (now loading dics each time, time consuming)
   //var kuromojiAnalyser = new KuromojiAnalyzer({ dictPath: "./js/libs/dict" });
@@ -1015,6 +1161,41 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   //           return kuroshiro.convert(str, { to: "romaji", mode: "spaced" });
   //       })
   // }
+
+  function postProcessRomaji(text){
+    text = processTextBetweenParentheses(text);
+    // Replacements
+    text = text.replace(/　/g,' ');                       // Replace JP spaces with normal ones (mainly for wordwrap)
+    text = text.replace(/tsu((?![a-z])|(?=tsu))/gi, '~'); // っ , will fuck up some works, but this functions is to be used on sex lines monstly so it's fine (Tried to fix it with negative lookahead)
+    text = text.replace(/ ~/gi, '~');
+    text = text.replace(/゛/gi, '~');					            // Could cause conflicts, check
+    text = text.replace(/ ?… ?/g, '...');                 // Fix spaces
+    text = text.replace(/ ?\./g, '.');
+    text = text.replace(/ , /g, ', ');
+    text = text.replace(/ !/g, '!');
+    text = text.replace(/ \?/g, '?');
+    text = text.replace(/ - /g, '-');
+    text = text.replace(/\% ?23/g, '#');                  // Heart character
+    text = text.replace(/ā/g, 'aa');                      // Long vowels
+    text = text.replace(/ī/g, 'ii');
+    text = text.replace(/ū/g, 'uu');
+    text = text.replace(/ē/g, 'ei');
+    text = text.replace(/ō/g, 'ou');
+                
+    // Fix lone characters 'mate e' -> 'matee'; 'e etto' -> 'eetto'
+    text = text.replace(/([a-z]) (?<![a-z])([a-z])(?![a-z])/g, '$1$2');
+    text = text.replace(/(?<![a-z])([a-z])(?![a-z]) ([a-z]~?)/g, '$1$2');
+
+    // Capitalize first letter
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+
+    text = text.trim();
+
+    // Remove " from start and end if there are any
+    text = text.replace(/^"(.*)"$/g, '$1');
+
+    return text;
+  }
 
   // Alias Window_Message updateInput
   var ZERO_WindowMessage_update = Window_Message.prototype.update;
@@ -1068,7 +1249,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         clipboard.set(text, 'text');
         if($.wordWrapType == 'ZERO') textOverflowed = false; // Discard rest of text if it was overflowed
         $.escapeText = true; // trigger/allow replaceText
-		jpTextSentToMem = true; // Allow replaceText
+		    jpTextSentToMem = true; // Allow replaceText
         //console.log('send text: ' + text);
       }
       
@@ -1082,42 +1263,14 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             //console.log(LastMemTextSend);
             //console.log(text);
             // Replacements
-            text = processTextBetweenParentheses(text);
-            text = text.replace(/　/g,' ');                       // Replace JP spaces with normal ones (mainly for wordwrap)
-            text = text.replace(/tsu((?![a-z])|(?=tsu))/gi, '~'); // っ , will fuck up some works, but this functions is to be used on sex lines monstly so it's fine (Tried to fix it with negative lookahead)
-            text = text.replace(/ ~/gi, '~');
-			      text = text.replace(/゛/gi, '~');					  // Could cause conflicts, check
-            text = text.replace(/ ?… ?/g, '...');                 // Fix spaces
-            text = text.replace(/ ?\./g, '.');
-            text = text.replace(/ , /g, ', ');
-            text = text.replace(/ !/g, '!');
-            text = text.replace(/ \?/g, '?');
-            text = text.replace(/ - /g, '-');
-            text = text.replace(/\% ?23/g, '#');                  // Heart character
-            text = text.replace(/ā/g, 'aa');                      // Long vowels
-            text = text.replace(/ī/g, 'ii');
-            text = text.replace(/ū/g, 'uu');
-            text = text.replace(/ē/g, 'ei');
-            text = text.replace(/ō/g, 'ou');
-                        
-            // Fix lone characters 'mate e' -> 'matee'; 'e etto' -> 'eetto'
-            text = text.replace(/([a-z]) (?<![a-z])([a-z])(?![a-z])/g, '$1$2');
-            text = text.replace(/(?<![a-z])([a-z])(?![a-z]) ([a-z]~?)/g, '$1$2');
-
-            // Capitalize first letter
-            text = text.charAt(0).toUpperCase() + text.slice(1);
-
-            text = text.trim();
-
-			// Remove " from start and end if there are any
-			text = text.replace(/^"(.*)"$/g, '$1');
+            text = postProcessRomaji(text);
 
             // Modify savedCache
             storedTranslations[currentText] = text;
             writeFile('translationsCache', storedTranslations);
 
             // Send to textbox
-			textOverflowed = false; // Reset overflow (YEP)
+			      textOverflowed = false; // Reset overflow (YEP)
             this.replaceText(text);
           });
         }
@@ -1132,7 +1285,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         // can't be done now, as this is getting the text already from the clipboard
 
         processCache = false; // This is here so this block is processed once per textbox
-		$.escapeText = false; // Stop trying to translate text (while it's searching for cache)
+		    $.escapeText = false; // Stop trying to translate text (while it's searching for cache)
         clipboardText = clipboard.get('text'); // Gets clipbard_llule jp text, not the translated one
         //textCached = clipboardText; // store it for romaji
         if($.alwaysLoadCacheTranslations) storedTranslations = readFile('translationsCache');
@@ -1152,7 +1305,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         } else if (skipCachedText) { // text in cache not found and skipping cached text enabled. Stop skipping
           SceneManager.callPopup('Skip Disabled', 'bottomLeft', 200);
           skipCachedText = false;
-		  $.escapeText = true; // Enable trying to display translated text
+		      $.escapeText = true; // Enable trying to display translated text
         } else $.escapeText = true; // Enable trying to display translated text 
         }
 
@@ -1236,7 +1389,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       }
     }
         
-    stopDrawingText = true;
+  stopDrawingText = true;
 
 	// Restore icons (would like to do this before it is being sent here
 	//  so it's stored in cache but can't put it choice replace, look into it) 
@@ -1251,7 +1404,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 		text = text.replace(/%23/g, heartCharacter);
 	}
 	
-		// Restore music note to text
+	// Restore music note to text
 	if(hasMusicNoteCharacter && (!text.includes('@') && !text.includes('♪'))){
 		text = text + '♪'; 
 	} else {
@@ -1290,8 +1443,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 		}
 	}
     
-    // Process colors and other special characters in new text (must be manually added)
-    text = this.convertEscapeCharacters(text);
+  // Process colors and other special characters in new text (must be manually added)
+  text = this.convertEscapeCharacters(text);
 	
 	// Prepare text for textbox
 	if(textOverflowed && $.wordWrapType == 'YEP' ){
@@ -1353,9 +1506,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       }
     }
 
-	// Finished text replacing, reset clipboarLulle flag
-	if($.wordWrapType == 'YEP') wordWrap = false;
-	jpTextSentToMem = false;
+    // Finished text replacing, reset clipboarLulle flag
+    if($.wordWrapType == 'YEP') wordWrap = false;
+    jpTextSentToMem = false;
   }
 
   // **** MessageWindowPopup handle START
