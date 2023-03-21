@@ -18,9 +18,9 @@
 
 //=============================================================================
 
-/* -------------------------------/
-/* Changes done by Zero_G v1.13.11 /
-/*--------------------------------/
+/* --------------------------------/
+/* Changes done by Zero_G v1.13.12 /
+/*---------------------------------/
  !!! Important !!! 
   SetClipboardText and (if used) HideMessageWindowZ_NameMod must be loaded before this script
 
@@ -57,6 +57,7 @@ v1.13.9 - Added ❤ and ♪ symbols to replace
 v1.13.10 - Change variable name from 'translationSent' to 'jpTextSentToMem'
 v1.13.11 - Add another check to not send text when there are choices (first one is in SetClipboardText and most times will trigger
 	       don't really know if it ever failed, but for sanity it's here)
+v1.13.12 - Check for cache here, so it can add a · for it to be ignored by deepL plugin
 
 */
 
@@ -166,6 +167,7 @@ var hasHeartCharacter = false; // Used in SetClipboardText
 var hasMusicNoteCharacter = false; // Used in SetClipboardText
 var textInBetweenParentheses = false; // Used in SetClipboardText
 var textStartsWithDots = false; // Used in SetClipboardText
+var cacheFound = false; // Used in SetClipboardText
 /*------------------------------------------------------------------*/
 
 TimerMil = 300; // Zero_G changed from 200 to 300 (give time for YEP namebox to enter)
@@ -337,6 +339,12 @@ if(UseExtraMethodToCapturePopups){
           IgnoreRegExtextbloc.forEach(function(re){
             if (textToSend.search(re)) return;
           });
+
+          // Check if translation exist in cache
+          storedTranslations = readFile('translationsCache');
+          if(storedTranslations[textToSend] !== undefined){
+            textToSend = '·' + textToSend; // add · so that DeepL browser plugin ignores text
+          }
           
           if (drawExTimer === null){
             drawExTimer = setTimeout(() => { // Wait for more messages
@@ -534,12 +542,21 @@ function ClipTimerSend() {
     MemText = MemText.replace(/！{2,}/g, '！');
 
     if (!LastMemTextSend.startsWith(MemText)){ // IF clause to fix repeating text when a choice window is displayed. May break if previous memtext start the same
-		if(!$gameMessage.isChoice()){ //Don't send on choice text (handled by SetClipboardText)
-			//console.log(MemText); // Text sent to clipboard
-			clipboard.set(MemText, 'text');
-			LastMemTextSend = MemText;
-			jpTextSentToMem = true;
-		}
+      if(!$gameMessage.isChoice()){ //Don't send on choice text (handled by SetClipboardText)
+        //console.log(MemText); // Text sent to clipboard
+
+        // Check if translation exist in cache
+        storedTranslations = readFile('translationsCache');
+        if(storedTranslations[MemText] !== undefined){
+          clipboard.set('·'+MemText, 'text');; // add · so that DeepL browser plugin ignores text
+          cacheFound = true;
+        } else{
+          clipboard.set(MemText, 'text');
+          cacheFound = false;
+        }
+        LastMemTextSend = MemText;
+        jpTextSentToMem = true;
+      }
     }
   }
   ClipTimerOn = false;

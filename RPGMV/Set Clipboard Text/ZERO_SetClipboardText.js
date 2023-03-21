@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.16.0
+ * @version 1.16.1
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -40,6 +40,9 @@
  - Free for use
 
  == Changelog ==
+ 1.16.1  -Bug fixes for TranslationWindo
+         -Cache for normal text is now checked on ClipboardLulle so it can add · and be ignored by DeepL plugin
+         -Recovering from pause now restores translated text
  1.16.0  -Added TranslationWindow, a new window that opens on key press and lets you modify the current saved cache
           for the current line (shows translation, romaji, current and original)
  1.15.7  -Added option to change font size if textwindow has a face
@@ -48,17 +51,17 @@
  1.15.5  -Fix some bugs when choice replace wasn't triggering properly (sometiems )when there was an empty text window.
          -Fix a bug where choices weren't replaced when there was text (bug introduced when in 1.15.3 when the wait
           was removed for auto insert)
-        -Fix bug introduced in 1.15.3 when var 'jpTextSentToMem' was introduced that broke translation for combat text
+         -Fix bug introduced in 1.15.3 when var 'jpTextSentToMem' was introduced that broke translation for combat text
             fixed by reseting vars in start message before processing battle text.
  1.15.4  -Added bgm volume control midgame/scenes (set to numpad 6-9)
-        -Fix icons in losing the \\ after translation
-        -Strip " from beggingin and end on romaji
+         -Fix icons in losing the \\ after translation
+         -Strip " from beggingin and end on romaji
  1.15.3  -Added keyevent (numeric pad) to send text from vaiables to memory
-		  Used for sending text found in erostate. Must be manually configured
- 		 -Change variable name from 'translationSent' to 'jpTextSentToMem'
+		      Used for sending text found in erostate. Must be manually configured
+ 		     -Change variable name from 'translationSent' to 'jpTextSentToMem'
          -Trying to fix bug where cached text is not displayed until translation deepl is stopped
-		   -Added a check to not try to use deepL text if processing cache
-		   -Auto insert (deepL) translation now waits properly for clipboardLulle (wait removed)
+		     -Added a check to not try to use deepL text if processing cache
+		     -Auto insert (deepL) translation now waits properly for clipboardLulle (wait removed)
  1.15.2  -Added ❤ and ♪ symbols to replace
  1.15.1  -Added some more replacement fixes to romaji conversion
          -Fixed wordwraper out of bounds when there was a heart double space character (may need to add more characters)
@@ -328,9 +331,13 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
  // Translation Window. Open a new window that displays various translations options and lets you
  // make corrections to the saved cached version
+ // Can run the same event as the save button by pressing Control+S
  $.translationWindowKey = '3';
  // Show a textbox with the original text?
  $.showOriginalText = false;
+ // Query a translation to DeepL each time you open the translation window
+ // Not recommended as the current text should already have a translation
+ $.translationWindowSetDeepLOnOpen = false;
 
  //* Description: Replacements to be made to text after translation. Left if text to be replaced
  // right is replacement. Left accepts regex, be careful, as it is a string and it will
@@ -413,6 +420,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var processCache = false;
   var autoSelectChoice = false;
   var skipChoice = false;
+  var exitingPause = false;
 
   // used to know if replace is replacing the correct textbox
   // will increase on each message, and if replace recives a different value
@@ -536,6 +544,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       SceneManager.callPopup('Cached Translations Reloaded', 'bottomLeft', 200);
     }
 
+    // Restore translation to window after pause (Sets a flag that is called from Window_Message.Update)
+    if (event.code == 'KeyP' && $gameMessage.hasText()){
+      exitingPause = true;
+    }
+
 	/** 
 	 * Show text from Ero Status. Simply copy to memory the text of determined variables 
 	 * To configure just check what variables are relevant and you want to copy to memory
@@ -623,7 +636,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     $.replacingChoicesStopIlule = false;
     stopDrawingText = false;
 	  jpTextSentToMem = false;
-    gettingTranslationWindowDeepL = false;
 
     if(clipboardDisabledBattle){ // ClipboardIllule disabled during battle, send text manually
       let text = this.convertEscapeCharacters($gameMessage.allText());
@@ -831,7 +843,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         clipboard.set(text, 'text');
 
         startChoiceReplaceNormal = true; 
-		startChoiceReplaceNormalLocal = true; 
+		    startChoiceReplaceNormalLocal = true; 
       }
     }
   }
@@ -1022,60 +1034,75 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var gameWindow = nw.Window.get();
   var JPTextInTranslationWindow = '';
   var intervalTranslationWindow;
+  var replaceTextTranslationWindow = false;
+  var textToReplaceTranslationWindow = '';
+  var stopCustomInterval = false;
 
   var ZERO_WindowMessage_updateTranslationWindow = Window_Message.prototype.update;
   Window_Message.prototype.update = function () {
     if (Input.isTriggered($.translationWindowKey) && this.isOpen()){
         if(!translationWindow){
-            createTranslationWindow(this);
+            createTranslationWindow();
         } else {
             translationWindow.show();
             translationWindow.focus();
             populateTranslationWindow();
         }
     }
+    if(replaceTextTranslationWindow){
+      replaceTextTranslationWindow = false;
+      this.replaceText(textToReplaceTranslationWindow);
+    }
     return ZERO_WindowMessage_updateTranslationWindow.call(this);
   }
 
-  function createTranslationWindow(windowMessage){
+  function createTranslationWindow(){
     let absolutePath = process.cwd();
     if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
-    nw.Window.open(absolutePath + '\\js\\plugins\\translation.html', {}, function(newTranslationWindow) {
+    nw.Window.open(absolutePath + '\\js\\plugins\\translation.html', {}, function(newWindow) {
         //console.log('Translation window created');
-        translationWindow = newTranslationWindow;
-        newTranslationWindow.width = 800;
-        newTranslationWindow.height = 445;
+        translationWindow = newWindow; // Make it accesible ouside callback
+        translationWindow.title = 'Translation Window';
 
         // Prevent user from closing the translation window, closing it will instead hide it
-        newTranslationWindow.on('close', function () {
-            newTranslationWindow.hide();
+        translationWindow.on('close', function () {
+            translationWindow.hide();
             gameWindow.focus();
         });        
 
         // Force close the translation (bypass close event) when main game window is closed
         gameWindow.on('close', function () {
-            newTranslationWindow.close(true);
+            translationWindow.close(true);
             this.close(true);
         });
 
         // Add events to buttons and populate for the frist time
-        newTranslationWindow.window.onload = () => {
+        translationWindow.window.onload = () => {
             //console.log('loaded');
-            newTranslationWindow.window.document.querySelector('#buttonSave').addEventListener('click', () => {translationWindowSave(windowMessage)});
-            newTranslationWindow.window.document.querySelector('#buttonDiscard').addEventListener('click', translationWindowDiscard);
-            newTranslationWindow.window.document.querySelector('#buttonGetDeepL').addEventListener('click', getTranslationWindowDeepLTranslation);
-            newTranslationWindow.window.document.querySelector('#buttonSetDeepL').addEventListener('click', setDeepLInCurrent);
-            newTranslationWindow.window.document.querySelector('#buttonRomaji').addEventListener('click', setRomajiInCurrent);
-            newTranslationWindow.window.document.querySelector('#buttonHerShe').addEventListener('click', convertToSheHer);
+            translationWindow.window.document.querySelector('#buttonSave').addEventListener('click', translationWindowSave);
+            translationWindow.window.document.querySelector('#buttonDiscard').addEventListener('click', translationWindowDiscard);
+            translationWindow.window.document.querySelector('#buttonGetDeepL').addEventListener('click', getTranslationWindowDeepLTranslation);
+            translationWindow.window.document.querySelector('#buttonSetDeepL').addEventListener('click', setDeepLInCurrent);
+            translationWindow.window.document.querySelector('#buttonRomaji').addEventListener('click', setRomajiInCurrent);
+            translationWindow.window.document.querySelector('#buttonHerShe').addEventListener('click', convertToSheHer);
 
             populateTranslationWindow();
 
+            // Set window dimensions
+            translationWindow.width = 800;
+            translationWindow.height = 450; // For some reason on full screen this is set to 384
+
             // Hide Fields
             if(!$.showOriginalText){
-              newTranslationWindow.window.document.querySelector('#origTextLabel').style.display = 'none';
-              newTranslationWindow.window.document.querySelector('#origText').style.display = 'none';
-              newTranslationWindow.height -= 140;
+              translationWindow.window.document.querySelector('#origTextLabel').style.display = 'none';
+              translationWindow.window.document.querySelector('#origText').style.display = 'none';
+              translationWindow.height -= 45; // On fullscreen sizes are smaller don't know why, windowed it should be 140
             }
+
+            // Add event to save with control+s
+            translationWindow.window.document.addEventListener('keydown', event => {
+              if(event.ctrlKey && event.code == 'KeyS' || event.ctrlKey && event.code == 'Enter') translationWindowSave();
+            });
         };
     });
   }
@@ -1093,40 +1120,78 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     // Clear current text if there is no translation
     if(translationWindow.window.document.querySelector('#current').value == 'undefined')
       translationWindow.window.document.querySelector('#current').value = '';
+    // Clear deepL beacuse fill it's on demand with the get button (unless option to set it by default is enabled)
+    if($.translationWindowSetDeepLOnOpen) getTranslationWindowDeepLTranslation();
+    else translationWindow.window.document.querySelector('#deepL').value = '';
   }
 
-  function translationWindowSave(windowMessage){
+  function translationWindowSave(){
     //console.log('Saved');
     let text = translationWindow.window.document.querySelector('#current').value;
     // Modify savedCache
     storedTranslations[JPTextInTranslationWindow] = text;
     writeFile('translationsCache', storedTranslations);
 
-    // Send to textbox
+    // Send to textbox (trigger flag in Window_Message update)
     textOverflowed = false; // Reset overflow (YEP)
-    windowMessage.replaceText(text);
+    textToReplaceTranslationWindow = text;
+    replaceTextTranslationWindow = true;
 
-    clearInterval(intervalTranslationWindow);
+    //clearInterval(intervalTranslationWindow);
+    stopCustomInterval = true;
     translationWindow.hide();
     gameWindow.focus();
   }
 
   function translationWindowDiscard(){
     //console.log('Discarded');
-    clearInterval(intervalTranslationWindow);
+    //clearInterval(intervalTranslationWindow);
+    stopCustomInterval = true;
     translationWindow.hide();
     gameWindow.focus();
   }
 
   function getTranslationWindowDeepLTranslation(){
-    gettingTranslationWindowDeepL = true;
     clipboard.set(JPTextInTranslationWindow+'.' , 'text');
-    intervalTranslationWindow = setInterval(() => {
+    stopCustomInterval = false;
+    customInterval(500);
+    
+    // SetTimeOut and SetInterval are broken when called from another window in this version of nwjs
+    // intervalTranslationWindow = setInterval(function() {
+    //   console.log('running interval');
+    //   if(clipboard.get('text') !== JPTextInTranslationWindow+'.'){
+    //     clearInterval(intervalTranslationWindow);
+    //     translationWindow.window.document.querySelector('#deepL').value = clipboard.get('text');
+    //   }
+    // }, 500);
+  }
+
+  function customInterval(time){
+    myTimer(()=>{
       if(clipboard.get('text') !== JPTextInTranslationWindow+'.'){
-        clearInterval(intervalTranslationWindow);
         translationWindow.window.document.querySelector('#deepL').value = clipboard.get('text');
+      } else if (stopCustomInterval){
+        return
+      } else {
+        customInterval(time);
       }
-    }, 500);
+    }, time);
+  }
+
+  // Custom timeout using Web Audio API and the AudioScheduledSourceNode, 
+  // which makes great use of the high precision Audio Context's own clock
+  // taken from https://stackoverflow.com/questions/50501356/how-to-create-your-own-settimeout-function
+  function myTimer(cb, ms) {
+    if(!myTimer.ctx) myTimer.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var ctx = myTimer.ctx;
+    var silence = ctx.createGain();
+    silence.gain.value = 0;
+    var note = ctx.createOscillator();
+    note.connect(silence);
+    silence.connect(ctx.destination);
+    note.onended = function() { cb() };
+    note.start(0);
+    note.stop(ctx.currentTime + (ms / 1000));
   }
 
   function setDeepLInCurrent(){
@@ -1181,6 +1246,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     text = text.replace(/ū/g, 'uu');
     text = text.replace(/ē/g, 'ei');
     text = text.replace(/ō/g, 'ou');
+    text = text.replace(/ ?" ?/g, '"');                   // Remove spaces around "
                 
     // Fix lone characters 'mate e' -> 'matee'; 'e etto' -> 'eetto'
     text = text.replace(/([a-z]) (?<![a-z])([a-z])(?![a-z])/g, '$1$2');
@@ -1189,6 +1255,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     // Capitalize first letter
     text = text.charAt(0).toUpperCase() + text.slice(1);
 
+    text = text.replace(/ +/g,' ');                       // Remove duplicate spaces
     text = text.trim();
 
     // Remove " from start and end if there are any
@@ -1290,7 +1357,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         //textCached = clipboardText; // store it for romaji
         if($.alwaysLoadCacheTranslations) storedTranslations = readFile('translationsCache');
 
-        if(storedTranslations[clipboardText] !== undefined){ // If translation found
+        //if(storedTranslations[clipboardText] !== undefined){ // check now done in ClipboardLlule, if you want to sill make it here, change clipboardText to clipboardText.replace(/·/g,'')
+        if(cacheFound){ // If translation found
           // If skipping text
           if(skipCachedText){ 
             if(typeof autoAdvanceTextTimeout !== 'undefined') clearTimeout(autoAdvanceTextTimeout); 
@@ -1300,7 +1368,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             }, 400);
           } else {
             // Text in cache found, display it
-            this.replaceText(storedTranslations[clipboardText], messageCounter);
+            this.replaceText(storedTranslations[clipboardText.replace(/·/g,'')], messageCounter);
           }
         } else if (skipCachedText) { // text in cache not found and skipping cached text enabled. Stop skipping
           SceneManager.callPopup('Skip Disabled', 'bottomLeft', 200);
@@ -1365,6 +1433,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         }
 
         this.replaceText(clipboardText);
+      }
+
+      if(exitingPause){
+        exitingPause = false;
+        this.replaceText(storedTranslations[LastMemTextSend]);
       }
     }
 

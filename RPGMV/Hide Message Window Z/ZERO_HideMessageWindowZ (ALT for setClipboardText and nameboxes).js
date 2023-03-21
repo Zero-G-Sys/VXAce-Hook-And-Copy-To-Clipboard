@@ -321,6 +321,9 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
         this._textState.text = '\\N<Kurokami>' + this._textState.text;
       }
       */
+      // Replace normal () to double width so they are detected in next code
+      this._textState.text = this._textState.text.replace(/\)/g, '）')
+      this._textState.text = this._textState.text.replace(/\(/g, '（')
 
       // add \n<> to name
       if(!/^(「|（|『| |\.|…)/.test(this._textState.text)                    // Check that text doesn't start with quotation or space or .
