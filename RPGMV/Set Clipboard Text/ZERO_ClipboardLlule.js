@@ -107,7 +107,8 @@ const replacements = {
   '姉ちゃん': 'Neechan',
   'ねーちゃん': 'Nee-chan',
   'おじさま': 'Ojisama',
-  'おじ様':  'Ojisama',
+  'おじ様': 'Ojisama',
+  '叔父様': 'Ojisama',
   'ジジイ': 'Jijii',
   '老人': 'Rojin', // Oldman - Elder person
   'ヒヒ': 'Hihi',
@@ -248,6 +249,8 @@ function readFile(file){
     let rawData = fs.readFileSync(absolutePath);
     let jsonData = JSON.parse(rawData);
     return jsonData;
+  } else{
+    return [];
   }
 }
 

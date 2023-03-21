@@ -43,6 +43,7 @@
  1.16.1  -Bug fixes for TranslationWindo
          -Cache for normal text is now checked on ClipboardLulle so it can add · and be ignored by DeepL plugin
          -Recovering from pause now restores translated text
+         -Fix backlog wordwrapping and add names (Change in Hide_Texbox)
  1.16.0  -Added TranslationWindow, a new window that opens on key press and lets you modify the current saved cache
           for the current line (shows translation, romaji, current and original)
  1.15.7  -Added option to change font size if textwindow has a face
@@ -381,9 +382,18 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     'Virgin membrane': 'Hymen',
     'virgin membrane': 'hymen',
     'Baboon': 'Hihi',
-	'Hexenbiest': 'Monster',
-	'hexenbiest': 'monster',
-	'　': ' ',
+    'Hexenbiest': 'Monster',
+    'hexenbiest': 'monster',
+    '　': ' ',
+    'Brave': 'Hero',
+    'brave': 'hero',
+    'Demon King': 'Demon Lord',
+    'Witch King': 'Demon Lord',
+    'Crotch': 'Vagina',
+    'crotch': 'vagina',
+    'Monk': 'Saint',
+    'monk': 'saint',
+    '⁉': '?!',
  }
 
  /*--------------------------------------------------------------------------------------*/
@@ -682,6 +692,15 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         clipboard.set(text, 'text');
         LastMemTextSend = text; // This var is normally filled by ClipboardLulle, but it's used when storing translation cache, as we are overriding/not-using clipboardLulle, we need to set it with jp text
         jpTextSentToMem = true;
+        
+        // Check cache (added for compatibility with illule checking cache first)
+        if(storedTranslations[text] !== undefined){
+          clipboard.set('·'+text, 'text');; // add · so that DeepL browser plugin ignores text
+          cacheFound = true;
+        } else{
+          clipboard.set(text, 'text');
+          cacheFound = false;
+        }
       }
     }
 
@@ -1544,9 +1563,12 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       if(/>.?{/.test($gameMessage._texts[0])) this.contents.fontSize += 12; 
       else if(/^\\{/.test($gameMessage._texts[1])) this.contents.fontSize += 12;
     } else{
-      // Normal text (without namebox)
+      // Normal text (without namebox) Or textbox detection failed (need to re do that to more games) [So now checking 1st and 2nd lines]
       if($gameMessage._texts[0].startsWith('\\}')) this.contents.fontSize -= 12;
+      else if ($gameMessage._texts[1]){ if($gameMessage._texts[1].startsWith('\\}')) this.contents.fontSize -= 12; }
+      
       if($gameMessage._texts[0].startsWith('\\{')) this.contents.fontSize += 12;
+      else if ($gameMessage._texts[1]){if($gameMessage._texts[1].startsWith('\\{')) this.contents.fontSize += 12; }
     }
     
     // If MessageWindowPopup plugin is used, resize popup window for new translated text
@@ -1558,7 +1580,15 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     //this.open();
 
     // Add text to backlog
-    if($.useBacklog) $gameSystem.addMessageBacklog(text);
+    if($.useBacklog) {
+      if($.wordWrapType == 'YEP' && typeof Window_NameBox == 'function'){
+        $gameSystem.addMessageBacklog('<wordwrap>' + ZERO.HideMessageWindow.nameBacklog + text);
+      } else {
+        // Using legacy wrapper if YEP_MessageCore is not pressent. I could port that functionality 
+        // but it's a waste of time, as my legacy wrapper works fine
+        $gameSystem.addMessageBacklog(wordWrapper(ZERO.HideMessageWindow.nameBacklog + text, 55));
+      }
+    }
     
 	  // Process text
     while (!this.isEndOfText2(this._textState1)) {

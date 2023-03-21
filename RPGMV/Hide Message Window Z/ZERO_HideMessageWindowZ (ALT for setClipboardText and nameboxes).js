@@ -51,6 +51,8 @@ TODO: Implement changes from main script, original forked at v2.1, currently is 
 2.3.12 alt
  - Converted Window_NameBox.prototype.refresh into an alias. This was the main reson all translation logic is in this script
    later all this can be moved to setClipboardText, and stop using this modified script
+ - Add names to YEP_Backlog
+ - Added a handling of MPP_MessageEx, and a modded version of it.
 2.3.11 alt
  - Improved forceNameboxMethod1
 2.3.10.3 alt
@@ -178,7 +180,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   /*** END OF MANUAL CONFIGURATION ***/
 
   //var previousReplacements = {};
-
+  $.nameBacklog = '';
   let fs = require('fs');
   if(!fileExists('savedNames')) writeFile('savedNames', {});
   
@@ -636,7 +638,11 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
       // Replace names with entries in savedNames.json and $.replacements
       let replacedName = replaceNames(text);
-      if(replacedName !== '') text = replacedName;
+      if(replacedName !== '') {
+        text = replacedName;
+        // Save replaced name for later use in backlog
+        $.nameBacklog = text + '\\c[0]: ';
+      }
       // Add unknown name to file with translation from clipboard
       else saveNewName(text);
 
@@ -690,10 +696,10 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
           replacedName = replacedName.substring(replacedName.indexOf(']')+1);
         }
         this._text = replacedName;
+        $.nameBacklog = replacedName + '\\c[0]: ';
       }
-
       // Add unknown name to file with translation from clipboard
-      if(replacedName === '') saveNewName(this._text);
+      else saveNewName(this._text);
 
       this.changeTextColor(this.textColor(color));
 
@@ -719,24 +725,69 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   if(typeof Window_MessageName == 'function'){
     let isHiddenNamebox = false;
 
+    // Mod script so namewindows don't constantly close and open everytime textwindow changes
+    Window_MessageName.prototype.initialize = function(messageWindow) {
+      this._messageWindow = messageWindow;
+      Window_Base.prototype.initialize.call(this, 0, 0, 0, this.fittingHeight(1));
+      this.openness = 0;
+      this._name = null;
+      this.deactivate();
+    };
+
+    Window_MessageName.prototype.setName = function(name, colorIndex) {
+      // Replace names with entries in savedNames.json and $.replacements
+      let replacedName = replaceNames(name);
+      if(replacedName !== '') {
+        if(replacedName.startsWith('\\c') || replacedName.startsWith('\\C')){ // Manually add color to names
+          colorIndex = replacedName.substring(replacedName.indexOf('[')+1,replacedName.indexOf(']'));
+          replacedName = replacedName.substring(replacedName.indexOf(']')+1);
+        }
+        name = replacedName;
+        $.nameBacklog = replacedName + '\\c[0]: ';
+      }
+      // Add unknown name to file with translation from clipboard
+      else saveNewName(name);
+
+      // Mod
+      this.open();
+      this.activate();
+      this._name = name;
+      var width = this.textWidth(name) + this.textPadding() * 2;
+      this.width = width + this.standardPadding() * 2;
+      this.createContents();
+      this.resetFontSettings();
+      this.changeTextColor(this.textColor(colorIndex));
+      this.drawText(name, this.textPadding(), 0, width);
+      this._needOpen = true;
+      if ($gameMessage.positionType() === 0) {
+          var y = this._messageWindow.y - MPPlugin.nameWindow.y;
+          this._messageWindow.y = Math.max(y, 0);
+      }
+      this.x = this._messageWindow.x + MPPlugin.nameWindow.x;
+      this.y = this._messageWindow.y + MPPlugin.nameWindow.y;
+    };
+
+    // Mod and hide namebox
     Window_MessageName.prototype.update = function() {
       Window_Base.prototype.update.call(this);
-      
-      if (Input.isTriggered($.buttonHide) || TouchInput.isCancelled()) {
+
+      if (this.isClosed() || this.isClosing()) {
+        return;
+      }
+
+      if (Input.isTriggered($.buttonHide) && this.isOpen()) {
         isHiddenNamebox = !isHiddenNamebox;
 
         if (isHiddenNamebox) this.visible = false;
         else this.visible = true;
       }
-    
       if (isHiddenOpacity) this.opacity = 0;
       else this.opacity = 255;
-      
-      if (this._needOpen && this.isClosed()) {
-          this.open();
-          this._needOpen = false;
-      }
-   };
+
+      if (this.active) return;
+
+      this.close();
+    };
   }
 
 })(ZERO.HideMessageWindow);
