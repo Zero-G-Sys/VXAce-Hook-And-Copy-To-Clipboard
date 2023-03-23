@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.16.1
+ * @version 1.16.2
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -40,7 +40,10 @@
  - Free for use
 
  == Changelog ==
- 1.16.1  -Bug fixes for TranslationWindo
+ 1.16.2  -Change how files are read. Now they are only loaded once on plugin load, then watched for changes with fs.watch
+         -Change how inputs are stored in variables, now they are stored and object. Can use mutiple inputs if using an
+          array. Inputs key mappings now autoadd themselves, no need to manually do it.
+ 1.16.1  -Bug fixes for TranslationWindow
          -Cache for normal text is now checked on ClipboardLulle so it can add · and be ignored by DeepL plugin
          -Recovering from pause now restores translated text
          -Fix backlog wordwrapping and add names (Change in Hide_Texbox)
@@ -151,24 +154,29 @@ ZERO.SetClipboardText = ZERO.SetClipboardText || {};
 var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
 (function ($) {
+  // Custom inputs, enter as a single letter string
+  // Can be an array of keys. Ex: ['a', 'b']
+  // To disable key use null or empty string ''
+  var CustomInputs = {};
  /*---------------------------------------------------------------------------------------*/
  /* Manual configuration                                                                  */
  /*---------------------------------------------------------------------------------------*/
 
- //* Description: Button to press to replace text.
+ //* Description: Button to press to replace text. And show overflowed text if any (when text was
+ //  longer than textbox)
  //* Default: 's'
- $.textButton = 's'; 
+ CustomInputs.textButton = 's'; 
 
  //* Description: Button to copy text of current window to clipboard (useful when Clipboard_llule, 
  // fails to copy it).
  //* Default: 'f'
- $.copyTextButton = 'f';
+ CustomInputs.copyTextButton = 'f';
 
  //* Description: Button to copy choices to clipboard. Format choices and text and send them for 
  // translation. Not really neccesary with the Auto Replace Choices function. But useful when that 
  // one fails.
  //* Default: 'r'
- $.copyChoicesButton = 'r';
+ CustomInputs.copyChoicesButton = 'r';
 
  //* Description: Select type of WordWrap. 
  // YEP: Yanfly MessageCore word wrap. Automatic, preferred.
@@ -206,11 +214,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  $.autoInsert = true;
 
  //* Description: Toggles auto insert functionality (Best used when skipping text fast. But not 
- // neccesary if skipping text with ctrl button, and clipboard_llule is disables while skipping, 
- // only in modded version). 
+ // neccesary if skipping text with ctrl button, and clipboard_llule is disabled while skipping) 
  // Will display a message at the top rigth screen.
  //* Default: 9
- $.autoInsertToogleKey = '9';
+ CustomInputs.autoInsertToogleKey = '9';
 
  //* Description: Auto replace choices with transalted ones. Works 99% of the time. But if it fails, 
  // use the copyChoicesButton, and it will send all choices and text for translation, it will
@@ -221,7 +228,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  //* Description: Toggles replace choices functionality. Will display a message at the top 
  // rigth screen.
  //* Default: h
- $.autoReplaceChoicesToggleKey = 'h';
+ CustomInputs.autoReplaceChoicesToggleKey = 'h';
 
  //* Description: Ignore text that starts with a specific character/word. Enable/Disable
  // This is useful when some unwanted text is being copied to the clipboard, normally that
@@ -254,13 +261,13 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  //* Description: Skip cached text. Upon press of a key, it will keep skipping text until a texbox
  // contains text that was not in the cache, then it will turn of the skip function.
  //* Default: 1
- $.skipCachedTextKey = '1';
+ CustomInputs.skipCachedTextKey = '1';
 
  //* Description: Key to start ignoring cache and overwrite the text in it. Ex: If a conversation
  // has bad lines cached. Redo the conversation with cacheOverwrite on, it will
  // stop reading from the cache file and write the new conversation based on new translations.
  //* Default: b
- $.cacheOverwriteKey = 'b';
+ CustomInputs.cacheOverwriteKey = 'b';
 
  //* Description: If the text was already cached, it will copy it to clipboard with special character 
  // at the start, the DeepL plugin has to be modified to ignore text that starts with that special
@@ -276,8 +283,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // This will advance text once the translation for that window is cached in the file.
  // If a translation doesn't occur and it gets stuck, it will wait 10 seconds and go to
  // the next message
- //* Default: n
- $.autoAdvanceTextKey = 'n';
+ //* Default: 0
+ CustomInputs.autoAdvanceTextKey = '0';
  // If there is a choice box while auto advancing, select the first choice.
  //* Default: true
  $.autoSelectFirstChoice = true; 
@@ -301,21 +308,15 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  $.disableWaitForButtonInputDuringText = true;
 
  // his will disable the ^ RPG Maker text function, that outright disables an input before changing
- // to the next textbox. As all native wait functions are disables, without this the textbox will be
+ // to the next textbox. As all native wait functions are disabled, without this the textbox will be
  // skipped. Disable it if a specific event is giving problems (or try not to have the textbox
  // in screen for too much time)
  $.disableDontWaitForInputAfterText = true;
 
  // If using forceNamebox, this needs to be activated to remove names from the battle text
+ // (Will be deprecated once Hidetextbox functionality is moved here, as it will be using
+ // the const forceNameboxMethod* instead)
  $.removeNameFromBattleText = true;
-
- // Load cachedTranslations each time it shows text? Useful if you are making many changes
- // to the json externally. Default false
- $.alwaysLoadCacheTranslations = false;
-
- // Button to muanually reload cachedTranslations json. Useful if the previous one is false
- // and you make changes to the json sporadically.
- $.reloadCachedTranslationsButton = '2';
 
  // Replace current text in textbox with JP text converted to romaji, and update stored
  // cache for that text. Useful for sex scenes where there is a lot of gliberish text
@@ -323,8 +324,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // Copy: 'kuroshiro.min.js', 'kuroshiro-analyzer-kuromoji.min' and 'dict' folder to js/libs
  // and load them before plugins.js in index.html
  $.replaceToRomaji = true;
- $.replaceToRomajiButton = 'g'; // Default 'g'
- $.replaceToRomajiButton2 = 'm'; // Default 'm'
+ CustomInputs.replaceToRomajiButton = ['g', 'm']; // Default ['g', 'm']
  // Set path to kuromoshi dictionaries. 
  // If you want them to be in the lib folder alongside the scripts: './js/libs/dict'
  // Or you can use a fixed folder in your system so every game looks for them there
@@ -333,7 +333,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // Translation Window. Open a new window that displays various translations options and lets you
  // make corrections to the saved cached version
  // Can run the same event as the save button by pressing Control+S
- $.translationWindowKey = '3';
+ CustomInputs.translationWindowKey = '2';
  // Show a textbox with the original text?
  $.showOriginalText = false;
  // Query a translation to DeepL each time you open the translation window
@@ -394,6 +394,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     'Monk': 'Saint',
     'monk': 'saint',
     '⁉': '?!',
+    'Uterus': 'Womb',
+    'uterus': 'womb',
  }
 
  /*--------------------------------------------------------------------------------------*/
@@ -423,6 +425,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var timeout;
   var stopDrawingText = false;
   var storedTranslations = readFile('translationsCache') || {};
+  var savedNames = readFile('savedNames') || {};
   var cacheOverwrite = false;
   var autoAdvanceText = false;
   var autoAdvanceTextTimeout;
@@ -431,6 +434,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var autoSelectChoice = false;
   var skipChoice = false;
   var exitingPause = false;
+
+  // Watch for file changes
+  watchFiles();
 
   // used to know if replace is replacing the correct textbox
   // will increase on each message, and if replace recives a different value
@@ -441,6 +447,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
   // Add key mappings
   function addKeyMapping(key){
+    if(key == null) return '';
     let buttonCode = key.toUpperCase().charCodeAt(0);
 
     // Prevent from mapping predefined strings (ej: 'pageup', 'left')
@@ -457,18 +464,27 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
   }
 
-  $.textButton = addKeyMapping($.textButton);
-  $.copyTextButton = addKeyMapping($.copyTextButton);
-  $.copyChoicesButton = addKeyMapping($.copyChoicesButton);
-  $.autoInsertToogleKey = addKeyMapping($.autoInsertToogleKey);
-  $.autoReplaceChoicesToggleKey = addKeyMapping($.autoReplaceChoicesToggleKey);
-  $.cacheOverwriteKey = addKeyMapping($.cacheOverwriteKey);
-  $.autoAdvanceTextKey = addKeyMapping($.autoAdvanceTextKey);
-  $.skipCachedTextKey = addKeyMapping($.skipCachedTextKey);
-  $.reloadCachedTranslationsButton = addKeyMapping($.reloadCachedTranslationsButton);
-  $.replaceToRomajiButton = addKeyMapping($.replaceToRomajiButton);
-  $.replaceToRomajiButton2 = addKeyMapping($.replaceToRomajiButton2);
-  $.translationWindowKey = addKeyMapping($.translationWindowKey);
+  // Update and add all key mappings
+  for (const [key, value] of Object.entries(CustomInputs)) {
+    if(Array.isArray(value)) {
+      let newInputArr = [];
+      for(i of value){
+        newInputArr.push(addKeyMapping(i))
+      }
+      CustomInputs[key] = newInputArr;
+    }
+    else CustomInputs[key] = addKeyMapping(value);
+  }
+
+  // Add support for using array of key mappings in Input function
+  ZERO_Input_isTriggered = Input.isTriggered;
+  Input.isTriggered = function(keyName) {
+    if(Array.isArray(keyName)){
+      return keyName.some(key => ZERO_Input_isTriggered.call(this, key));
+    } else {
+      return ZERO_Input_isTriggered.call(this, keyName);
+    }
+  };
 
   // Load kuroshiro romaji converter
   if($.replaceToRomaji){
@@ -514,44 +530,38 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   // Key Event Listeners
   document.addEventListener('keydown', event => {
     // Add Auto Insert Toogle Key event and show popup when pressed
-    if (Input.keyMapper[event.keyCode] == $.autoInsertToogleKey) {
+    if (Input.keyMapper[event.keyCode] == CustomInputs.autoInsertToogleKey) {
       $.autoInsert = !$.autoInsert
       if($.autoInsert) SceneManager.callPopup('Auto Insert Enabled');
       else SceneManager.callPopup('Auto Insert Disabled');
     }
 
     // Add Auto Replace Choices Toggle Key event and show popup when pressed
-    if (Input.keyMapper[event.keyCode] == $.autoReplaceChoicesToggleKey ) {
+    if (Input.keyMapper[event.keyCode] == CustomInputs.autoReplaceChoicesToggleKey ) {
       $.autoReplaceChoices = !$.autoReplaceChoices
       if($.autoReplaceChoices) SceneManager.callPopup('Auto Replace Choices Enabled', 'topRight', 200);
       else SceneManager.callPopup('Auto Replace Choices Disabled', 'topRight', 200);
     }
 
     // Add Cache Overwrite Key event and show popup when pressed
-    if (Input.keyMapper[event.keyCode] == $.cacheOverwriteKey ) {
+    if (Input.keyMapper[event.keyCode] == CustomInputs.cacheOverwriteKey ) {
       cacheOverwrite = !cacheOverwrite
       if(cacheOverwrite) SceneManager.callPopup('Cache Overwrite Enabled', 'topRight', 200);
       else SceneManager.callPopup('Cache Overwrite Disabled', 'topRight', 200);
     }
 
     // Add Auto Advance Key event and show popup when pressed
-    if (Input.keyMapper[event.keyCode] == $.autoAdvanceTextKey ) {
+    if (Input.keyMapper[event.keyCode] == CustomInputs.autoAdvanceTextKey ) {
       autoAdvanceText = !autoAdvanceText
       if(autoAdvanceText) SceneManager.callPopup('Auto Advance Enabled', 'topRight', 200);
       else SceneManager.callPopup('Auto Advance Disabled', 'topRight', 200);
     }
 
     // Add Auto Advance Key event and show popup when pressed
-    if (Input.keyMapper[event.keyCode] == $.skipCachedTextKey ) {
+    if (Input.keyMapper[event.keyCode] == CustomInputs.skipCachedTextKey ) {
       skipCachedText = !skipCachedText
       if(skipCachedText) SceneManager.callPopup('Skip Enabled', 'bottomLeft', 200);
       else SceneManager.callPopup('Skip Disabled', 'bottomLeft', 200);
-    }
-
-    // Add Reload CachedTranslations Key event and show popup when pressed
-    if (Input.keyMapper[event.keyCode] == $.reloadCachedTranslationsButton ) {
-      storedTranslations = readFile('translationsCache');
-      SceneManager.callPopup('Cached Translations Reloaded', 'bottomLeft', 200);
     }
 
     // Restore translation to window after pause (Sets a flag that is called from Window_Message.Update)
@@ -692,8 +702,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         clipboard.set(text, 'text');
         LastMemTextSend = text; // This var is normally filled by ClipboardLulle, but it's used when storing translation cache, as we are overriding/not-using clipboardLulle, we need to set it with jp text
         jpTextSentToMem = true;
-        
-        // Check cache (added for compatibility with illule checking cache first)
+
+        // Check cache
         if(storedTranslations[text] !== undefined){
           clipboard.set('·'+text, 'text');; // add · so that DeepL browser plugin ignores text
           cacheFound = true;
@@ -847,8 +857,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
     // Check cache file for stored translations
     if($.useTranslationCache && !cacheOverwrite){
-      if($.alwaysLoadCacheTranslations) storedTranslations = readFile('translationsCache');
-      
       if(storedTranslations[text] !== undefined){ // Translation exists
         // Add special character so DeepL plugin ignores text
         if($.ignoreDeeplIfCachedText) text = $.ignoreDeeplIfCachedTextCharacter + text;
@@ -934,7 +942,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         //Remove name from text. If using force namebox removing the block that has the name is handled
         //by clipboardlulle block ignore. That won't trigger here, so we need to remove it here.
         //this code is mostly the same as in ClipboardLulle
-        let savedNames = readFile('savedNames'); // If there is no file or it's empty, the next for will be skipped
+        //let savedNames = readFile('savedNames'); // If there is no file or it's empty, the next for will be skipped
 
         for(const key in savedNames){
           let name = savedNames[key];
@@ -1052,19 +1060,19 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var translationWindow;
   var gameWindow = nw.Window.get();
   var JPTextInTranslationWindow = '';
-  var intervalTranslationWindow;
   var replaceTextTranslationWindow = false;
   var textToReplaceTranslationWindow = '';
   var stopCustomInterval = false;
 
   var ZERO_WindowMessage_updateTranslationWindow = Window_Message.prototype.update;
   Window_Message.prototype.update = function () {
-    if (Input.isTriggered($.translationWindowKey) && this.isOpen()){
+    if (Input.isTriggered(CustomInputs.translationWindowKey) && this.isOpen()){
         if(!translationWindow){
             createTranslationWindow();
         } else {
             translationWindow.show();
             translationWindow.focus();
+            translationWindow.window.document.querySelector('#current').focus();
             populateTranslationWindow();
         }
     }
@@ -1253,6 +1261,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     text = text.replace(/tsu((?![a-z])|(?=tsu))/gi, '~'); // っ , will fuck up some works, but this functions is to be used on sex lines monstly so it's fine (Tried to fix it with negative lookahead)
     text = text.replace(/ ~/gi, '~');
     text = text.replace(/゛/gi, '~');					            // Could cause conflicts, check
+    text = text.replace(/~/g, '～');	
     text = text.replace(/ ?… ?/g, '...');                 // Fix spaces
     text = text.replace(/ ?\./g, '.');
     text = text.replace(/ , /g, ', ');
@@ -1288,7 +1297,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   Window_Message.prototype.update = function () {
 
     // Manual copy choices to clipboard (if there are any)
-    if (Input.isTriggered($.copyChoicesButton) && $gameMessage.isChoice()) {
+    if (Input.isTriggered(CustomInputs.copyChoicesButton) && $gameMessage.isChoice()) {
       let choices = $gameMessage._choices;
       if(choices.length > 0){
         let text = '';
@@ -1321,7 +1330,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     if(this.isOpen() && !startChoiceReplaceNormal && !startChoiceReplaceStored){ // Check if message window is opened
       // Copy (current window) Text to Clipboard Button function
       // Most of this function can be replaced with $gameMessage._texts if necessary ()
-      if ((Input.isTriggered($.copyTextButton)) && this.isOpen()) {
+      if ((Input.isTriggered(CustomInputs.copyTextButton)) && this.isOpen()) {
         let text = this.__text;
         // let text = this.convertEscapeCharacters($gameMessage.allText());  // alternate way to get text
         text = Window_Base.prototype.convertEscapeCharacters(text);          // Convert variables to text
@@ -1340,7 +1349,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       }
       
       // Show romaji on current window and replace stored cache
-      if ((Input.isTriggered($.replaceToRomajiButton) || Input.isTriggered($.replaceToRomajiButton2)) && this.isOpen() && $.replaceToRomaji) {
+      if (Input.isTriggered(CustomInputs.replaceToRomajiButton) && this.isOpen() && $.replaceToRomaji) {
         let currentText = LastMemTextSend;
         if(isJapaneseRegex.test(currentText)){ // put this regex in a constant (put constant in all other places where it was called)
           //ToRomaji(currentText)
@@ -1374,7 +1383,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 		    $.escapeText = false; // Stop trying to translate text (while it's searching for cache)
         clipboardText = clipboard.get('text'); // Gets clipbard_llule jp text, not the translated one
         //textCached = clipboardText; // store it for romaji
-        if($.alwaysLoadCacheTranslations) storedTranslations = readFile('translationsCache');
 
         //if(storedTranslations[clipboardText] !== undefined){ // check now done in ClipboardLlule, if you want to sill make it here, change clipboardText to clipboardText.replace(/·/g,'')
         if(cacheFound){ // If translation found
@@ -1443,7 +1451,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         }
 
       // Call function manually with button, or use it when text is overflowed
-      if ((Input.isTriggered($.textButton)) && this.isOpen()) {
+      if ((Input.isTriggered(CustomInputs.textButton)) && this.isOpen()) {
         clipboardText = LastMemTextSend || clipboard.get('text'); // Get text from clipboard
         
         if(!textOverflowed){
@@ -1942,30 +1950,62 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     ZERO_Window_Base_processCharacter.call(this, textState);
   }*/
 
-  function writeFile(file, data){
+  /*----------------------------------- Helper Functions ---------------------------------------------*/
+
+  /*
+   * Get full path to file. Detects if game is run from main folder or as debug
+  */
+  function getAbsolutePath(file){
     let absolutePath = process.cwd();
     if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
 
-    absolutePath = absolutePath + '\\' + file + '.json';
+    return absolutePath + '\\' + file + '.json';
+  }
 
+  function writeFile(file, data){
     let fs = require('fs');
-
-    fs.writeFileSync(absolutePath, JSON.stringify(data, null, 2)/*, 'utf16le'*/); // The 2 passed to stringify is to make the JSNO readable
+    fs.writeFileSync(getAbsolutePath(file), JSON.stringify(data, null, 2)); // The 2 passed to stringify is to make the JSON readable
   }
 
   function readFile(file){
-    let absolutePath = process.cwd();
-    if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
-
-    absolutePath = absolutePath + '\\' + file + '.json';
-
+    let absolutePath = getAbsolutePath(file);
     let fs = require('fs');
 
     if(fs.existsSync(absolutePath)){
-      let rawData = fs.readFileSync(absolutePath/*, 'utf16le'*/);
+      let rawData = fs.readFileSync(absolutePath);
       let jsonData = JSON.parse(rawData);
       return jsonData;
     }
+  }
+ 
+  /*
+   * Watch files for changes and reload them when they do.
+   * fs.watch triggers multiple times in windows, so use a workaround to 
+   * prevent multiple calls with a setTimeOut
+  */
+  function watchFiles(){ //
+    let fs = require('fs');
+    let savedNamesTimeOut = true;
+    let translationsCacheTimeOut = true;
+
+    fs.watch(getAbsolutePath('savedNames'), () => {
+      if(savedNamesTimeOut){
+        savedNamesTimeOut = false;
+        setTimeout(() => { savedNamesTimeOut = true; }, 500);
+
+        // Modify global variable
+        savedNames = readFile('savedNames');
+      }
+    });
+    fs.watch(getAbsolutePath('translationsCache'), () => {
+      if(translationsCacheTimeOut){
+        translationsCacheTimeOut = false;
+        setTimeout(() => { translationsCacheTimeOut = true; }, 500);
+
+        // Modify global variable
+        storedTranslations = readFile('translationsCache');
+      }
+    });
   }
 
   function replaceHeartCharacter(text){
