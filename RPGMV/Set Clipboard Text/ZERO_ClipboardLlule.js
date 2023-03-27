@@ -82,6 +82,7 @@ const replacements = {
   '^\\. *': '', // Text starts with dot (remove)
   // General replacements
   'お兄さん': 'Oniisan',
+  'おにいさん': 'Oniisan',
   '兄さん': 'Niisan',
   '後輩': 'Kouhai',
   'パイズリフェラ': 'Paizuri Blowjob',

@@ -58,7 +58,8 @@ for fpath, fname in filenames.items():
             copyfile(fpath+'/ZERO_SetClipboardText.js', 'zOutput/ZERO_SetClipboardText.js')
             copyfile(fpath+'/Javascript to romaji/Kuroshiro (prefered)/kuroshiro.min.js', 'zOutput/kuroshiro.min.js')
             copyfile(fpath+'/Javascript to romaji/Kuroshiro (prefered)/kuroshiro-analyzer-kuromoji.min.js', 'zOutput/kuroshiro-analyzer-kuromoji.min.js')
-            copyfile(fpath+'/translation.html', 'zOutput/translation.html')
+            copyfile(fpath+'/ZERO_SetTranslationWindow.html', 'zOutput/ZERO_SetTranslationWindow.html')
+            copyfile(fpath+'/ZERO_SetConfigurationWindow.html', 'zOutput/ZERO_SetConfigurationWindow.html')
 
         else:
             copyfile(fpath+'/'+fname, 'zOutput/'+fname)

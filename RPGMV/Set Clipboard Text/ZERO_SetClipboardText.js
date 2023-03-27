@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.16.2
+ * @version 1.16.4
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -27,10 +27,10 @@
  The script has a functionality to ignore and not re display japanese text that 
  was copied to the clipboard. There are two options, only one must be used.
  - Ignore text that starts with a specific character ('「' for example, 
-    Clipboard_llule adds this to most sentences by default).
+    ClipboardLlule adds this to most sentences by default).
  - Ignore all japanese characters by a regex function.
 
- Must use a modified clipboard_llule plugin. (ZERO_ClipboardLlule)
+ Must use a modified ClipboardLlule plugin. (ZERO_ClipboardLlule)
 
  Script has an option to store translations in a file, and read upon that file
  the next time it sees an already translated text. More options with their
@@ -40,41 +40,44 @@
  - Free for use
 
  == Changelog ==
+ 1.16.4  -Some bug fixes
+         -A lot of typos fixed
+ 1.16.3  -Add a configuration window to toggle values or trigger functions that previously was only done by keys.
  1.16.2  -Change how files are read. Now they are only loaded once on plugin load, then watched for changes with fs.watch
-         -Change how inputs are stored in variables, now they are stored and object. Can use mutiple inputs if using an
-          array. Inputs key mappings now autoadd themselves, no need to manually do it.
+         -Change how inputs are stored in variables, now they are stored and object. Can use multiple inputs if using an
+          array. Inputs key mappings now auto add themselves, no need to manually do it.
  1.16.1  -Bug fixes for TranslationWindow
-         -Cache for normal text is now checked on ClipboardLulle so it can add · and be ignored by DeepL plugin
+         -Cache for normal text is now checked on ClipboardLlule so it can add · and be ignored by DeepL plugin
          -Recovering from pause now restores translated text
-         -Fix backlog wordwrapping and add names (Change in Hide_Texbox)
+         -Fix backlog wordwrapping and add names (Change in Hide_Textbox)
  1.16.0  -Added TranslationWindow, a new window that opens on key press and lets you modify the current saved cache
           for the current line (shows translation, romaji, current and original)
  1.15.7  -Added option to change font size if textwindow has a face
          -Added making font smaller or bigger if original text started with a size modifier (\{ or \})
- 1.15.6  -Implemented YEP_WordWrap and setted as default word wrapper
- 1.15.5  -Fix some bugs when choice replace wasn't triggering properly (sometiems )when there was an empty text window.
+ 1.15.6  -Implemented YEP_WordWrap and set as default word wrapper
+ 1.15.5  -Fix some bugs when choice replace wasn't triggering properly (sometimes) when there was an empty text window.
          -Fix a bug where choices weren't replaced when there was text (bug introduced when in 1.15.3 when the wait
           was removed for auto insert)
          -Fix bug introduced in 1.15.3 when var 'jpTextSentToMem' was introduced that broke translation for combat text
-            fixed by reseting vars in start message before processing battle text.
+            fixed by resetting vars in start message before processing battle text.
  1.15.4  -Added bgm volume control midgame/scenes (set to numpad 6-9)
          -Fix icons in losing the \\ after translation
-         -Strip " from beggingin and end on romaji
- 1.15.3  -Added keyevent (numeric pad) to send text from vaiables to memory
+         -Strip " from beginning and end on romaji
+ 1.15.3  -Added keyevent (numeric pad) to send text from variables to memory
 		      Used for sending text found in erostate. Must be manually configured
  		     -Change variable name from 'translationSent' to 'jpTextSentToMem'
-         -Trying to fix bug where cached text is not displayed until translation deepl is stopped
+         -Trying to fix bug where cached text is not displayed until translation DeepL is stopped
 		     -Added a check to not try to use deepL text if processing cache
-		     -Auto insert (deepL) translation now waits properly for clipboardLulle (wait removed)
+		     -Auto insert (deepL) translation now waits properly for clipboardLlule (wait removed)
  1.15.2  -Added ❤ and ♪ symbols to replace
  1.15.1  -Added some more replacement fixes to romaji conversion
          -Fixed wordwraper out of bounds when there was a heart double space character (may need to add more characters)
          -Fix a bug where the script would get stuck when selecting a choice fast
          -Typo Hearth -> Heart
- 1.15.0  -Added romaji convertion with kuromoshi library, to setup you need to copy two files to the lib folder, and modify 
+ 1.15.0  -Added romaji conversion with kuromoji library, to setup you need to copy two files to the lib folder, and modify 
           index.html. For now it overwrites the text in a window (and the stored cache) with romaji when pressing a key.
  1.14.12 -Added replace current textbox to romaji and update stored cache, when pressing a button ('g')
-         -Replaced all instaces of raw regex that checked for japanese text with var isJapaneseRegex
+         -Replaced all instances of raw regex that checked for japanese text with var isJapaneseRegex
  1.14.11 -Fixed choice replace cleanup regexes, should work better now
          -Choice replace now can display colors and icons
          -Fixed remove name from textbox during a choice replace if forceNamebox is enabled
@@ -85,14 +88,14 @@
         -No longer reading the Json file each time it checks for cache by default
         -Add a button to reload cachedTranslations
         -Check cache function in normal text, no longer uses the clipboard, now it uses lastMemTextSend (Important that Load 
-          scene text is not captured or map name [made a function to disable that in clipboardLulle])
+          scene text is not captured or map name [made a function to disable that in clipboardLlule])
  1.14.7 -Removed from text the \! that waits for user input in the middle of text (otherwise text isn't sent completely)
         -Removed from text the \^ that would skip textboxes
- 1.14.6 -Added translate mesaggeboxes during battle
+ 1.14.6 -Added translate messageboxes during battle
         -Added partial removal of names in battle when using forceNamebox (forceNameboxMethod2 for now). Must set
           removeNameFromBattleText to true.
         -Fix a bug with translation cache, don't let it save an empty line.
-        -Fix creatining multiple timouts in line 826
+        -Fix creating multiple timeouts in line 826
         -Fix trying to read cache multiple times per textbox
  1.14.5 -Add ignore DeePL plugin when text is in cache (partial - not working)
  1.14.4 -If game uses MessageWindowPopup plugin, resize the popup window properly
@@ -100,35 +103,35 @@
         -Updated wordWrap to handle existing linebreaks
  1.14.3 -Some choices replace bug fixes.
  1.14.2 -Try to fix translation of previous textbox showing on next one. Sometimes happens when you advance text
-         without wating for translation to be replaced. Only affects autoinsert mode.
+         without waiting for translation to be replaced. Only affects autoinsert mode.
  1.14.1 -Add %23 to heart replace as it DeepL not always converts it to #
         -Add option to choose to which heart to restore to
  1.14   -Fix translated choiceboxes with number of choices larger than box, that required scrolling and drawing
-         new choices. Now translated choices are replaced to MV own choice arraw.
+         new choices. Now translated choices are replaced to MV own choice array.
         -Fix write/read file functions.
- 1.13   -Modify/handle text when it's surronded by parentheses or it starts with '...' (corrections for DeepL)
+ 1.13   -Modify/handle text when it's surrounded by parentheses or it starts with '...' (corrections for DeepL)
  1.12   -Ditched plugin parameters, replaced for manual configuration variables
         -Added option to store/cache translations on a file
-        -Handle hearts ♥ ♡ ❤ in text better (code in clipboard_llule also changed)
+        -Handle hearts ♥ ♡ ❤ in text better (code in ClipboardLlule also changed)
         -Add button to auto advance text (for storing scenes to cache to watch them later)
         -Added post translation replacements
  1.11.4 -Send choices to DeepL with []. and split translated ones with '].' (Fix problems in case the choices
-          have '!' or '...') (Previously they were splited with '.')
+          have '!' or '...') (Previously they were splitted with '.')
         -Fix. Remove color codes from window text when sending choices.
  1.11.3 -If there was a text window with the choices, send them together for translation and replace 
          them at the same time (faster as it is only one translation request).
- 1.11.2 -Choices window now properly resizes to choice lenght (no more cropped choices)
+ 1.11.2 -Choices window now properly resizes to choice length (no more cropped choices)
  1.11.1 -Changed detection of choices (should detect choices without textbox)
         -Changed detection of window message from updateInput to update and checking if a window is open
          +Should be less cpu intense
-         +Fixed auto insert of tranlated text in textbox when a choices window appears in some games
+         +Fixed auto insert of translated text in textbox when a choices window appears in some games
  1.11   -Add Auto Replace Choices function
         -Removed auto insert unnecessary double variable
-        -Added separate variable for stoping processing character while replace function is working.
+        -Added separate variable for stopping processing character while replace function is working.
  1.10   -Add option to use Yanfly backlog plugin
         -Alternate way to get text from current window (not used)
  1.9    -Added sending choices to clipboard with a button
-        -Added changeing font size of tranlated text
+        -Added changing font size of translated text
  1.8    -Added setting of textbox lines, so text overflow works when textbox is 
          smaller or bigger
  1.7    -Fixed word wrap single line loop
@@ -140,7 +143,7 @@
         -Added text popup when switching auto insert
 
  == Usage ==
- Just add the plugin. Plugin must be loaded before Clipboard_Ilule
+ Just add the plugin. Plugin must be loaded before ClipboardLlule
  
  -------------------------------------------------------------------------------
 
@@ -167,13 +170,13 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  //* Default: 's'
  CustomInputs.textButton = 's'; 
 
- //* Description: Button to copy text of current window to clipboard (useful when Clipboard_llule, 
+ //* Description: Button to copy text of current window to clipboard (useful when ClipboardLlule, 
  // fails to copy it).
  //* Default: 'f'
  CustomInputs.copyTextButton = 'f';
 
  //* Description: Button to copy choices to clipboard. Format choices and text and send them for 
- // translation. Not really neccesary with the Auto Replace Choices function. But useful when that 
+ // translation. Not really necessary with the Auto Replace Choices function. But useful when that 
  // one fails.
  //* Default: 'r'
  CustomInputs.copyChoicesButton = 'r';
@@ -198,37 +201,32 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
  //* Description: Number of lines in game textbox. Important to set, as some games use 3 line windows
  // Recommended to edit game plugin to always display 4 lines if possible
- //* Defualt 4
+ //* Default 4
  $.textboxLines = 4;
 
  // * Description: Change font size of translated text. Most games use 28, leave at 0 to use game default.
- // * Defualt 0
+ // * Default 0
  $.fontSize = 0;
 
- // * Description: Decrease the font size when it's a textbox with a face (Only if font size wans't overriden)
+ // * Description: Decrease the font size when it's a textbox with a face (Only if font size wasn't overridden)
  $.decreaseFontFaceWindow = true;
  $.decreaseFontAmountFaceWindow = 3;
 
  //* Description: Auto insert translated text without manual button press. Recommended to on
- //* Default: true
+ //* Default: true (This should be deprecated)
  $.autoInsert = true;
 
  //* Description: Toggles auto insert functionality (Best used when skipping text fast. But not 
- // neccesary if skipping text with ctrl button, and clipboard_llule is disabled while skipping) 
- // Will display a message at the top rigth screen.
- //* Default: 9
- CustomInputs.autoInsertToogleKey = '9';
+ // necessary if skipping text with ctrl button, and ClipboardLlule is disabled while skipping) 
+ // Will display a message at the top right screen.
+ //* Default: 9 (This should be deprecated)
+ CustomInputs.autoInsertToggleKey = '9';
 
- //* Description: Auto replace choices with transalted ones. Works 99% of the time. But if it fails, 
- // use the copyChoicesButton, and it will send all choices and text for translation, it will
- // not replace the choices in game, but you will know what they mean.
+ //* Description: Auto replace choices with translated ones. Works 99% of the time. But if it fails, 
+ // use the copyChoicesButton, and it will send all choices and text for translation.
+ // Disable if breaking the game (changing plugin order may fix this)
  //* Default: true
  $.autoReplaceChoices = true;
-
- //* Description: Toggles replace choices functionality. Will display a message at the top 
- // rigth screen.
- //* Default: h
- CustomInputs.autoReplaceChoicesToggleKey = 'h';
 
  //* Description: Ignore text that starts with a specific character/word. Enable/Disable
  // This is useful when some unwanted text is being copied to the clipboard, normally that
@@ -242,7 +240,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  $.ignoreTextStr = '「';
 
  //* Description: Ignore japanese text via regex
- // Sometimes a pre tranlated text is cought in the script, enable this to ignore it. Most games 
+ // Sometimes a pre translated text is caught in the script, enable this to ignore it. Most games 
  // work better with this on.
  //* Default: true
  $.ignoreJapText = true;
@@ -252,13 +250,13 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  $.useBacklog = true;
 
  //* Description: Create a json file and store translations, if a translation is stored it will read 
- // it from the file instead of external soruces. Needs auto instert enabled to store.
+ // it from the file instead of external sources. Needs auto insert enabled to store.
  // Manual request for translation will ignore the file (**need to check if this is true**)
  // File is in '%GamePath%/www/translationsCache.json'
- //* Default: true
+ //* Default: true (This should be deprecated and always be true)
  $.useTranslationCache = true;
 
- //* Description: Skip cached text. Upon press of a key, it will keep skipping text until a texbox
+ //* Description: Skip cached text. Upon press of a key, it will keep skipping text until a textbox
  // contains text that was not in the cache, then it will turn of the skip function.
  //* Default: 1
  CustomInputs.skipCachedTextKey = '1';
@@ -267,12 +265,13 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // has bad lines cached. Redo the conversation with cacheOverwrite on, it will
  // stop reading from the cache file and write the new conversation based on new translations.
  //* Default: b
- CustomInputs.cacheOverwriteKey = 'b';
+ CustomInputs.cacheOverwriteKey = '';
 
  //* Description: If the text was already cached, it will copy it to clipboard with special character 
  // at the start, the DeepL plugin has to be modified to ignore text that starts with that special
- // character. WARNING: Not working until script with clipbardIllule is merged or a custom hook
- // is developed, more in line 708.
+ // character. WARNING: Not working until script with ClipboardLlule is merged or a custom hook
+ // is developed, more in line 708. (already implemented on ClipboardLlule, this code is left 
+ // in case ClipboardLlule is deprecated)
  //* Default: true
  $.ignoreDeeplIfCachedText = true;
  //* Default: '·'
@@ -298,7 +297,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // DeepL doesn't like heart characters, so sent text replaces them with a # (%23 uri character)
  // Then restores them in the text to insert
  // Currently always does it despite variable (TODO)
- $.replaceHeartCaratcters = true
+ $.replaceHeartCharacters = true
  // Heart character to restore (This works)
  heartCharacter = '\\c[27]❤\\c[0]' // options ♡ ♥ ❤ or with pink color \\c[27]♥\\c[0]
 
@@ -319,16 +318,16 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  $.removeNameFromBattleText = true;
 
  // Replace current text in textbox with JP text converted to romaji, and update stored
- // cache for that text. Useful for sex scenes where there is a lot of gliberish text
- // Must load Kuroshiro and Kuromoshi librearies:
+ // cache for that text. Useful for sex scenes where there is a lot of gibberish text
+ // Must load Kuroshiro and Kuromoji libraries:
  // Copy: 'kuroshiro.min.js', 'kuroshiro-analyzer-kuromoji.min' and 'dict' folder to js/libs
  // and load them before plugins.js in index.html
  $.replaceToRomaji = true;
  CustomInputs.replaceToRomajiButton = ['g', 'm']; // Default ['g', 'm']
- // Set path to kuromoshi dictionaries. 
+ // Set path to kuromoji dictionaries. 
  // If you want them to be in the lib folder alongside the scripts: './js/libs/dict'
  // Or you can use a fixed folder in your system so every game looks for them there
- const kuromoshiDictPath = 'I:/_/dict';
+ const kuromojiDictPath = 'I:/_/dict';
 
  // Translation Window. Open a new window that displays various translations options and lets you
  // make corrections to the saved cached version
@@ -340,9 +339,16 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // Not recommended as the current text should already have a translation
  $.translationWindowSetDeepLOnOpen = false;
 
+ // Configuration Window. Open a new window that displays options for previous key actions and
+ // toggles. In case you want to have a gui for that, and optionally disable the keys (and only
+ // access those functions from the configuration window).
+ // Configurations are not persistent, and are only for the current session, if you want to change
+ // configurations do it in these variables
+ CustomInputs.configurationWindowKey = '3';
+
  //* Description: Replacements to be made to text after translation. Left if text to be replaced
  // right is replacement. Left accepts regex, be careful, as it is a string and it will
- // need (two) \\ instead of (one) \ . Also don't replace special characteres ex: []
+ // need (two) \\ instead of (one) \ . Also don't replace special characters ex: []
  // Pre translation replacements in clipboard_llule.
  // Useful when a replacement before translation isn't working.
  // Note: script with replace # with a heart symbol.
@@ -403,9 +409,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  /*--------------------------------------------------------------------------------------*/
 
   // Variable used to control the when to show the translated text
-  // Also used for comunicating with external plugin (Clipboard_Ilule)
+  // Also used for communicating with external plugin (Clipboard_Llule)
   $.escapeText = true;
-  $.replacingChoicesStopIlule = false; // used to stop Llule when replacing choices
+  $.replacingChoicesStopLlule = false; // used to stop Llule when replacing choices
   
   // Nwjs
   var gui = require('nw.gui');
@@ -439,7 +445,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   watchFiles();
 
   // used to know if replace is replacing the correct textbox
-  // will increase on each message, and if replace recives a different value
+  // will increase on each message, and if replace receives a different value
   // of the current counter, it stops
   var messageCounter = 0; 
   var isJapaneseRegex = /[一-龠]+|[ぁ-ゔ]+|[ァ-ヴー]+|[ａ-ｚＡ-Ｚ０-９]+|[々〆〤！？]+/;
@@ -490,10 +496,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   if($.replaceToRomaji){
     try{
       var kuroshiroInstance = new Kuroshiro();
-      kuroshiroInstance.init(new KuromojiAnalyzer({ dictPath: kuromoshiDictPath }))
+      kuroshiroInstance.init(new KuromojiAnalyzer({ dictPath: kuromojiDictPath }))
       .then(function () { console.log('Kuroshiro initialized') })
     } catch (ex){
-      console.log('Kuromoshi initialization failed - ' + ex);
+      console.log('Kuromoji initialization failed - ' + ex);
       $.replaceToRomaji = false;
     }
   }
@@ -529,18 +535,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   
   // Key Event Listeners
   document.addEventListener('keydown', event => {
-    // Add Auto Insert Toogle Key event and show popup when pressed
-    if (Input.keyMapper[event.keyCode] == CustomInputs.autoInsertToogleKey) {
+    // Add Auto Insert Toggle Key event and show popup when pressed
+    if (Input.keyMapper[event.keyCode] == CustomInputs.autoInsertToggleKey) {
       $.autoInsert = !$.autoInsert
       if($.autoInsert) SceneManager.callPopup('Auto Insert Enabled');
       else SceneManager.callPopup('Auto Insert Disabled');
-    }
-
-    // Add Auto Replace Choices Toggle Key event and show popup when pressed
-    if (Input.keyMapper[event.keyCode] == CustomInputs.autoReplaceChoicesToggleKey ) {
-      $.autoReplaceChoices = !$.autoReplaceChoices
-      if($.autoReplaceChoices) SceneManager.callPopup('Auto Replace Choices Enabled', 'topRight', 200);
-      else SceneManager.callPopup('Auto Replace Choices Disabled', 'topRight', 200);
     }
 
     // Add Cache Overwrite Key event and show popup when pressed
@@ -557,7 +556,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       else SceneManager.callPopup('Auto Advance Disabled', 'topRight', 200);
     }
 
-    // Add Auto Advance Key event and show popup when pressed
+    // Add Skip cache Key event and show popup when pressed
     if (Input.keyMapper[event.keyCode] == CustomInputs.skipCachedTextKey ) {
       skipCachedText = !skipCachedText
       if(skipCachedText) SceneManager.callPopup('Skip Enabled', 'bottomLeft', 200);
@@ -569,71 +568,71 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       exitingPause = true;
     }
 
-	/** 
-	 * Show text from Ero Status. Simply copy to memory the text of determined variables 
-	 * To configure just check what variables are relevant and you want to copy to memory
-	 * Variables can be found in erostate config, or search for jp text and see what var 
-	 * is being written, should be the first 2 number. Ex: [23,23,0,0 'jp text'] is var 23
-	 * 
-	 * This was a lazy approach, could be better done in when showing the erostate screen
-	 * instead of manually calling it with numpad numbers
-	 */
-	// Panel 1
-	if (event.code == 'NumpadDivide'){
-		//let text = $gameVariables.value(19);
-		//clipboard.set(text, 'text');
-	}
-	// Panel 2
-	if (event.code == 'Numpad7'){
-		//let text = $gameVariables.value(15);
-		//text += ' ' + $gameVariables.value(16);
-		//clipboard.set(text, 'text');
-	}
-	// Panel 3
-	if (event.code == 'Numpad4'){
-		// let text = 'Bound Partner: ' + $gameVariables.value(4) + '.';
-		// text += $gameVariables.value(17);
-		// text += ' ' + $gameVariables.value(18);
-		// clipboard.set(text, 'text');
-	}
-	// Panel 4
-	if (event.code == 'NumpadMultiply'){
-		// let text = $gameVariables.value(39);
-		// clipboard.set(text, 'text');
-	}
-	// Panel 5
-	if (event.code == 'Numpad8'){
-		// let text = $gameVariables.value(35);
-		// text += ' ' + $gameVariables.value(36);
-		// clipboard.set(text, 'text');
-	}
-	// Panel 6
-	if (event.code == 'Numpad5'){
-		// let text = 'Bound Partner: ' + $gameVariables.value(24) + '.';
-		// text += $gameVariables.value(37);
-		// text += ' ' + $gameVariables.value(38);
-		// clipboard.set(text, 'text');
-	}
+    /** 
+     * Show text from Ero Status. Simply copy to memory the text of determined variables 
+     * To configure just check what variables are relevant and you want to copy to memory
+     * Variables can be found in erostate config, or search for jp text and see what var 
+     * is being written, should be the first 2 number. Ex: [23,23,0,0 'jp text'] is var 23
+     * 
+     * This was a lazy approach, could be better done in when showing the erostate screen
+     * instead of manually calling it with numpad numbers
+     */
+    // Panel 1
+    if (event.code == 'NumpadDivide'){
+      //let text = $gameVariables.value(19);
+      //clipboard.set(text, 'text');
+    }
+    // Panel 2
+    if (event.code == 'Numpad7'){
+      //let text = $gameVariables.value(15);
+      //text += ' ' + $gameVariables.value(16);
+      //clipboard.set(text, 'text');
+    }
+    // Panel 3
+    if (event.code == 'Numpad4'){
+      // let text = 'Bound Partner: ' + $gameVariables.value(4) + '.';
+      // text += $gameVariables.value(17);
+      // text += ' ' + $gameVariables.value(18);
+      // clipboard.set(text, 'text');
+    }
+    // Panel 4
+    if (event.code == 'NumpadMultiply'){
+      // let text = $gameVariables.value(39);
+      // clipboard.set(text, 'text');
+    }
+    // Panel 5
+    if (event.code == 'Numpad8'){
+      // let text = $gameVariables.value(35);
+      // text += ' ' + $gameVariables.value(36);
+      // clipboard.set(text, 'text');
+    }
+    // Panel 6
+    if (event.code == 'Numpad5'){
+      // let text = 'Bound Partner: ' + $gameVariables.value(24) + '.';
+      // text += $gameVariables.value(37);
+      // text += ' ' + $gameVariables.value(38);
+      // clipboard.set(text, 'text');
+    }
 
-	/**
-	 * Change bgm volume midgame
-     */ 
-	// Up volume
-	if (event.code == 'Numpad9'){
-		let offset = 5;
-		let value = ConfigManager['bgmVolume'];
-		value += offset;
-		value = value.clamp(0,100);
-		ConfigManager['bgmVolume'] = value;
-	}
-	// down volume
-	if (event.code == 'Numpad6'){
-		let offset = 5;
-		let value = ConfigManager['bgmVolume'];
-		value -= offset;
-		value = value.clamp(0,100);
-		ConfigManager['bgmVolume'] = value;
-	}
+    /**
+     * Change bgm volume midgame
+       */ 
+    // Up volume
+    if (event.code == 'Numpad9'){
+      let offset = 5;
+      let value = ConfigManager['bgmVolume'];
+      value += offset;
+      value = value.clamp(0,100);
+      ConfigManager['bgmVolume'] = value;
+    }
+    // down volume
+    if (event.code == 'Numpad6'){
+      let offset = 5;
+      let value = ConfigManager['bgmVolume'];
+      value -= offset;
+      value = value.clamp(0,100);
+      ConfigManager['bgmVolume'] = value;
+    }
   })
 
   // Pause clipboard 
@@ -653,11 +652,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     if($.useTranslationCache) processCache = true;
     textOverflowed = false;
     $.escapeText = true;
-    $.replacingChoicesStopIlule = false;
+    $.replacingChoicesStopLlule = false;
     stopDrawingText = false;
 	  jpTextSentToMem = false;
 
-    if(clipboardDisabledBattle){ // ClipboardIllule disabled during battle, send text manually
+    if(clipboardDisabledBattle){ // ClipboardLlule disabled during battle, send text manually
       let text = this.convertEscapeCharacters($gameMessage.allText());
       if(text !== '' && isJapaneseRegex.test(text)){  // Check that text is in JP
         text = Window_Base.prototype.convertEscapeCharacters(text);          // Convert variables to text
@@ -686,21 +685,21 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
           }
         }
 
-        // Replace names with honorifics first (Uses dictionary from ClipboardLulle)
+        // Replace names with honorifics first (Uses dictionary from ClipboardLlule)
         for (const [key, value] of Object.entries(nameReplacementsWitHonorifics)) {
           let re = new RegExp(key,"g"); // Create regex with variable
-          text = text.replace(re, value); // Use regular expresion to replace all values and not the first one only
+          text = text.replace(re, value); // Use regular expression to replace all values and not the first one only
         }
 
-        // Replace words (for names, etc) (Uses dictionary from ClipboardLulle)
+        // Replace words (for names, etc) (Uses dictionary from ClipboardLlule)
         for (const [key, value] of Object.entries(replacements)) {
           let re = new RegExp(key,"g"); // Create regex with variable
-          text = text.replace(re, value); // Use regular expresion to replace all values and not the first one only
+          text = text.replace(re, value); // Use regular expression to replace all values and not the first one only
         }
 
         text = text.replace(//g,'');
         clipboard.set(text, 'text');
-        LastMemTextSend = text; // This var is normally filled by ClipboardLulle, but it's used when storing translation cache, as we are overriding/not-using clipboardLulle, we need to set it with jp text
+        LastMemTextSend = text; // This var is normally filled by ClipboardLlule, but it's used when storing translation cache, as we are overriding/not-using clipboardLlule, we need to set it with jp text
         jpTextSentToMem = true;
 
         // Check cache
@@ -736,7 +735,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
     ZERO_Window_Message_prototype_startMessage.call(this);
     
-    // Remove 'Wait for user input' in the middle of text (Otherwise text is not completly sent to clipboard)
+    // Remove 'Wait for user input' in the middle of text (Otherwise text is not completely sent to clipboard)
     this._textState.text = this._textState.text.replace(/!/g, '');
     this._textState.text = this._textState.text.replace(/\^/g, '');
   }
@@ -756,7 +755,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var translatedWindowText = '';
   var globalChoicesText= '';
 
-  // Access Window_ChoiceList methods from Widnows_Selectable
+  // Access Window_ChoiceList methods from Window_Selectable
   Window_Selectable.prototype.updatePlacement = function() {
   }
 
@@ -799,7 +798,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
 
     if(custom){
-        this.createContents(); // Refresh choices-items lenght
+        this.createContents(); // Refresh choices-items length
     }
   };
 
@@ -819,7 +818,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   };
 
   function preProcessChoiceReplace(){
-    $.replacingChoicesStopIlule = true;
+    $.replacingChoicesStopLlule = true;
     $.escapeText = false; // prevent capture text from clipboard_llule
       
     // Send choices to clipboard
@@ -829,7 +828,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       text += '['+ choice + '].'; // DeepL understands '.' as a sentence break
     });  
 
-    // Remove japanese brackets (may break non japanese brackes to later split)
+    // Remove japanese brackets (may break non japanese brackets to later split)
     text = text.replace(/【/g, '<');
     text = text.replace(/】/g, '>');
 
@@ -840,13 +839,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     // so that there is no need to send two translation requests
     if($gameMessage._texts.length){
       text += Window_Base.prototype.convertEscapeCharacters($gameMessage._texts.join(' '));
-      text = text.replace(/(c|C)\[\d{1,3}\]/g, ''); // Remove color codes
+      text = text.replace(/C\[\d{1,3}\]/gi, ''); // Remove color codes
       // If there is a namebox remove it
-      if(/(N|n)</.test(text)){
-        let left = text.substring(0, text.search(/(N|n)</));
-        let right = text.substring(text.indexOf('>')+1);
-        text = left + right;
-      }
+      text = text.replace(/N<.*> */i, '');
     }else{
       text = text.slice(0, -1); // delete last '.'
     }
@@ -854,6 +849,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     text = replaceHeartCharacter(text);
 
     previousClipboardText = text;
+    choiceWindowText = text;
 
     // Check cache file for stored translations
     if($.useTranslationCache && !cacheOverwrite){
@@ -893,7 +889,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         // Post-translation replacements
         for (const [key, value] of Object.entries(postTranslationReplacements)) {
           let re = new RegExp(key,'g'); // Create regex with variable
-          clipboardText = clipboardText.replace(re, value); // Use regular expresion to replace all values and not the first one only
+          clipboardText = clipboardText.replace(re, value); // Use regular expression to replace all values and not the first one only
         }
         // Remove "" if there wasn't 『|』on text
         if(!/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
@@ -904,7 +900,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
         // Store translation in cache
         if ($.useTranslationCache){
-          if(!(previousClipboardText == '' || previousClipboardText == ' ' || clipboardText == '' || clipboardText == '')){ // Don't store if empty
+          if(!(previousClipboardText == '' || previousClipboardText == ' ' || clipboardText == '' || clipboardText == ' ')){ // Don't store if empty
             storedTranslations[previousClipboardText] = clipboardText;
             writeFile('translationsCache', storedTranslations);
             setTimeout(() => { // Needs a wait when storing to cache, reason unknown
@@ -923,38 +919,35 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     text = text.replace(/\[ /g, ''); // Make variations of '] . [' to '].['
     text = text.replace(/(\[|\])\1+/g, '$1') // Remove repetitions of [ or ]
     text = text.replace(/\] *\[/g, '].['); // If separation came without dot add it
-	text = text.replace(/(?<!\.{2,3})\.\] \.?/g, '].'); // There's a . inside a choice at the end, put it ouside (Ignore is choice has ...)
+	  text = text.replace(/(?<!\.{2,3})\.\] \.?/g, '].'); // There's a . inside a choice at the end, put it outside (Ignore is choice has ...)
 
     // Replace [] in icons and color codes to {} (otherwise they get in the way of the split of choices)
-    text = text.replace(/(\\|)?(i|I|c|C)\[(\d{1,2})\]/g, '$2{$3}');
+    text = text.replace(/(\\|)?(I|C)\[(\d{1,2})\]/gi, '$2{$3}');
 
     translatedChoices = text.split('].');
     let maxWidth = '123';
 
-    // If there was a window message, separate transalted text from translated choices
+    // If there was a window message, separate translated text from translated choices
     if($gameMessage._texts.length){
-      // Sanity check, recieved translations should be greater than choices to be replaced
+      // Sanity check, received translations should be greater than choices to be replaced
       if(translatedChoices.length > $gameMessage.choices().length){
         let winTextArray = translatedChoices.splice($gameMessage.choices().length);
         translatedWindowText = winTextArray.join(''); // Save text in global var to be used in windows_message.update
         translatedWindowText = translatedWindowText.replace(/\[? ?\[?/, '') // Remove first space and '['
 
         //Remove name from text. If using force namebox removing the block that has the name is handled
-        //by clipboardlulle block ignore. That won't trigger here, so we need to remove it here.
-        //this code is mostly the same as in ClipboardLulle
+        //by ClipboardLlule block ignore. That won't trigger here, so we need to remove it here.
+        //this code is mostly the same as in ClipboardLlule
         //let savedNames = readFile('savedNames'); // If there is no file or it's empty, the next for will be skipped
 
         for(const key in savedNames){
           let name = savedNames[key];
-          name = name.replace(/\\(c|C)\[\d{1,2}\]/g, '') // Remove color codes
+          name = name.replace(/\\C\[\d{1,2}\]/gi, '')                // Remove color codes
           if(name.includes('$1')) name = name.replace(' $1', '.{0,3}'); // Remove regex for multi names
-          else name = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'); // Esacpe special characters for regex (if there is a [ for example use it as text not as regex special character)
+          else name = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');   // Escape special characters for regex (if there is a [ for example use it as text not as regex special character)
 
-          let re = new RegExp('^' + name + '$', 'i');
-          if(re.test(name)){
-            re = new RegExp(name + '\\.?(-| |:|：)*', 'i');
-            translatedWindowText = translatedWindowText.replace(re, '');
-          }
+          re = new RegExp('^ *' + name + '\\.?(-| |:|：)*', 'i');       // Add possible name endings (ex 'Name: ')
+          translatedWindowText = translatedWindowText.replace(re, '');
         }
         // -End- remove name from text
 
@@ -967,25 +960,25 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
 
 
-    // Get choice with max lenght and remove []
+    // Get choice with max length and remove []
     for (let i = 0; i < translatedChoices.length; i++) {
       translatedChoices[i] = translatedChoices[i].replace(/\[? ?\[/, ''); // remove '['
       translatedChoices[i] = translatedChoices[i].replace(']', ''); // remove ']'
-      translatedChoices[i] = translatedChoices[i].charAt(0).toUpperCase() + translatedChoices[i].slice(1); // Capitilize first letter
+      translatedChoices[i] = translatedChoices[i].charAt(0).toUpperCase() + translatedChoices[i].slice(1); // Capitalize first letter
 
       // remove special characters that make choice length more than it is
       let choice = translatedChoices[i].replace(/(i|I)\{(\d{1,2})\}/g, 'aa'); // Two characters for icons
       choice = choice.replace(/(c|C)\{(\d{1,2})\}/g, ''); // Remove color codes
-      if(choice.length > maxWidth.length) maxWidth = choice; // get choice with max lenght
+      if(choice.length > maxWidth.length) maxWidth = choice; // get choice with max length
     }
 
-    // Resize choice window with choice with max lenght or max game window size
-	if($.wordWrapType == 'YEP'){
-		var wordWrapState = wordWrap;
-		wordWrap = false;
-	}
+    // Resize choice window with choice with max length or max game window size
+    if($.wordWrapType == 'YEP'){
+      var wordWrapState = wordWrap;
+      wordWrap = false;
+    }
     let width = Math.min(this.textWidthEx(maxWidth) + this.padding * 3 , Graphics.boxWidth);
-	if($.wordWrapType == 'YEP') wordWrap = wordWrapState;
+	  if($.wordWrapType == 'YEP') wordWrap = wordWrapState;
     if(isNaN(width)){
       let bitmap = new Bitmap();
       width = bitmap.measureTextWidth(maxWidth);
@@ -993,11 +986,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     if(width < 132) width = 132;
     this.updatePlacement(true, width);
 
-    // Replace choices with translated ones (no direct assignment in case traslation wrongly gives fewer choices)
+    // Replace choices with translated ones (no direct assignment in case translation wrongly gives fewer choices)
     for (let i = 0; i < $gameMessage.choices().length; i++) {
       // Restore escaped
       translatedChoices[i] = translatedChoices[i].replace(/(i|I|c|C){(\d{1,2})}/g, '$1[$2]');
-      // Remove endping .
+      // Remove ending .
       translatedChoices[i] = translatedChoices[i].replace(/\.$/g, '');
 
       if(translatedChoices[i]) $gameMessage.choices()[i] = translatedChoices[i];
@@ -1005,22 +998,24 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
     // Clear and draw new (translated) items
     this.refresh();
-    // Redraw cursor in case choicebox is bigger
+    // Redraw cursor in case the choicebox is bigger
     this.ensureCursorVisible();
     this.updateCursor(); 
 
     // If there is a text window replace that text after replacing choices
-    //if($gameMessage._texts.length){ // This was generating an error when sometimes it detected text in $gameMessage._texts when there was none, probably from another plugin or another window, like names or gold
-	if(translatedWindowText !== ''){
+    //if($gameMessage._texts.length){ // This was generating an error when sometimes 
+                                      // it detected text in $gameMessage._texts when there was none, 
+                                      // probably from another plugin or another window, like names or gold
+	  if(translatedWindowText !== ''){
       // If window_message.prototype.update is disabled or gives problems 
       // an alternate method of showing the message can be trying to push (MV function) new text window
 
       // This will trigger code in Window_Message update, translated text is in global var translatedWindowText
-	  // Don't know why but it textReplace triggers first, choices won't be replaced, so we add a wait
-	  setTimeout(() => {
-        windowTextWithChoices = true;
-      	if($.wordWrapType == 'ZERO') textOverflowed = false;
-      }, 300);
+      // Don't know why but it textReplace triggers first, choices won't be replaced, so we add a wait
+      setTimeout(() => {
+          windowTextWithChoices = true;
+          if($.wordWrapType == 'ZERO') textOverflowed = false;
+        }, 300);
     }
     
     startChoiceReplaceNormal = false; // end choice script
@@ -1028,7 +1023,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     translatedChoices = []; // empty array
 
     // If auto advancing text, and skip choices is selected, auto select first choice
-    // Modifing whice choice is selected is possible in the next lines, but not implemented
+    // Modifying which choice is selected is possible in the next lines, but not implemented
     if(autoAdvanceText && $.autoSelectFirstChoice){
       setTimeout(() => {
         this.callOkHandler();
@@ -1036,8 +1031,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
   }
 
-  // Reset variables once a choice is selected, normally done automaticlly, but if choice
-  // is selected before translation or proceced it will break
+  // Reset variables once a choice is selected, normally done automatically, but if choice
+  // is selected before translation or proceed it will break
   var ZERO_Window_Selectable_processOk = Window_Selectable.prototype.processOk;
   Window_Selectable.prototype.processOk = function() {
     ZERO_Window_Selectable_processOk.call(this);
@@ -1063,10 +1058,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var replaceTextTranslationWindow = false;
   var textToReplaceTranslationWindow = '';
   var stopCustomInterval = false;
+  var choiceWindowText = ''; // Tried to use previousClipboardText, but it makes as undefined in populateTranslationWindow(), don't know why
 
   var ZERO_WindowMessage_updateTranslationWindow = Window_Message.prototype.update;
   Window_Message.prototype.update = function () {
-    if (Input.isTriggered(CustomInputs.translationWindowKey) && this.isOpen()){
+    if (Input.isTriggered(CustomInputs.translationWindowKey) && (this.isOpen() || $gameMessage.isChoice())){
         if(!translationWindow){
             createTranslationWindow();
         } else {
@@ -1086,9 +1082,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   function createTranslationWindow(){
     let absolutePath = process.cwd();
     if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
-    nw.Window.open(absolutePath + '\\js\\plugins\\translation.html', {}, function(newWindow) {
+    nw.Window.open(absolutePath + '\\js\\plugins\\ZERO_SetTranslationWindow.html', {}, newWindow => {
         //console.log('Translation window created');
-        translationWindow = newWindow; // Make it accesible ouside callback
+        translationWindow = newWindow; // Make it accessible outside callback
         translationWindow.title = 'Translation Window';
 
         // Prevent user from closing the translation window, closing it will instead hide it
@@ -1098,12 +1094,20 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         });        
 
         // Force close the translation (bypass close event) when main game window is closed
-        gameWindow.on('close', function () {
+        if(!configurationWindow){ // Check if configuration window already made a modification on close event
+          gameWindow.on('close', function () {
             translationWindow.close(true);
             this.close(true);
-        });
+          });
+        } else {
+          gameWindow.on('close', function () {
+            translationWindow.close(true);
+            configurationWindow.close(true);
+            this.close(true);
+          });
+        }
 
-        // Add events to buttons and populate for the frist time
+        // Add events to buttons and populate for the first time
         translationWindow.window.onload = () => {
             //console.log('loaded');
             translationWindow.window.document.querySelector('#buttonSave').addEventListener('click', translationWindowSave);
@@ -1136,7 +1140,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
   function populateTranslationWindow(){
     //console.log('Populate translation window');
-    JPTextInTranslationWindow = LastMemTextSend;
+    if($gameMessage.isChoice()) JPTextInTranslationWindow = choiceWindowText;
+    else JPTextInTranslationWindow = LastMemTextSend;
+
     if($.showOriginalText) translationWindow.window.document.querySelector('#origText').value = $gameMessage._texts.join(' ');
     kuroshiroInstance.convert(JPTextInTranslationWindow, {to: "romaji", mode: "spaced"})
         .then(text => {
@@ -1147,7 +1153,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     // Clear current text if there is no translation
     if(translationWindow.window.document.querySelector('#current').value == 'undefined')
       translationWindow.window.document.querySelector('#current').value = '';
-    // Clear deepL beacuse fill it's on demand with the get button (unless option to set it by default is enabled)
+    // Clear deepL because fill it's on demand with the get button (unless option to set it by default is enabled)
     if($.translationWindowSetDeepLOnOpen) getTranslationWindowDeepLTranslation();
     else translationWindow.window.document.querySelector('#deepL').value = '';
   }
@@ -1160,9 +1166,13 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     writeFile('translationsCache', storedTranslations);
 
     // Send to textbox (trigger flag in Window_Message update)
-    textOverflowed = false; // Reset overflow (YEP)
-    textToReplaceTranslationWindow = text;
-    replaceTextTranslationWindow = true;
+    if($gameMessage.isChoice()){
+      startChoiceReplaceStored = true;
+    } else {
+      textOverflowed = false; // Reset overflow (YEP)
+      textToReplaceTranslationWindow = text;
+      replaceTextTranslationWindow = true;
+    }
 
     //clearInterval(intervalTranslationWindow);
     stopCustomInterval = true;
@@ -1233,17 +1243,17 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     let text = translationWindow.window.document.querySelector('#current').value;
     text = text.replace(/\bhe\b/g, 'she');
     text = text.replace(/\bHe\b/g, 'She');
-    text = text.replace(/\bhis\b/g, 'her');
-    text = text.replace(/\bHis\b/g, 'Her');
+    text = text.replace(/\b(H|h)i(s|m)(self)?\b/g, '$1er$3');
     translationWindow.window.document.querySelector('#current').value = text;
   }
 
-  /* End Translation Window */
+  /* ----------------------*\
+  /* End Translation Window *\
   /* ----------------------------------------------------------------------------------*/
 
 
   // Promise for romaji converting
-  //var kuroshiro = new Kuroshiro(); // Giving problmens if they both are not redefined each time (now loading dics each time, time consuming)
+  //var kuroshiro = new Kuroshiro(); // Giving problems if they both are not redefined each time (now loading dictionaries each time, time consuming)
   //var kuromojiAnalyser = new KuromojiAnalyzer({ dictPath: "./js/libs/dict" });
   // function ToRomaji(str) {
   //   var kuroshiro = new Kuroshiro();
@@ -1258,7 +1268,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     text = processTextBetweenParentheses(text);
     // Replacements
     text = text.replace(/　/g,' ');                       // Replace JP spaces with normal ones (mainly for wordwrap)
-    text = text.replace(/tsu((?![a-z])|(?=tsu))/gi, '~'); // っ , will fuck up some works, but this functions is to be used on sex lines monstly so it's fine (Tried to fix it with negative lookahead)
+    text = text.replace(/tsu((?![a-z])|(?=tsu))/gi, '~'); // っ , will fuck up some works, but this functions is to be used on sex lines mostly so it's fine (Tried to fix it with negative lookahead)
     text = text.replace(/ ~/gi, '~');
     text = text.replace(/゛/gi, '~');					            // Could cause conflicts, check
     text = text.replace(/~/g, '～');	
@@ -1297,7 +1307,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   Window_Message.prototype.update = function () {
 
     // Manual copy choices to clipboard (if there are any)
-    if (Input.isTriggered(CustomInputs.copyChoicesButton) && $gameMessage.isChoice()) {
+    if ((Input.isTriggered(CustomInputs.copyChoicesButton) || configWindowCopyChoices) && $gameMessage.isChoice()) {
+      configWindowCopyChoices = false;
       let choices = $gameMessage._choices;
       if(choices.length > 0){
         let text = '';
@@ -1330,7 +1341,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     if(this.isOpen() && !startChoiceReplaceNormal && !startChoiceReplaceStored){ // Check if message window is opened
       // Copy (current window) Text to Clipboard Button function
       // Most of this function can be replaced with $gameMessage._texts if necessary ()
-      if ((Input.isTriggered(CustomInputs.copyTextButton)) && this.isOpen()) {
+      if ((Input.isTriggered(CustomInputs.copyTextButton) || configWindowCopyText) && this.isOpen()) {
+        configWindowCopyText = false;
         let text = this.__text;
         // let text = this.convertEscapeCharacters($gameMessage.allText());  // alternate way to get text
         text = Window_Base.prototype.convertEscapeCharacters(text);          // Convert variables to text
@@ -1349,7 +1361,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       }
       
       // Show romaji on current window and replace stored cache
-      if (Input.isTriggered(CustomInputs.replaceToRomajiButton) && this.isOpen() && $.replaceToRomaji) {
+      if ((Input.isTriggered(CustomInputs.replaceToRomajiButton) || configWindowRomaji) && this.isOpen() && $.replaceToRomaji) {
+        configWindowRomaji = false;
         let currentText = LastMemTextSend;
         if(isJapaneseRegex.test(currentText)){ // put this regex in a constant (put constant in all other places where it was called)
           //ToRomaji(currentText)
@@ -1374,14 +1387,14 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       // Check the translation cache
       // If the text is cached, display it, without waiting for deepl
       if(this.isOpen() && jpTextSentToMem && !cacheOverwrite && processCache){ // Check if message window is opened
-        // Once clipboardIllule script is merged and or a custom text hook is made add here
+        // Once clipboardLlule script is merged and or a custom text hook is made add here
         // a check to add the special character to ignore text in the DeepL plugin
         // need to check if the text is cached before copying it to clipboard
         // can't be done now, as this is getting the text already from the clipboard
 
         processCache = false; // This is here so this block is processed once per textbox
 		    $.escapeText = false; // Stop trying to translate text (while it's searching for cache)
-        clipboardText = clipboard.get('text'); // Gets clipbard_llule jp text, not the translated one
+        clipboardText = clipboard.get('text'); // Gets ClipboardLlule jp text, not the translated one
         //textCached = clipboardText; // store it for romaji
 
         //if(storedTranslations[clipboardText] !== undefined){ // check now done in ClipboardLlule, if you want to sill make it here, change clipboardText to clipboardText.replace(/·/g,'')
@@ -1420,7 +1433,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             // Post translation replacements
             for (const [key, value] of Object.entries(postTranslationReplacements)) {
               let re = new RegExp(key,"g"); // Create regex with variable
-              clipboardText = clipboardText.replace(re, value); // Use regular expresion to replace all values and not the first one only
+              clipboardText = clipboardText.replace(re, value); // Use regular expression to replace all values and not the first one only
             }
             // Remove "" if there wasn't 『|』on text
             if(!/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
@@ -1443,7 +1456,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             if ($.ignoreTextStartWith){
               if (!clipboardText.startsWith($.ignoreTextStr)) this.replaceText(clipboardText, messageCounter);
             }else if($.ignoreJapText){
-              if (clipboardText.search(/[一-龠]+|[ぁ-ゔ]+|[ァ-ヴー]+|[ａ-ｚＡ-Ｚ０-９]+|[々〆〤！？]+/u) == -1) this.replaceText(clipboardText, messageCounter); // don't know why I'm doing /u (unicode) and checkin on -1, may be that this was done before I knew how to handle this regex, for now leaving as is without using var isJapaneseRegex
+              // don't know why I'm doing /u (unicode) and checking on -1, may be that this was done before I knew how to handle this 
+              // regex, for now leaving as is without using var isJapaneseRegex
+              if (clipboardText.search(/[一-龠]+|[ぁ-ゔ]+|[ァ-ヴー]+|[ａ-ｚＡ-Ｚ０-９]+|[々〆〤！？]+/u) == -1)  
+                this.replaceText(clipboardText, messageCounter);
             }else{
               this.replaceText(clipboardText, messageCounter);
             }
@@ -1451,7 +1467,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         }
 
       // Call function manually with button, or use it when text is overflowed
-      if ((Input.isTriggered(CustomInputs.textButton)) && this.isOpen()) {
+      if ((Input.isTriggered(CustomInputs.textButton) || configWindowReplaceText) && this.isOpen()) {
+        configWindowReplaceText = false; // trigger this function from config menu
         clipboardText = LastMemTextSend || clipboard.get('text'); // Get text from clipboard
         
         if(!textOverflowed){
@@ -1472,8 +1489,12 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   };
 
   // New method
-  // Get tranlated text, wordwrap it and insert it in current textbox
+  // Get translated text, wordwrap it and insert it in current textbox
   Window_Message.prototype.replaceText = function (text, localMessageCounter = false){
+    if(!text){ // Prevent error on undefined text var
+      jpTextSentToMem = false;
+      return;
+    }
     wait = true;
     $.escapeText = false; // Prevent this function from being called until its done
 
@@ -1559,7 +1580,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     
     this.newPage(this._textState1);
     if($.fontSize != 0) this.contents.fontSize = $.fontSize;
-    else if ($.decreaseFontFaceWindow && $gameMessage._faceName !== '') // Decrese font for textboxes with face
+    else if ($.decreaseFontFaceWindow && $gameMessage._faceName !== '') // Decrease font for textboxes with face
       this.contents.fontSize -= $.decreaseFontAmountFaceWindow; 
 
     // Increase or decrease fontsize by one step if text started with { or } (original escape characters to change font size)
@@ -1570,7 +1591,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       // Make font bigger
       if(/>.?{/.test($gameMessage._texts[0])) this.contents.fontSize += 12; 
       else if(/^\\{/.test($gameMessage._texts[1])) this.contents.fontSize += 12;
-    } else{
+    } else if ($gameMessage._texts[0]){
       // Normal text (without namebox) Or textbox detection failed (need to re do that to more games) [So now checking 1st and 2nd lines]
       if($gameMessage._texts[0].startsWith('\\}')) this.contents.fontSize -= 12;
       else if ($gameMessage._texts[1]){ if($gameMessage._texts[1].startsWith('\\}')) this.contents.fontSize -= 12; }
@@ -1592,7 +1613,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       if($.wordWrapType == 'YEP' && typeof Window_NameBox == 'function'){
         $gameSystem.addMessageBacklog('<wordwrap>' + ZERO.HideMessageWindow.nameBacklog + text);
       } else {
-        // Using legacy wrapper if YEP_MessageCore is not pressent. I could port that functionality 
+        // Using legacy wrapper if YEP_MessageCore is not present. I could port that functionality 
         // but it's a waste of time, as my legacy wrapper works fine
         $gameSystem.addMessageBacklog(wordWrapper(ZERO.HideMessageWindow.nameBacklog + text, 55));
       }
@@ -1617,7 +1638,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       }
     }
 
-    // Finished text replacing, reset clipboarLulle flag
+    // Finished text replacing, reset ClipboardLlule flag
     if($.wordWrapType == 'YEP') wordWrap = false;
     jpTextSentToMem = false;
   }
@@ -1687,9 +1708,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
 				// Draw * at end
 				var w = this.textWidth('*');
-				let xPossition = textState.x;
-				if (textState.x+w > this.contents.width) xPossition = xPossition - w; // Prevent * to go past window if last word was at the very border
-				this.contents.drawText('*', xPossition, textState.y, w * 2, textState.height);
+				let xPosition = textState.x;
+				if (textState.x+w > this.contents.width) xPosition = xPosition - w; // Prevent * to go past window if last word was at the very border
+				this.contents.drawText('*', xPosition, textState.y, w * 2, textState.height);
 
 				return;
 			}
@@ -1729,7 +1750,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	Window_Base.prototype.saveCurrentWindowSettings2 = function(){
 		this._saveFontFace = this.contents.fontFace;
 		this._saveFontSize = this.contents.fontSize;
-		this._savetextColor = this.contents.textColor;
+		this._saveTextColor = this.contents.textColor;
 		this._saveFontBold = this.contents.fontBold;
 		this._saveFontItalic = this.contents.fontItalic;
 		this._saveOutlineColor = this.contents.outlineColor;
@@ -1739,7 +1760,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	Window_Base.prototype.restoreCurrentWindowSettings2 = function(){
 		this.contents.fontFace = this._saveFontFace;
 		this.contents.fontSize = this._saveFontSize;
-		this.contents.textColor = this._savetextColor;
+		this.contents.textColor = this._saveTextColor;
 		this.contents.fontBold = this._saveFontBold;
 		this.contents.fontItalic = this._saveFontItalic;
 		this.contents.outlineColor = this._saveOutlineColor;
@@ -1749,7 +1770,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	Window_Base.prototype.clearCurrentWindowSettings2 = function(){
 		this._saveFontFace = undefined;
 		this._saveFontSize = undefined;
-		this._savetextColor = undefined;
+		this._saveTextColor = undefined;
 		this._saveFontBold = undefined;
 		this._saveFontItalic = undefined;
 		this._saveOutlineColor = undefined;
@@ -1785,7 +1806,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 	}
 	// END OF YEP WORD WRAPPING
 
-  // Function for wordwraping text (Legacy)
+  // Function for wordwrapping text (Legacy)
   function wordWrapper(str, width){
     // Split all text into words
     let text = str.split(' ');
@@ -1793,12 +1814,12 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     let localWidth;
     
     str = '';
-    // Loop while there are words left in the text. Each loop reperents a line
+    // Loop while there are words left in the text. Each loop represents a line
     while(text.length > 0){
       localWidth = width;
       // Each loop adds a word to the line, until line is full or no more text
       while(line.replace(colorRegex, '').length < localWidth && text.length > 0){
-        // Reduce line lenght if there is a special double width character
+        // Reduce line length if there is a special double width character
         localWidth -= (text[0].match(/❤|♥|♡|★/g)|| []).length;
 
         // Check if next word isn't longer than width, else split it
@@ -1813,7 +1834,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
           if(/(\n|\r)/.test(text[0])) {
             linebreak = true;
             let split = text[0].split('\n');
-            // if the linebrake had two words (split at start of function didn't split words)
+            // if the linebreaks had two words (split at start of function didn't split words)
             if(split.length > 1) {
               line += split[0];
               text[0] = split[1];
@@ -1841,8 +1862,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     return str;
   }
 
-  // Split single words that are longer than maxium width
-  // Returns splited elements at the start of array
+  // Split single words that are longer than maximum width
+  // Returns splitted elements at the start of array
   function wordWarpSingleWord(arr, line ,width){
     let word = arr.shift();
     let arr2 = [];
@@ -1878,7 +1899,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   }
 
   // Add normal parenthesis when flag from clipboard_llule was set
-  // Original text had parentheses, and was removed because it conflics with DeepL
+  // Original text had parentheses, and was removed because it conflicts with DeepL
   function processTextBetweenParentheses(text){
     if (textInBetweenParentheses) text = '(' + text + ')';
     return text;
@@ -1891,7 +1912,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       if(text.indexOf('...') < 15){ // Check that the '...' are not at the end or far in the middle of the sentence
         text = text.substring(text.indexOf('...')); // Delete text to the left of '...'
         text = text.replace('... ', '...');
-      }else text = '...' + text; // DeepL didn't add '...' at the beggining, so add them
+      }else text = '...' + text; // DeepL didn't add '...' at the beginning, so add them
     }
     return text;
   }
@@ -1900,8 +1921,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   //      to choose primary or alt)
 
   // Overwrite updateMessage so it stops processing a message when
-  // a text from memory is pasted in box. (this may be unncesesary if always show fast is on)
-  // If another plugin conficts with this override, the modification can 
+  // a text from memory is pasted in box. (this may be unnecessary if always show fast is on)
+  // If another plugin conflicts with this override, the modification can 
   // be done to processCharacter method (problem with that, read bellow)
   Window_Message.prototype.updateMessage = function() {
     if (this._textState) {
@@ -1930,7 +1951,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
   };
 
-  // In case the previous overwrite confilcts with another plugin
+  // In case the previous overwrite conflicts with another plugin
   // there is a problem that it doesn't clear text
   // coding in progress (need to call onEndOfText for windowMessage from here)
 
@@ -1950,7 +1971,121 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     ZERO_Window_Base_processCharacter.call(this, textState);
   }*/
 
-  /*----------------------------------- Helper Functions ---------------------------------------------*/
+  /* ---------------------------------------------------------------------------- */
+  /* Start Configuration Window /
+  /* -------------------------*/
+
+  var configurationWindow;
+  // gameWindow already set on translation window
+  var configWindowReplaceText = false;
+  var configWindowCopyText = false;
+  var configWindowCopyChoices = false;
+  var configWindowRomaji = false;
+
+  var ZERO_WindowMessage_updateConfigurationWindow = Window_Message.prototype.update;
+  Window_Message.prototype.update = function () {
+    if (Input.isTriggered(CustomInputs.configurationWindowKey) && this.isOpen()){
+        if(!configurationWindow){
+            createConfigurationWindow();
+        } else {
+            configurationWindow.show();
+            configurationWindow.focus();
+            updateConfigurationWindow();
+        }
+    }
+    
+    return ZERO_WindowMessage_updateConfigurationWindow.call(this);
+  }
+
+  // Create window and set items
+  function createConfigurationWindow(){
+    let absolutePath = process.cwd();
+    if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
+    nw.Window.open(absolutePath + '\\js\\plugins\\ZERO_SetConfigurationWindow.html', {}, function(newWindow) {
+      configurationWindow = newWindow;
+      configurationWindow.title = 'Configuration Window';
+
+      // Prevent user from closing the configuration window, closing it will instead hide it
+      configurationWindow.on('close', function () {
+        configurationWindow.hide();
+        gameWindow.focus();
+      });
+
+      // Force close the translation (bypass close event) when main game window is closed
+      if(!translationWindow){ // Check if translation window already made a modification on close event
+        gameWindow.on('close', function () {
+          configurationWindow.close(true);
+          this.close(true);
+        });
+      } else {
+        gameWindow.on('close', function () {
+          translationWindow.close(true);
+          configurationWindow.close(true);
+          this.close(true);
+        });
+      }
+
+      // Add events to checkboxes and buttons
+      configurationWindow.window.onload = () => {
+        configurationWindow.window.document.querySelector('#replaceText').addEventListener('click', function(){configWindowReplaceText = true});
+        configurationWindow.window.document.querySelector('#copyText').addEventListener('click', function(){configWindowCopyText = true});
+        configurationWindow.window.document.querySelector('#copyChoices').addEventListener('click', function(){configWindowCopyChoices = true});
+        configurationWindow.window.document.querySelector('#toRomaji').addEventListener('click', function(){configWindowRomaji = true});
+        configurationWindow.window.document.querySelector('#skipCachedText').addEventListener('click', function(){skipCachedText = !skipCachedText});
+        configurationWindow.window.document.querySelector('#cacheOverwrite').addEventListener('click', function(){cacheOverwrite = !cacheOverwrite});
+        configurationWindow.window.document.querySelector('#autoAdvanceText').addEventListener('click', configAutoAdvanceText);
+        configurationWindow.window.document.querySelector('#autoAdvanceText2').addEventListener('click', configAutoAdvanceText2);
+        // Set current state to checkboxes
+        updateConfigurationWindow();
+
+        
+      }
+    });
+
+    // Set window dimensions (Must be set outside of open function or else it doesn't work)
+    var interval = setInterval(() => {
+      if(configurationWindow){
+        configurationWindow.width = 660;
+        configurationWindow.height = 550;
+        clearInterval(interval);
+      }
+    }, 50);
+    //end of config window
+  }
+
+  // Update state of toggles
+  function updateConfigurationWindow(){
+    configurationWindow.window.document.querySelector('#skipCachedText').checked = skipCachedText;
+    configurationWindow.window.document.querySelector('#cacheOverwrite').checked = cacheOverwrite;
+    configurationWindow.window.document.querySelector('#autoAdvanceText').checked = (autoAdvanceText && $.autoAdvanceTextWait == 500);
+    configurationWindow.window.document.querySelector('#autoAdvanceText2').checked = (autoAdvanceText && $.autoAdvanceTextWait != 500);
+  }
+
+  // Configuration menu attached functions 
+  function configAutoAdvanceText(){ // For caching text
+    autoAdvanceText = !autoAdvanceText
+    if(autoAdvanceText){
+      $.autoSelectFirstChoice = true; 
+      $.autoAdvanceTextWait = 500;
+    }
+  }
+
+  function configAutoAdvanceText(){ // For auto reading text
+    autoAdvanceText = !autoAdvanceText
+    if(autoAdvanceText){
+      $.autoSelectFirstChoice = false; 
+      $.autoAdvanceTextWait = configurationWindow.window.document.querySelector('#autoAdvanceText2Millis').value;
+    }
+  }
+  
+
+  /* ---------------------------------------------------------------------------- */
+  /* End of Configuration Window /
+  /* ------------------------- */
+
+  /* -------------------------------------------------------------------------------------- */
+  /* Helper functions  /
+  /* ----------------*/
 
   /*
    * Get full path to file. Detects if game is run from main folder or as debug
@@ -1964,7 +2099,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
   function writeFile(file, data){
     let fs = require('fs');
+
+    if(file == 'translationsCache'){ writingFile = true; } // Prevent triggering a fs.watch (Should be changed to all when HideMessageTextbox names functionality is moved here)
     fs.writeFileSync(getAbsolutePath(file), JSON.stringify(data, null, 2)); // The 2 passed to stringify is to make the JSON readable
+    if(file == 'translationsCache') {setTimeout(() => { writingFile = false }, 500); }
   }
 
   function readFile(file){
@@ -1983,13 +2121,16 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
    * fs.watch triggers multiple times in windows, so use a workaround to 
    * prevent multiple calls with a setTimeOut
   */
+  var writingFile = false;
   function watchFiles(){ //
     let fs = require('fs');
     let savedNamesTimeOut = true;
     let translationsCacheTimeOut = true;
 
+    // Now this is being also triggered by the write file of HideMessageWindow (and that is good, so here we have an updated version)
+    // (But...) Once this is moved to SetClipboardText edit writeFile if, and uncomment the 2nd condition here
     fs.watch(getAbsolutePath('savedNames'), () => {
-      if(savedNamesTimeOut){
+      if(savedNamesTimeOut/* && !writingFile*/){
         savedNamesTimeOut = false;
         setTimeout(() => { savedNamesTimeOut = true; }, 500);
 
@@ -1998,7 +2139,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       }
     });
     fs.watch(getAbsolutePath('translationsCache'), () => {
-      if(translationsCacheTimeOut){
+      if(translationsCacheTimeOut && !writingFile){
         translationsCacheTimeOut = false;
         setTimeout(() => { translationsCacheTimeOut = true; }, 500);
 
@@ -2013,7 +2154,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     if(text.includes('♡') || text.includes('♥') || text.includes('❤')){
       text = text.replace(/♡/g,'%23'); // %23 is urlURI code for #
       text = text.replace(/♥/g,'%23');
-	  text = text.replace(/❤/g,'%23');
+	    text = text.replace(/❤/g,'%23');
       if(typeof hasHeartCharacter !== 'undefined') hasHeartCharacter = true;
     }else{
       if(typeof hasHeartCharacter !== 'undefined') hasHeartCharacter = false;

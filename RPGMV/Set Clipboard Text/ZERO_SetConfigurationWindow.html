@@ -1,0 +1,463 @@
+<body style="background: #222"></body>
+  <div id="main">
+    <div class="row">
+      <h1 style="text-align:center;margin:5 auto;margin-bottom: 10">Configuration</h1>
+    </div>
+    <!--** Row1 **-->
+    <div class="row">
+      <div class="column left">
+        <div class="row">
+          <div class="text">Replace Text</div> 
+          <!--Help Modal-->
+          <a class="button" href="#popupReplaceText">?</a>
+          <div id="popupReplaceText" class="overlay">
+            <div class="popup">
+              <a class="close" href="#">&times;</a>
+              <div class="content">
+                Replace text. And show overflowed text if any (when text was longer than textbox)
+              </div>
+            </div>
+          </div>
+          <!--End Help Modal-->
+        </div>
+      </div>
+      <div class="column right"> <!--Right Column-->
+        <button id="replaceText" class="button-3" role="button">Run</button>
+      </div>
+    </div>
+    <!--** Row2 **-->
+    <div class="row">
+        <div class="column left">
+          <div class="row">
+            <div class="text">Copy Text</div> 
+            <!--Help Modal-->
+            <a class="button" href="#popupCopyText">?</a>
+            <div id="popupCopyText" class="overlay">
+              <div class="popup">
+                <a class="close" href="#">&times;</a>
+                <div class="content">
+                    Copy text of current window to clipboard and show translation on textbox (useful when Clipboard_llule, fails to copy it).
+                </div>
+              </div>
+            </div>
+            <!--End Help Modal-->
+          </div>
+        </div>
+        <div class="column right"> <!--Right Column-->
+          <button id="copyText" class="button-3" role="button">Run</button>
+        </div>
+    </div>
+    <!--** Row3 **-->
+    <div class="row">
+        <div class="column left">
+          <div class="row">
+            <div class="text">Copy Choices</div> 
+            <!--Help Modal-->
+            <a class="button" href="#popupCopyChoices">?</a>
+            <div id="popupCopyChoices" class="overlay">
+              <div class="popup">
+                <a class="close" href="#">&times;</a>
+                <div class="content">
+                    Copy choices to clipboard. Format choices and text and send them for translation. Not really neccesary with the Auto Replace Choices function. But useful when that one fails.
+                </div>
+              </div>
+            </div>
+            <!--End Help Modal-->
+          </div>
+        </div>
+        <div class="column right" > <!--Right Column-->
+          <button id="copyChoices" class="button-3" role="button">Run</button>
+        </div>
+    </div>
+    <!--** Row4 **-->
+    <div class="row">
+        <div class="column left">
+          <div class="row">
+            <div class="text">Replace Text With Romaji</div> 
+            <!--Help Modal-->
+            <a class="button" href="#popupToRomaji">?</a>
+            <div id="popupToRomaji" class="overlay">
+              <div class="popup">
+                <a class="close" href="#">&times;</a>
+                <div class="content">
+                    Replace current text in textbox with JP text converted to romaji, and update stored cache for that text. Useful for sex scenes where there is a lot of gliberish text.
+                </div>
+              </div>
+            </div>
+            <!--End Help Modal-->
+          </div>
+        </div>
+        <div class="column right"> <!--Right Column-->
+            <button id="toRomaji" class="button-3" role="button">Run</button>
+        </div>
+    </div>
+    <!--** Row5 **-->
+    <div class="row">
+        <div class="column left">
+          <div class="row">
+            <div class="text">Skip Cached Text</div> 
+            <!--Help Modal-->
+            <a class="button" href="#popupSkipCachedText">?</a>
+            <div id="popupSkipCachedText" class="overlay">
+              <div class="popup">
+                <a class="close" href="#">&times;</a>
+                <div class="content">
+                  Start skipping text until a texbox that contains text that was not in the cache, then it will turn of the skip function.
+                  Activate and manually go to next textbox.
+                </div>
+              </div>
+            </div>
+            <!--End Help Modal-->
+          </div>
+        </div>
+        <div class="column right"> <!--Right Column-->
+          <!--Slider Checkbox-->
+          <label class="toggler-wrapper style-1">
+            <input id="skipCachedText" type="checkbox" />
+            <div class="toggler-slider">
+                <div class="toggler-knob"></div>
+            </div>
+          </label>
+          <!--End Slider Checkbox-->
+        </div>
+    </div>
+    <!--** Row6 **-->
+    <div class="row">
+        <div class="column left">
+          <div class="row">
+            <div class="text">Cache Overwrite</div> 
+            <!--Help Modal-->
+            <a class="button" href="#popupCacheOverwrite">?</a>
+            <div id="popupCacheOverwrite" class="overlay">
+              <div class="popup">
+                <a class="close" href="#">&times;</a>
+                <div class="content">
+                    Start ignoring cache and overwrite the text in it. Ex: If a conversation has bad lines cached. Redo the conversation with cacheOverwrite on, it will stop reading from the cache file and write the new conversation based on new translations.
+                </div>
+              </div>
+            </div>
+            <!--End Help Modal-->
+          </div>
+        </div>
+        <div class="column right"> <!--Right Column-->
+          <!--Slider Checkbox-->
+          <label class="toggler-wrapper style-1">
+            <input id="cacheOverwrite" type="checkbox" />
+            <div class="toggler-slider">
+                <div class="toggler-knob"></div>
+            </div>
+          </label>
+          <!--End Slider Checkbox-->
+        </div>
+    </div>
+    <!--** Row7 **-->
+    <div class="row">
+        <div class="column left">
+          <div class="row">
+            <div class="text">Auto Advance Text (For Caching)</div> 
+            <!--Help Modal-->
+            <a class="button" href="#popupAutoAdvanceText">?</a>
+            <div id="popupAutoAdvanceText" class="overlay">
+              <div class="popup">
+                <a class="close" href="#">&times;</a>
+                <div class="content">
+                    Auto advance text. In case you want to cache/store in file the text of a scene before watching it (save-watch-reload). This will advance text once the translation for that window is cached in the file. If a translation doesn't occur and it gets stuck, it will wait 10 seconds and go to the next message. (Will autoselect first choice if a choice appears)
+                </div>
+              </div>
+            </div>
+            <!--End Help Modal-->
+          </div>
+        </div>
+        <div class="column right"> <!--Right Column-->
+          <!--Slider Checkbox-->
+          <label class="toggler-wrapper style-1">
+            <input id="autoAdvanceText" type="checkbox" />
+            <div class="toggler-slider">
+                <div class="toggler-knob"></div>
+            </div>
+          </label>
+          <!--End Slider Checkbox-->
+        </div>
+    </div>
+    <!--** Row8 **-->
+    <div class="row">
+        <div class="column left">
+          <div class="row">
+            <div class="text">Auto Advance Text (Reading)</div> 
+            <!--Help Modal-->
+            <a class="button" href="#popupAutoAdvanceText2">?</a>
+            <div id="popupAutoAdvanceText2" class="overlay">
+              <div class="popup">
+                <a class="close" href="#">&times;</a>
+                <div class="content">
+                    Auto advance text. For reading, will advance text, wait for translation then wait x millis until going to next textbox.
+                </div>
+              </div>
+            </div>
+            <!--Input for millis-->
+            <div style="margin-left:20px"> <label style="font-size: medium;" for="autoAdvanceText2Millis"> Millis: </label> <input type="text" id="autoAdvanceText2Millis" placeholder="7000" value="7000"></div>
+          </div>
+        </div>
+        <div class="column right"> <!--Right Column-->
+          <!--Slider Checkbox-->
+          <label class="toggler-wrapper style-1">
+            <input id="autoAdvanceText2" type="checkbox" />
+            <div class="toggler-slider">
+                <div class="toggler-knob"></div>
+            </div>
+          </label>
+          <!--End Slider Checkbox-->
+        </div>
+    </div>
+  </div>
+
+  <style>
+    #main {
+      background-color: #222;
+      color: #dadada;
+      font-family: Helvetica, Sans Serif;
+    }
+
+    .row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      width: 100%;
+      
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .left {
+      flex: 5;
+      padding: 10;
+      border: solid #444;
+      border-right: 0;
+      font-weight: 100;
+      font-size: 1.2rem;
+      border-radius: 30px 0px 0px 30px;
+    }
+
+    .right {
+      flex: 1;
+      padding: 10;
+      border: solid #444;
+      border-left: 0;
+      text-align: center;
+      border-radius: 0px 30px 30px 0px;
+    }
+
+    /* For single columns */
+    .only {
+      flex: 1;
+      padding: 10;
+      border: solid #444;
+      border-radius: 30px;
+    }
+
+    .text {
+        margin-top: 5px; 
+        margin-left: 10px
+    }
+
+    input{
+        margin-top: 4px;
+        background-color: #444;
+        border: none;
+        color: #dadada;
+        width: 4em;
+    }
+
+    /** Fancy Checkbox **/
+    .toggler-wrapper {
+      display: block;
+      width: 45px;
+      height: 25px;
+      cursor: pointer;
+      position: relative;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .toggler-wrapper input[type='checkbox'] {
+      display: none;
+    }
+
+    .toggler-wrapper input[type='checkbox']:checked + .toggler-slider {
+      background-color: #2a8b42;
+    }
+
+    .toggler-wrapper .toggler-slider {
+      background-color: #666;
+      position: absolute;
+      border-radius: 100px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      -webkit-transition: all 300ms ease;
+      transition: all 300ms ease;
+    }
+
+    .toggler-wrapper .toggler-knob {
+      position: absolute;
+      -webkit-transition: all 300ms ease;
+      transition: all 300ms ease;
+    }
+
+    .toggler-wrapper.style-1
+      input[type='checkbox']:checked
+      + .toggler-slider
+      .toggler-knob {
+      left: calc(100% - 19px - 3px);
+    }
+
+    .toggler-wrapper.style-1 .toggler-knob {
+      width: calc(25px - 6px);
+      height: calc(25px - 6px);
+      border-radius: 50%;
+      left: 3px;
+      top: 3px;
+      background-color: #fff;
+    }
+
+    /** Help Popup **/
+    .box {
+      width: 40%;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 35px;
+      border: 2px solid #fff;
+      border-radius: 20px/50px;
+      background-clip: padding-box;
+      text-align: center;
+    }
+
+    .button {
+      font-size: 0.7em;
+      padding-top: 2;
+      padding-left: 3;
+      padding-right: 3;
+      margin-left: 7px;
+      margin-bottom: 7px;
+      color: #fff;
+      border: 1px solid #04b94f;
+      border-radius: 30px/50px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.3s ease-out;
+      color: rgb(138, 138, 244);
+    }
+    .button:hover {
+      background: #06d85f;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.7);
+      transition: opacity 500ms;
+      visibility: hidden;
+      opacity: 0;
+    }
+    .overlay:target {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .popup {
+      margin: 70px auto;
+      padding: 20px;
+      background: #444;
+      border-radius: 5px;
+      width: 30%;
+      position: relative;
+      transition: all 5s ease-in-out;
+    }
+
+    .popup .close {
+      position: absolute;
+      top: 0px;
+      right: 5px;
+      transition: all 200ms;
+      font-size: 30px;
+      font-weight: bold;
+      text-decoration: none;
+      color: #111;
+    }
+    .popup .close:hover {
+      color: #de4c1c;
+    }
+    .popup .content {
+      max-height: 30%;
+      overflow: auto;
+    }
+
+    @media screen and (max-width: 700px) {
+      .box {
+        width: 60%;
+      }
+      .popup {
+        width: 60%;
+      }
+    }
+
+    /** Button **/
+    .button-3 {
+    appearance: none;
+    background-color: #2b8d47;
+    border: 1px solid rgba(27, 31, 35, .15);
+    border-radius: 6px;
+    box-shadow: rgba(27, 31, 35, .1) 0 1px 0;
+    box-sizing: border-box;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    font-family: -apple-system,system-ui,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    padding: 6px 16px;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    vertical-align: middle;
+    white-space: nowrap;
+    margin: 0 auto;
+    }
+
+    .button-3:focus:not(:focus-visible):not(.focus-visible) {
+    box-shadow: none;
+    outline: none;
+    }
+
+    .button-3:hover {
+    background-color: #23793b;
+    }
+
+    .button-3:focus {
+    box-shadow: rgba(46, 164, 79, .4) 0 0 0 3px;
+    outline: none;
+    }
+
+    .button-3:disabled {
+    background-color: #94d3a2;
+    border-color: rgba(27, 31, 35, .1);
+    color: rgba(255, 255, 255, .8);
+    cursor: default;
+    }
+
+    .button-3:active {
+    background-color: #298e46;
+    box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
+    }
+  </style>

@@ -267,12 +267,12 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   var ZERO_Input__onKeyDown = Input._onKeyDown;
   Input._onKeyDown = function(event) {
     ZERO_Input__onKeyDown.call(this, event);
-	if(event.code === 'ControlLeft') this._currentState['control'] = true;
+	  if(event.code === 'ControlLeft') this._currentState['control'] = true;
   };
   var ZERO_Input__onKeyUp = Input._onKeyUp
   Input._onKeyUp = function(event) {
     ZERO_Input__onKeyUp.call(this, event);
-	if(event.code === 'ControlLeft') this._currentState['control'] = false;
+	  if(event.code === 'ControlLeft') this._currentState['control'] = false;
   };
 
   /* ---------------------------------------------------------------------------- */
@@ -334,37 +334,28 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       && this._textState.text.indexOf('\n') !== 0){                          // text doesn't start with a line break
         if(nameInSameLine){
           if(!((this._textState.text.indexOf('\n') !== -1) && (this._textState.text.indexOf('\n') < this._textState.text.indexOf('「')))){ // This if is added beacuse game fucks up and sometimes gives name and text in separate lines, it checks that name is in single line only
-            this._textState.text = this._textState.text.replace(/(| )「/, '\n「');
-            this._textState.text = this._textState.text.replace(/(| )『/, '\n『');
-            this._textState.text = this._textState.text.replace(/(| )（/, '\n（');
+            this._textState.text = this._textState.text.replace(/ ?「/, '\n「');
+            this._textState.text = this._textState.text.replace(/ ?『/, '\n『');
+            this._textState.text = this._textState.text.replace(/ ?（/, '\n（');
           }
         }
 
         let nameLength = this._textState.text.substring(0, this._textState.text.indexOf('\n')) // Get first line of text
-        nameLength = nameLength.replace(/(c|C)\[\d{1,2}\]/g, '');          // Remove color codes
+        nameLength = nameLength.replace(/c\[\d{1,2}\]/gi, '');               // Remove color codes
 
-        if(nameLength.length < maxNamesLength){                                     // if first line is x amount of characters (name)
+        if(nameLength.length < maxNamesLength){                                // if first line is x amount of characters (name)
           if(usingQuotation){
-            if(this._textState.text.indexOf('「') != -1                       // Sentence includes at least one of these three quotations
-            || this._textState.text.indexOf('（') != -1                       // Replace all with with a regex and add it to the options vars at top
-            || this._textState.text.indexOf('『') != -1){
-              this._textState.text = '\\N<' + this._textState.text;           // add first part of namebox
-              this._textState.text = this._textState.text.replace('\n', '>'); // replace first line break with second part of namebox
+            if(/「|（|『/.test(this._textState.text)){                          // Sentence includes at least one of these three quotations
+              this._textState.text = '\\N<' + this._textState.text;            // add first part of namebox
+              this._textState.text = this._textState.text.replace('\n', '>');  // replace first line break with second part of namebox
             }
           }else if(usingSemiColon){
-            let semiColonIndex =  this._textState.text.indexOf(':');
-            let semiColonJPIndex =  this._textState.text.indexOf('：');
+            let match = /:|：/.exec(this._textState.text); // get index with regex
 
-            if(semiColonIndex != -1){                                          // Sentence includes a semi colon
-              if(semiColonIndex < this._textState.text.indexOf('\n')){         // semicolon in in the first line
-                this._textState.text = this._textState.text.replace(':', '');  // remove semicolon
-                this._textState.text = '\\N<' + this._textState.text;          // process as name
-                this._textState.text = this._textState.text.replace('\n', '>');
-              }
-            }else if(semiColonJPIndex != -1){                                  // Sentence includes a semi colon (JP width)
-              if(semiColonJPIndex < this._textState.text.indexOf('\n')){       // semicolon in in the first line
-                this._textState.text = this._textState.text.replace('：', ''); // remove semicolon
-                this._textState.text = '\\N<' + this._textState.text;          // process as name
+            if(match){
+              if(match.index < this._textState.text.indexOf('\n')){                // semicolon in in the first line
+                this._textState.text = this._textState.text.replace(/:|：/g, '');  // remove semicolon
+                this._textState.text = '\\N<' + this._textState.text;              // process as name
                 this._textState.text = this._textState.text.replace('\n', '>');
               }
             }
@@ -467,19 +458,19 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
         // Convert to regex name if it ends with a capital letter or a number
         // Used when you have names like: Villager A, Villager B, Villager C, etc
         // Only using capital letters [A-Z] instead of uppercase and lowercase [A-Za-z] in case it registers false positives
-        if(/[A-Z]$/.test(newName)){
-          newName = newName.replace(/[A-Z]$/, '([A-Z]){0,1}');
-          clipboardText = clipboardText.replace(/[A-Z]$/, '$1');
+        if(/([A-Z]|[Ａ-Ｚ])$/.test(newName)){
+          newName = newName.replace(/([A-Z]|[Ａ-Ｚ])$/, '([Ａ-Ｚ])?');
+          clipboardText = clipboardText.replace(/[A-Z]$|[Ａ-Ｚ]$/, '$1');
         }
         // Same but with circled numbers
         if(/[①-⑳]$/.test(newName)){
-          newName = newName.replace(/[①-⑳]$/, '([①-⑳]){0,1}');
+          newName = newName.replace(/[①-⑳]$/, '([①-⑳])?');
           //console.log(JSON.stringify(clipboardText));
           clipboardText = clipboardText.replace(/\d{1,2}$|[①-⑳]$/, '$1');
         }
         // Same but with Full width numbers
         if(/[１-９]$/.test(newName)){
-          newName = newName.replace(/[１-９]$/, '([１-９]){0,1}');
+          newName = newName.replace(/[１-９]$/, '([１-９])?');
           //console.log(JSON.stringify(clipboardText));
           clipboardText = clipboardText.replace(/\d{1,2}$|[①-⑳]$/, '$1');
         }
