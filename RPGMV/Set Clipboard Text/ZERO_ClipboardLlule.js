@@ -34,22 +34,22 @@
 - Fix sending to clipboard same text, prevent from overwriting [choices] + [text] (may not work if
    previous line started with the same text, experimental)
 - Capture messages on top left screen (experimental, capturing only text that starts with '\FS[##]')
-- Add remove tranlsated names if they are defined in HideMessageWindowZ (If game uses a namebox it won't send 
+- Add remove translated names if they are defined in HideMessageWindowZ (If game uses a namebox it won't send 
    translated/replaced text to clipboard) 
-- Added checking choices block for ingore regex (with toggle var, default true)
-v1.12 - Added remove tranlsated names if they are defined in HideMessageWindowZ files modification
+- Added checking choices block for ignore regex (with toggle var, default true)
+v1.12 - Added remove translated names if they are defined in HideMessageWindowZ files modification
       - Handle hearts ♥ ♡ ❤ in text better (code also changed in SetClipboardText)
       - Add option to disable clipboard during battles (can be toggle mid battle with 't')
 v1.13 - Remove color codes from imported names from translated names added in HideMessageWindowZ
       - Add variables for text that starts with ... and when text is in between parentheses (to be handled by SetClipboardText)
-v1.13.1 - Fix a bug with importing empty names for ignore regexbloc
+v1.13.1 - Fix a bug with importing empty names for ignore regex bloc
 v1.13.2 - Renamed variable heartCharacter to hasHeartCharacter
-v1.13.3 - Fix a parenthesys replace bug (upgraded regex to hande wester and eastern parenthesis)
+v1.13.3 - Fix a parentheses replace bug (upgraded regex to handle western and eastern parenthesis)
 v1.13.4 - Add removing 「 and 」 when they are alone as DeepL doesn't like that 
           (old translations caches must be updated, use /^[^「]+」[^」]+$/ regex to find which lines should have「 and 」removed )
-        - Remove repetition of ！ character (DeepL doens't like it)
+        - Remove repetition of ！ character (DeepL doesn't like it)
 v1.13.5 - Add a fix for regex savedNames
-v1.13.6 - Add variable to let SetClipbardText to hook text during battles.
+v1.13.6 - Add variable to let SetClipboardText to hook text during battles.
 v1.13.7 - Added names honorifics (created a new object for name replacements)
 v1.13.8 - Replaced how it checks for nameboxes to ignore them, now it loads the savedNames.json each time (deprecated code commented)
         - Added, disable map name window (when entering maps)
@@ -62,9 +62,9 @@ v1.13.12 - Check for cache here, so it can add a · for it to be ignored by deep
 */
 
 // Zero_G Variables (configure)
-const CheckChoicesForIgnoreRegEx = true; // Check choices block for ingnore regex
+const CheckChoicesForIgnoreRegEx = true; // Check choices block for ignore regex
 const UseExtraMethodToCapturePopups = false;
-const PopupStartsWith = /^\\FS\[\d{1,3}\]/; // Regex for (Starts with \FS[##]) (Get value needed by uncomenting the console log for drawTextEX in line 135~)
+const PopupStartsWith = /^\\FS\[\d{1,3}\]/; // Regex for (Starts with \FS[##]) (Get value needed by uncommenting the console log for drawTextEX in line 135~)
 const clipboardDisableButton = 't';
 const DisableClipboardDuringBattles = true;
 const replacements = {
@@ -161,7 +161,7 @@ const nameReplacements = {
 
 // Don't edit this variables
 var clipboardDisabled = false; // for switching sending text to clipboard
-var clipboardDisabledBattle = clipboardDisabledBattle || false; // for disabling in battle and letting SetClipboardText hangle the hooking
+var clipboardDisabledBattle = clipboardDisabledBattle || false; // for disabling in battle and letting SetClipboardText handle the hooking
 var textToSend = '';
 var drawExTimer = null; // for storing a setTimeout
 var jpTextSentToMem = false; // Used in SetClipboardText
@@ -210,7 +210,7 @@ var IgnoreRegExtextbloc = [
   /Load which.*/,
   /(Save|Load) to which.*/,
   /New Game.*/,
-  /Heal.*/, // Replace with first spell or skill (when entering menues)
+  /Heal.*/, // Replace with first spell or skill (when entering menus)
 ];
 
 /*--------------------------------------------------------------------------*/
@@ -259,7 +259,7 @@ function readFile(file){
 Object.assign(replacements, nameReplacements);
 
 // Add translated names form HideMessageWindowZ to regex ignore (Deprecated)
-// TODO: Change this to only load once from array in script, and reload the json to everytime, discarding this convoluted mess of merging the arrays
+// TODO: Change this to only load once from array in script, and reload the json to every time, discarding this convoluted mess of merging the arrays
 /*if (typeof ZERO.HideMessageWindow !== 'undefined'){
   for(const index in ZERO.HideMessageWindow.replacements){
     let name = ZERO.HideMessageWindow.replacements[index];
@@ -287,16 +287,16 @@ Object.assign(replacements, nameReplacements);
   }
 }*/
 
-ClipLogerOnStart = true;
+ClipLoggerOnStart = true;
 WantChoiceSeparator = true;
 ChoiceSeparator = '.\r\n'; // Change this to a '.' for DeepL
 TextWaitingTimeOFF = true;
-var ClipLoger = '';
+var ClipLogger = '';
 LastItem = '';
 ColorEnCour = '';
 ActualThis = '';
-StarTextNamefound = false;
-EndTextNamefound = false;
+StarTextNameFound = false;
+EndTextNameFound = false;
 BlocSeparatorLeft = String.fromCharCode(12300);
 BlocSeparatorRight = String.fromCharCode(12301);
 LastColor = '';
@@ -307,8 +307,8 @@ SaveOrgDrawText = Bitmap.prototype.drawText;
 var gui = require('nw.gui');
 var clipboard = gui.Clipboard.get();
 var win = gui.Window.get();
-var SaveoldInput_onKeyDown = Input._onKeyDown;
-var Savewindowonload = window.onload;
+var SaveOldInput_onKeyDown = Input._onKeyDown;
+var SaveWindowOnLoad = window.onload;
 var choices_encour = [];
 
 // Disable map names (Usually bothers first message when you enter a new map)
@@ -316,10 +316,10 @@ Window_MapName.prototype.update = function() {};
 Window_MapName.prototype.refresh = function() {};
 
 /*
-* Zero_G function to capture messages on top left sreen
+* Zero_G function to capture messages on top left screen
 * These messages usually start with \FS[##], and are used to show a status update
 *   for example 'Got x item' or 'Sensitivity +10'
-* This method with capure those messages for 2 seconds and send them to clipboard
+* This method with capture those messages for 2 seconds and send them to clipboard
 *   along with any other text that was already queued (ex: main message window)
 *   you will get: [text in popup] text in message window
 */   
@@ -412,17 +412,17 @@ Bitmap.prototype.drawText = function (text, x, y, maxWidth, lineHeight, align) {
       if (ForceNameSeparator && text.length == 1) {
         if (!ClipTimerOn && NameCodeColor.indexOf(this.textColor) > -1) {
           LastColor = this.textColor;
-          StarTextNamefound = true;
+          StarTextNameFound = true;
           ColorNameEnCour = this.textColor;
         }
         if (
           ClipTimerOn &&
-          StarTextNamefound &&
+          StarTextNameFound &&
           this.textColor != ColorNameEnCour
         ) {
           OptionalText = OptionalText + TextSeparatorLeft;
-          StarTextNamefound = false;
-          EndTextNamefound = true;
+          StarTextNameFound = false;
+          EndTextNameFound = true;
         }
       }
       if (BloctextSeparator) {
@@ -467,16 +467,16 @@ function ClipTimerSend() {
     MemText = MemText + BlocSeparatorRight;
     KickOutDuplicateBloc();
   }
-  if (EndTextNamefound) {
+  if (EndTextNameFound) {
     MemText = MemText + TextSeparatorRight;
-    StarTextNamefound = false;
-    EndTextNamefound = false;
+    StarTextNameFound = false;
+    EndTextNameFound = false;
     if (BloctextSeparator) {
       KickOutDuplicateBloc();
     }
   }
   // Zero_G various
-  if (MemText != '' && ZERO.SetClipboardText.escapeText && !ZERO.SetClipboardText.replacingChoicesStopIlule && !clipboardDisabled) {
+  if (MemText != '' && ZERO.SetClipboardText.escapeText && !ZERO.SetClipboardText.replacingChoicesStopLlule && !clipboardDisabled) {
     // Take out line breaks (For translator aggregator)
     MemText = MemText.replace(/(\r\n|\n|\r)/gm,' ');
 
@@ -497,13 +497,13 @@ function ClipTimerSend() {
     // Replace names with honorifics first
     for (const [key, value] of Object.entries(nameReplacementsWitHonorifics)) {
       let re = new RegExp(key,"g"); // Create regex with variable
-      MemText = MemText.replace(re, value); // Use regular expresion to replace all values and not the first one only
+      MemText = MemText.replace(re, value); // Use regular expression to replace all values and not the first one only
     }
 
     // Replace words (for names, etc)
     for (const [key, value] of Object.entries(replacements)) {
       let re = new RegExp(key,"g"); // Create regex with variable
-      MemText = MemText.replace(re, value); // Use regular expresion to replace all values and not the first one only
+      MemText = MemText.replace(re, value); // Use regular expression to replace all values and not the first one only
     }
 
     // If there are more than two blocks, separate them with a '.' (DeepL separates sentences with '.')
@@ -527,7 +527,7 @@ function ClipTimerSend() {
     } 
     else textInBetweenParentheses = false;
 
-    // Text starts with ... DeepL usually worngly adds a word at the start of translation
+    // Text starts with ... DeepL usually wrongly adds a word at the start of translation
     // So flip a switch so SetClipboardText can handle it
     if(/^「…/.test(MemText)) textStartsWithDots = true;
     else textStartsWithDots = false;
@@ -542,7 +542,7 @@ function ClipTimerSend() {
         MemText = MemText.replace('」', '');
     }
 
-    // DeepL doens't like multiple use of ！
+    // DeepL doesn't like multiple use of ！
     MemText = MemText.replace(/！{2,}/g, '！');
 
     if (!LastMemTextSend.startsWith(MemText)){ // IF clause to fix repeating text when a choice window is displayed. May break if previous memtext start the same
@@ -576,24 +576,24 @@ Window_Message.prototype.clearFlags = function () {
   this._lineShowFast = true;
   this._pauseSkip = false;
 };
-function LaunchCliploger() {
+function LaunchClipLogger() {
   Path = process.cwd() + '\\www\\js\\plugins';
   var execFile = require('child_process').execFile;
-  ClipLoger = execFile(Path + '\\ClipLoger.exe', function (
+  ClipLogger = execFile(Path + '\\ClipLogger.exe', function (
     error,
     stdout,
     stderr
   ) {
-    ClipLoger = '';
+    ClipLogger = '';
   });
-  if (!ClipLoger.pid) {
+  if (!ClipLogger.pid) {
     //alert(Msg1);
     return;
   }
   setTimeout(Focus, 500);
 }
 function Focus() {
-  if (ClipLoger.pid) {
+  if (ClipLogger.pid) {
     win.focus();
   } else {
     setTimeout(Focus, 500);
@@ -604,15 +604,15 @@ Input._onKeyDown = function (event) {
     clipboard.set(LastMemTextSend, 'text');
   }
   if (event.keyCode == 117) {
-    if (ClipLoger.pid) {
-      ClipLoger.kill();
+    if (ClipLogger.pid) {
+      ClipLogger.kill();
     } else {
-      LaunchCliploger();
+      LaunchClipLogger();
     }
   }
   if (event.keyCode == 116) {
-    if (ClipLoger.pid) {
-      ClipLoger.kill();
+    if (ClipLogger.pid) {
+      ClipLogger.kill();
     }
   }
   if (event.key == clipboardDisableButton){ // Zero_G add event to disable sending text to clipboard
@@ -620,36 +620,36 @@ Input._onKeyDown = function (event) {
     if(!clipboardDisabled) SceneManager.callPopup('Clipboard Enabled');
     else SceneManager.callPopup('Clipboard Disabled');
   }
-  SaveoldInput_onKeyDown.call(this, event);
+  SaveOldInput_onKeyDown.call(this, event);
 };
 window.onload = function () {
-  if (ClipLogerOnStart) {
-    LaunchCliploger();
+  if (ClipLoggerOnStart) {
+    LaunchClipLogger();
   }
-  Savewindowonload.call(this);
+  SaveWindowOnLoad.call(this);
 };
 function KickOutDuplicateBloc() {
   var Bloc = MemText.split('\r\n');
   var output = [];
-  var Deleteone = '';
+  var deleteOne = '';
   if (choices_encour.length && WantChoiceSeparator) {
     var temps = choices_encour[0].replace(/\\C\[\d+\]/gi, '');
     var With = BlocSeparatorLeft + temps;
-    var Deleteone = With;
+    var deleteOne = With;
     for (i = 1; i < choices_encour.length; i++) {
       temps = choices_encour[i].replace(/\\C\[\d+\]/gi, '');
       With = With + ChoiceSeparator + temps;
-      Deleteone = Deleteone + temps;
+      deleteOne = deleteOne + temps;
     }
     With += BlocSeparatorRight;
-    Deleteone += BlocSeparatorRight;
+    deleteOne += BlocSeparatorRight;
     
     //Zero_G check choices block in ignore regex
     if(CheckChoicesForIgnoreRegEx){
-      if(RegEXspeIgnore(Deleteone)){
+      if(RegEXspeIgnore(deleteOne)){
         output.push(With);
       } else {
-        Deleteone = '';
+        deleteOne = '';
       }  
     }else{
       output.push(With);
@@ -659,7 +659,7 @@ function KickOutDuplicateBloc() {
   }
   for (var i = 0; i < Bloc.length; i++) {
     if (output.indexOf(Bloc[i]) < 0) {
-      if (RegEXspeIgnore(Bloc[i]) && Deleteone != Bloc[i]) {
+      if (RegEXspeIgnore(Bloc[i]) && deleteOne != Bloc[i]) {
         output.push(EraseDoubleSeparator(Bloc[i]));
       }
     }
@@ -699,7 +699,7 @@ function RegEXspeIgnore(Bloc) {
     name = name.replace(/\\(c|C)\[\d{1,2}\]/g, '') // Remove color codes
     if(name.includes('$1')) name = name.replace(' $1', '.{0,3}'); // Remove regex for multi names
     else {
-      name = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'); // Esacpe special characters for regex (if there is a [ for example use it as text not as regex special character)
+      name = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'); // Escape special characters for regex (if there is a [ for example use it as text not as regex special character)
       name = name.replace(/\\\\\\/g, '\\'); // Fix triple \
     }
     let re = new RegExp('^' + name + '。?$'); // Make sure it only looks for namebox blocks (sometimes it has a dot 。)
@@ -725,7 +725,7 @@ function EraseDoubleSeparator(Bloc) {
   }
   return Bloc;
 }
-Msg1 = 'ClipLoger.exe not found\r\nReinstal the plugin from the patcher\r\n';
+Msg1 = 'ClipLogger.exe not found\r\nReinstall the plugin from the patcher\r\n';
 var Save_Window_Message_prototype_updateWait =
   Window_Message.prototype.updateWait;
 Window_Message.prototype.updateWait = function () {

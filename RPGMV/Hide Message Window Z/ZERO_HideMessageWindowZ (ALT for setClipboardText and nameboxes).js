@@ -18,7 +18,7 @@ This script will allow a player to:
 
 Mode 1
   Press 'Hide Button' key to hide textbox completely, press again to restore.
-  Trying to advance text while text is hidden won't be possible untile 
+  Trying to advance text while text is hidden won't be possible until 
   textbox is restored
 
 Mode 2
@@ -62,11 +62,11 @@ TODO: Implement changes from main script, original forked at v2.1, currently is 
 2.3.10.2 alt
  - Fixed a bug when incoming text had a color code
 2.3.10.1 alt
- - Removed/Deprecated filling an object so ClipboardIllule could fill it in its regex ignore bloc (Removed all logic from here, 
-      ClipboardIllule now just loads savedNames.json file)
+ - Removed/Deprecated filling an object so ClipboardLlule could fill it in its regex ignore bloc (Removed all logic from here, 
+      ClipboardLlule now just loads savedNames.json file)
 2.3.9 alt
  - Refactored code for replace names and save names to functions, so YEP and LUNA calls those same functions
- - Changed the save name SetTimeOut to an Interval that constatly checks if the name was translated (No longer have to 
+ - Changed the save name SetTimeOut to an Interval that constantly checks if the name was translated (No longer have to 
    always wait 5 seconds)
  - Replaced names in Luna can have color, just add \c[colorCode] before the name. Ex: '\c[2]Name'
  - Fixed Lunatlazur next namebox didn't change opacity if triggered from a non named window.
@@ -105,7 +105,7 @@ TODO: Implement changes from main script, original forked at v2.1, currently is 
 2.1
  - Added YEP_MessageCore name window handling
  - Added MPP_MessageEX namebox handling (required editing that script)
-2.0 Code rewriten
+2.0 Code rewritten
  - Deprecated using command 101
  - Dim background properly hidden
  - Restoring window from mode 2 will now recover proper state
@@ -143,7 +143,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
   // Method 1: Name has color or is between quotations or []
   // How to use: For colors use the default regex.
-  // If name is between quotations or special caracters regex should be 
+  // If name is between quotations or special characters regex should be 
   // for []: /^\[(.*)\]/
   // for "": /^"(.*)"/
   const forceNameboxMethod1 = false;
@@ -159,16 +159,16 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   // Use only one sub method (can be both false)
   const forceNameboxMethod2 = false;
   var maxNamesLength = 15;
-  var nameInSameLine = false; // Is name and text continous (true) or separed by a line break (false)?
+  var nameInSameLine = false; // Is name and text continuous (true) or separated by a line break (false)?
   var usingQuotation = true; // text uses 「 or （ or 『 for dialogues?
   var usingSemiColon = false;  // Name ends with : or ： (JP width semicolon)
 
   // Replace names that will be inside the textbox
-  // This variable also comunicates with clipboard_illule, to add them to
-  // the regex ignore bloc so the name doens't appear in the dialoge textbox
+  // This variable also communicates with clipboard_Llule, to add them to
+  // the regex ignore bloc so the name doesn't appear in the dialogue textbox
   // Names are also read from www/savedNames.json, so names can be added while the
   // game is running.
-  $.replacements = { // Need to add translated to regex ignore in Clipboard_illule
+  $.replacements = { // Need to add translated to regex ignore in Clipboard_Llule
     //'春': '\\c[14]Haru', // Names
     '商人': 'Merchant',
     'シスター': 'Sister',
@@ -219,8 +219,8 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   }
 
   // Populates replacements2 only with new names added since previous called
-  // Used to add new names that were added while game is running to regex ignore in illule
-  /*function compareFileNames(file){                          // Deprecated (To deletete, not used)
+  // Used to add new names that were added while game is running to regex ignore in Llule
+  /*function compareFileNames(file){                          // Deprecated (To delete, not used)
     let allNamesKeys = Object.keys(file).concat(Object.keys($.replacements));
     let previousReplacementsKeys = Object.keys(previousReplacements);
     let newNames = allNamesKeys.filter(val => !previousReplacementsKeys.includes(val));
@@ -290,7 +290,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       // Only using names added (Disabled)
       //for (let key in $.replacements){
       //    var re = new RegExp('^(c|C)\\[2\\]'+key+'(|\\n)(c|C)\\[0\\]', 'g'); // Create regex with variable
-      //    this._textState.text = this._textState.text.replace(re, '\\N<'+key+'>'); // Use regular expresion to replace all values and not the first one only
+      //    this._textState.text = this._textState.text.replace(re, '\\N<'+key+'>'); // Use regular expression to replace all values and not the first one only
       //}
       //this._textState.text = this._textState.text.replace(/>\n/, '>');
       //this._textState.text = this.convertEscapeCharacters(this._textState.text); //Call escape characters again to create namebox
@@ -333,7 +333,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       && (this._textState.text.indexOf('\n') !== -1 || nameInSameLine)       // text is more than one line
       && this._textState.text.indexOf('\n') !== 0){                          // text doesn't start with a line break
         if(nameInSameLine){
-          if(!((this._textState.text.indexOf('\n') !== -1) && (this._textState.text.indexOf('\n') < this._textState.text.indexOf('「')))){ // This if is added beacuse game fucks up and sometimes gives name and text in separate lines, it checks that name is in single line only
+          if(!((this._textState.text.indexOf('\n') !== -1) && (this._textState.text.indexOf('\n') < this._textState.text.indexOf('「')))){ // This if is added because game fucks up and sometimes gives name and text in separate lines, it checks that name is in single line only
             this._textState.text = this._textState.text.replace(/ ?「/, '\n「');
             this._textState.text = this._textState.text.replace(/ ?『/, '\n『');
             this._textState.text = this._textState.text.replace(/ ?（/, '\n（');
@@ -387,7 +387,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
   /*
   * Replace Names (For use with SetClipboardText)
-  * Recieves a name (current name before it's displayed)
+  * Receives a name (current name before it's displayed)
   * Returns the replaced name or an empty string if it wasn't replaced
   */
   function replaceNames(text){
@@ -428,10 +428,10 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     }, 5000);
 
     // Experimental changed the setTimeout of 5s to an interval that checks the state
-    // of escapeText every few milis
+    // of escapeText every few millis
     // This will wait until translation comes and saves it savedNames.json
     // *
-    // this will not be neccesary if this functionality is merged to 
+    // this will not be necessary if this functionality is merged to 
     // setClipboardText plugin, as you can call this from the replace text function
     const i = setInterval((clipboard, newName) => {
       // Refresh value and invert it
@@ -486,7 +486,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
         // If translated name was empty put untranslated one
         if(clipboardText == '') clipboardText = newName;
 
-        // Remove 'The ' from beggining of name
+        // Remove 'The ' from beginning of name
         if(clipboardText.startsWith('The ')) clipboardText = clipboardText.replace('The ', '');
         if(clipboardText.startsWith('A ')) clipboardText = clipboardText.replace('A ', '');
 
@@ -560,7 +560,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     ZERO_WindowMessage_update.call(this);
   };
   
-  // Prevent from advancint text when message is hidden - By HIME
+  // Prevent from advancing text when message is hidden - By HIME
   var ZERO_WindowMessage_updateMessage = Window_Message.prototype.updateMessage;
   Window_Message.prototype.updateMessage = function() {
     if (isHidden) return false;
@@ -716,7 +716,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   if(typeof Window_MessageName == 'function'){
     let isHiddenNamebox = false;
 
-    // Mod script so namewindows don't constantly close and open everytime textwindow changes
+    // Mod script so namewindows don't constantly close and open every time textwindow changes
     Window_MessageName.prototype.initialize = function(messageWindow) {
       this._messageWindow = messageWindow;
       Window_Base.prototype.initialize.call(this, 0, 0, 0, this.fittingHeight(1));
