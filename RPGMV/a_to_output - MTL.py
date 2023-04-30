@@ -2,6 +2,7 @@ import os
 import os.path
 from os import path
 from shutil import copyfile
+from distutils.dir_util import copy_tree
 
 filenames_patch = [ # Add path to plugins_patch.txt, file must be in unicode (UTF-16LE)
     'Separator/plugins_patch.txt',
@@ -45,29 +46,39 @@ filenames = { # Add path to plugin file. Key: path, Value: filename
 
 if not os.path.exists('zOutput'):
     os.makedirs('zOutput')
+if not os.path.exists('zOutput/www'):
+    os.makedirs('zOutput/www')
+if not os.path.exists('zOutput/www/js'):
+    os.makedirs('zOutput/www/js')
+if not os.path.exists('zOutput/www/js/plugins'):
+    os.makedirs('zOutput/www/js/plugins')
 
 # Copy plugin files
 for fpath, fname in filenames.items():
     try:
         if fname == 'ZERO_HideMessageWindowZ (ALT for setClipboardText and nameboxes).js': # Rename this
-            copyfile(fpath+'/'+fname, 'zOutput/ZERO_HideMessageWindowZ.js')
+            copyfile(fpath+'/'+fname, 'zOutput/www/js/plugins/ZERO_HideMessageWindowZ.js')
         elif fname == 'YEP_X_MessageBacklog - setClipboard compatible.js':
-            copyfile(fpath+'/'+fname, 'zOutput/YEP_X_MessageBacklog.js')
+            copyfile(fpath+'/'+fname, 'zOutput/www/js/plugins/YEP_X_MessageBacklog.js')
         elif fpath == 'Set Clipboard Text': # Copy both scripts (cant reuse key)
-            copyfile(fpath+'/'+fname, 'zOutput/'+fname)
-            copyfile(fpath+'/ZERO_SetClipboardText.js', 'zOutput/ZERO_SetClipboardText.js')
-            copyfile(fpath+'/Javascript to romaji/Kuroshiro (prefered)/kuroshiro.min.js', 'zOutput/kuroshiro.min.js')
-            copyfile(fpath+'/Javascript to romaji/Kuroshiro (prefered)/kuroshiro-analyzer-kuromoji.min.js', 'zOutput/kuroshiro-analyzer-kuromoji.min.js')
-            copyfile(fpath+'/ZERO_SetTranslationWindow.html', 'zOutput/ZERO_SetTranslationWindow.html')
-            copyfile(fpath+'/ZERO_SetConfigurationWindow.html', 'zOutput/ZERO_SetConfigurationWindow.html')
+            copyfile(fpath+'/'+fname, 'zOutput/www/js/plugins/'+fname)
+            copyfile(fpath+'/ZERO_SetClipboardText.js', 'zOutput/www/js/plugins/ZERO_SetClipboardText.js')
+            copyfile(fpath+'/Javascript to romaji/Kuroshiro (preferred)/kuroshiro.min.js', 'zOutput/www/js/plugins/kuroshiro.min.js')
+            copyfile(fpath+'/Javascript to romaji/Kuroshiro (preferred)/kuroshiro-analyzer-kuromoji.min.js', 'zOutput/www/js/plugins/kuroshiro-analyzer-kuromoji.min.js')
+            copyfile(fpath+'/ZERO_SetTranslationWindow.html', 'zOutput/www/js/plugins/ZERO_SetTranslationWindow.html')
+            copyfile(fpath+'/ZERO_SetConfigurationWindow.html', 'zOutput/www/js/plugins/ZERO_SetConfigurationWindow.html')
+            # Copy spellcheck files
+            copyfile(fpath+'/Spellcheck/package.json', 'zOutput/www/package.json')
+            copyfile(fpath+'/Spellcheck/packageBase.json', 'zOutput/package.json')
+            copy_tree(fpath+'/Spellcheck/node_modules', 'zOutput/www/node_modules')
 
         else:
-            copyfile(fpath+'/'+fname, 'zOutput/'+fname)
+            copyfile(fpath+'/'+fname, 'zOutput/www/js/plugins/'+fname)
         print('Copied file: ' + fname)
     except:
         print('Error copying file: ' + fpath + '/' + fname)
 
-# Create ouput file will all plugin parameters
+# Create output file will all plugin parameters
 
 if path.exists('zOutput/zoutput.txt'): # Check if file exists, if exits erase it
     print('Erasing zoutput.txt file')

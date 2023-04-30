@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.16.4
+ * @version 1.16.5
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -36,10 +36,19 @@
  the next time it sees an already translated text. More options with their
  explanation in the configuration variables.
 
+ * SpellCheck Requirements:
+ Needs node module simple-spellchecker (https://www.npmjs.com/package/simple-spellchecker?activeTab=readme) in www folder
+ as a node_modules folder (can be copied, no need to do npm install for each game).
+ To get typos underscore you must set chrome flags on both package.json files to:
+ "chromium-args":"--enable-spell-checking",
+
  == Terms of Use ==
  - Free for use
 
  == Changelog ==
+ 1.16.5  -Add possibility to restore translated text after changing it to romaji by pressing romaji key again (even on 
+          Translation Window textareas)
+         -Add spellcheck to "Current" textarea on Translation Window (See notes on description for dependencies)
  1.16.4  -Some bug fixes
          -A lot of typos fixed
  1.16.3  -Add a configuration window to toggle values or trigger functions that previously was only done by keys.
@@ -519,12 +528,16 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   };
 
   // Alias Window_Base initialize
-  // Add variable for storing text of current window, used in sending current 
-  // window text to clipboard (for Copy Text to Clipboard button)
   var ZERO_Window_Base_prototype_initialize = Window_Base.prototype.initialize;
   Window_Base.prototype.initialize = function(x, y, width, height) {
     ZERO_Window_Base_prototype_initialize.apply(this, arguments);
+    // Add variable for storing text of current window, used in sending current 
+    // window text to clipboard (for Copy Text to Clipboard button)
     this.__text = '';
+    // Add variable for storing translated text when calling set to romaji and a
+    // toggle to track if it was done (so you can reverse it)
+    this._translatedText = '';
+    this._romajiSet = false;
   }
 
   // Delete previous numpad key bindings
@@ -901,8 +914,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 		startChoiceReplaceNormalLocal = false; // Stop entering previous block (as it is an update function)
         // Post-translation replacements
         for (const [key, value] of Object.entries(postTranslationReplacements)) {
-          let re = new RegExp(key,'g'); // Create regex with variable
-          clipboardText = clipboardText.replace(re, value); // Use regular expression to replace all values and not the first one only
+          let re = new RegExp(key,'g');
+          clipboardText = clipboardText.replace(re, value);
         }
         // Remove "" if there wasn't 『|』on text
         if(!/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
@@ -980,7 +993,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       translatedChoices[i] = translatedChoices[i].charAt(0).toUpperCase() + translatedChoices[i].slice(1); // Capitalize first letter
 
       // remove special characters that make choice length more than it is
-      let choice = translatedChoices[i].replace(/(i|I)\{(\d{1,2})\}/g, 'aa'); // Two characters for icons
+      let choice = translatedChoices[i].replace(/I\{(\d{1,2})\}/gi, 'aa'); // Two characters for icons
       choice = choice.replace(/C\{(\d{1,2})\}/gi, ''); // Remove color codes
       if(choice.length > maxWidth.length) maxWidth = choice; // get choice with max length
     }
@@ -1002,7 +1015,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     // Replace choices with translated ones (no direct assignment in case translation wrongly gives fewer choices)
     for (let i = 0; i < $gameMessage.choices().length; i++) {
       // Restore escaped
-      translatedChoices[i] = translatedChoices[i].replace(/(i|I|c|C){(\d{1,2})}/g, '$1[$2]');
+      translatedChoices[i] = translatedChoices[i].replace(/(I|C){(\d{1,2})}/gi, '$1[$2]');
       // Remove ending .
       translatedChoices[i] = translatedChoices[i].replace(/\.$/g, '');
 
@@ -1072,6 +1085,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var textToReplaceTranslationWindow = '';
   var stopCustomInterval = false;
   var choiceWindowText = ''; // Tried to use previousClipboardText, but it makes as undefined in populateTranslationWindow(), don't know why
+  var SpellChecker = require(getAbsolutePath() + '\\node_modules\\simple-spellchecker\\index');
 
   var ZERO_WindowMessage_updateTranslationWindow = Window_Message.prototype.update;
   Window_Message.prototype.update = function () {
@@ -1093,9 +1107,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   }
 
   function createTranslationWindow(){
-    let absolutePath = process.cwd();
-    if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
-    nw.Window.open(absolutePath + '\\js\\plugins\\ZERO_SetTranslationWindow.html', {}, newWindow => {
+    nw.Window.open(getAbsolutePath() + '\\js\\plugins\\ZERO_SetTranslationWindow.html', {}, newWindow => {
         //console.log('Translation window created');
         translationWindow = newWindow; // Make it accessible outside callback
         translationWindow.title = 'Translation Window';
@@ -1147,8 +1159,61 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             translationWindow.window.document.addEventListener('keydown', event => {
               if(event.ctrlKey && event.code == 'KeyS' || event.ctrlKey && event.code == 'Enter') translationWindowSave();
             });
+
+            // Add spellcheck event
+            translationWindow.window.document.querySelector('#current').addEventListener('contextmenu', function(event) {
+              spellCheck(this, event);
+            });
         };
     });
+  }
+
+  function spellCheck(textarea, event){
+    // Get current word for textarea
+    var text = textarea.value;
+    var start = textarea.selectionStart;
+    var end = textarea.selectionEnd;
+    var borderChars = [' ','\n','\r','\t','¿','?','\'','"','!','.',',',';',':','$','&','/','\\','(',')','=','*','-','+','_'];
+    while (start > 0) {
+      if (borderChars.indexOf(text[start - 1]) === -1) {
+          --start;
+      } else {
+          break;
+      }                        
+    }
+    while (end < text.length) {
+      if (borderChars.indexOf(text[end]) === -1) {
+          ++end;
+      } else {
+          break;
+      }
+    }
+    var currentWord = text.substring(start, end);
+
+    // Get dictionary suggestions and load nwjs right click menu with suggestions
+    SpellChecker.getDictionary("en-US", function(err, dictionary) {
+      if(!err) {
+        //var misspelled = ! dictionary.spellCheck(currentWord); // Check if it's a typo and then add that var to a if (Not necessary as using spellcheck from google)
+        var suggestions = dictionary.getSuggestions(currentWord);
+
+        // Create nwjs menu
+        if(Array.isArray(suggestions) && suggestions.length >= 1){
+          var menu = new nw.Menu();
+          for(let suggestion of suggestions){
+            menu.append(new nw.MenuItem({ 
+              label: suggestion,
+              // Replace all instances of text (Done on purpose, I could get the specific word if I wanted)
+              click: () => {textarea.value = textarea.value.replace(new RegExp(currentWord, 'g'), suggestion)}
+            }));
+          }
+
+          // Open context menu next to word, BUG: can't get new position of translationWindow if it was moved afterwards
+          menu.popup(translationWindow.x + event.clientX, translationWindow.y + event.clientY + 42);
+        }
+      } else {
+        console.log('error loading spellcheck', err);
+      }
+    }); 
   }
 
   function populateTranslationWindow(){
@@ -1249,6 +1314,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   }
 
   function setRomajiInCurrent(){
+    // Set current translation on DeepL textarea
+    translationWindow.window.document.querySelector('#deepL').value = translationWindow.window.document.querySelector('#current').value;
+    // Set romaji in current
     translationWindow.window.document.querySelector('#current').value = translationWindow.window.document.querySelector('#romaji').value;
   }
 
@@ -1347,7 +1415,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     // If there was a text window with the choices this code will be triggered after processing choices
     if (windowTextWithChoices){
       this.replaceText(translatedWindowText);
-	  translatedWindowText = ''; // Reset var
+      this._translatedText = translatedWindowText;
+	    translatedWindowText = ''; // Reset var
       windowTextWithChoices = false; // reset var
     }
 
@@ -1373,10 +1442,22 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         //console.log('send text: ' + text);
       }
       
-      // Show romaji on current window and replace stored cache
+      // Show romaji on current textbox and replace stored cache
       if ((Input.isTriggered(CustomInputs.replaceToRomajiButton) || configWindowRomaji) && this.isOpen() && $.replaceToRomaji) {
-        configWindowRomaji = false;
+        let normalCall = false; // Check if this was triggered from a textbox
+        if(configWindowRomaji) configWindowRomaji = false; // If function call comes from the configuration window, reset var and prevent this function to be called again
+        else normalCall = true;
+
         let currentText = LastMemTextSend;
+
+        // Restore text (if it was previously set to romaji)
+        if(normalCall && this._romajiSet){
+          this._romajiSet = false;
+          storedTranslations[currentText] = this._translatedText;
+          this.replaceText(this._translatedText);
+          return;
+        }
+
         if(isJapaneseRegex.test(currentText)){ // put this regex in a constant (put constant in all other places where it was called)
           //ToRomaji(currentText)
           kuroshiroInstance.convert(currentText, {to: "romaji", mode: "spaced"})
@@ -1389,6 +1470,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             // Modify savedCache
             storedTranslations[currentText] = text;
             writeFile('translationsCache', storedTranslations);
+
+            // Save translation to variable and set flag as romaji replaced (so you can revert it if you want)
+            if(normalCall) this._romajiSet = true;
 
             // Send to textbox
 			      textOverflowed = false; // Reset overflow (YEP)
@@ -1421,7 +1505,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             }, 400);
           } else {
             // Text in cache found, display it
-            this.replaceText(storedTranslations[clipboardText.replace(/·/g,'')], messageCounter);
+            let text = storedTranslations[clipboardText.replace(/·/g,'')];
+            this._translatedText = text;
+            this.replaceText(text, messageCounter);
           }
         } else if (skipCachedText) { // text in cache not found and skipping cached text enabled. Stop skipping
           SceneManager.callPopup('Skip Disabled', 'bottomLeft', 200);
@@ -1445,8 +1531,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         && clipboardText.localeCompare('') != 0){ // Check if text is empty
             // Post translation replacements
             for (const [key, value] of Object.entries(postTranslationReplacements)) {
-              let re = new RegExp(key,"g"); // Create regex with variable
-              clipboardText = clipboardText.replace(re, value); // Use regular expression to replace all values and not the first one only
+              let re = new RegExp(key,"g");
+              clipboardText = clipboardText.replace(re, value);
             }
             // Remove "" if there wasn't 『|』on text
             if(!/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
@@ -1467,13 +1553,19 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             }
 
             if ($.ignoreTextStartWith){
-              if (!clipboardText.startsWith($.ignoreTextStr)) this.replaceText(clipboardText, messageCounter);
+              if (!clipboardText.startsWith($.ignoreTextStr)){
+                this._translatedText = clipboardText;
+                this.replaceText(clipboardText, messageCounter);
+              }
             }else if($.ignoreJapText){
               // don't know why I'm doing /u (unicode) and checking on -1, may be that this was done before I knew how to handle this 
               // regex, for now leaving as is without using var isJapaneseRegex
-              if (clipboardText.search(/[一-龠]+|[ぁ-ゔ]+|[ァ-ヴー]+|[ａ-ｚＡ-Ｚ０-９]+|[々〆〤！？]+/u) == -1)  
+              if (clipboardText.search(/[一-龠]+|[ぁ-ゔ]+|[ァ-ヴー]+|[ａ-ｚＡ-Ｚ０-９]+|[々〆〤！？]+/u) == -1){
+                this._translatedText = clipboardText;
                 this.replaceText(clipboardText, messageCounter);
+              }
             }else{
+              this._translatedText = clipboardText;
               this.replaceText(clipboardText, messageCounter);
             }
           }
@@ -2012,9 +2104,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
   // Create window and set items
   function createConfigurationWindow(){
-    let absolutePath = process.cwd();
-    if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
-    nw.Window.open(absolutePath + '\\js\\plugins\\ZERO_SetConfigurationWindow.html', {}, function(newWindow) {
+    nw.Window.open(getAbsolutePath() + '\\js\\plugins\\ZERO_SetConfigurationWindow.html', {}, function(newWindow) {
       configurationWindow = newWindow;
       configurationWindow.title = 'Configuration Window';
 
@@ -2050,8 +2140,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         configurationWindow.window.document.querySelector('#autoAdvanceText2').addEventListener('click', configAutoAdvanceText2);
         // Set current state to checkboxes
         updateConfigurationWindow();
-
-        
       }
     });
 
@@ -2103,23 +2191,25 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   /*
    * Get full path to file. Detects if game is run from main folder or as debug
   */
-  function getAbsolutePath(file){
+  function getAbsolutePath(){
     let absolutePath = process.cwd();
     if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
-
-    return absolutePath + '\\' + file + '.json';
+    return absolutePath;
+  }
+  function getAbsolutePathJson(file){
+    return getAbsolutePath() + '\\' + file + '.json';
   }
 
   function writeFile(file, data){
     let fs = require('fs');
 
     if(file == 'translationsCache'){ writingFile = true; } // Prevent triggering a fs.watch (Should be changed to all when HideMessageTextbox names functionality is moved here)
-    fs.writeFileSync(getAbsolutePath(file), JSON.stringify(data, null, 2)); // The 2 passed to stringify is to make the JSON readable
+    fs.writeFileSync(getAbsolutePathJson(file), JSON.stringify(data, null, 2)); // The 2 passed to stringify is to make the JSON readable
     if(file == 'translationsCache') {setTimeout(() => { writingFile = false }, 500); }
   }
 
   function readFile(file){
-    let absolutePath = getAbsolutePath(file);
+    let absolutePath = getAbsolutePathJson(file);
     let fs = require('fs');
 
     if(fs.existsSync(absolutePath)){
