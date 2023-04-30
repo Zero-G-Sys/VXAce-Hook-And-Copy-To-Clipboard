@@ -143,7 +143,7 @@ const replacements = {
   'お母さま': 'Okaasama',
   '淫魔': 'Succubus',
   'エロガキ': 'Erokid',
-  '全く': 'Mattaku',
+  '全く$': 'Mattaku',
   'オヤジ': 'Oyaji',
   'ショタコン': 'Shotacon',
   'もう！(！+)?': 'Mou!$1 ',
@@ -488,11 +488,11 @@ function ClipTimerSend() {
       hasHeartCharacter = true; 
     }else hasHeartCharacter = false;
 
-	// If text has music notes replace them and switch variable to notify it
+	  // If text has music notes replace them and switch variable to notify it
     if(MemText.includes('♪')){
-		MemText = MemText.replace(/♪/g,'@');
-		hasMusicNoteCharacter = true; 
-	}else hasMusicNoteCharacter = false;
+      MemText = MemText.replace(/♪/g,'@');
+      hasMusicNoteCharacter = true; 
+    }else hasMusicNoteCharacter = false;
 
     // Replace names with honorifics first
     for (const [key, value] of Object.entries(nameReplacementsWitHonorifics)) {

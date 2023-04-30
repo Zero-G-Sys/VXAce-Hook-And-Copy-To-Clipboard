@@ -35,7 +35,7 @@ module ZERO
     #/Text to replace/ => "Replacement text",
     "`" => "'",
     "´" => "'",
-    "E => "'",
+    "E" => "'",
   }
 end
 

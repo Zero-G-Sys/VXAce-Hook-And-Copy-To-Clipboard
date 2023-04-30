@@ -1,0 +1,16 @@
+Use replace text before this plugin, and a replace for first line name to \nb['name']
+
+Example here:
+\c[2]Name\c[0]
+to
+\nb['name']
+
+notice the \n at the end of regex, to delete line break
+
+
+/\\c\[2\](.*)\\c\[0\]\n/ => "\\nb['\\1']"
+
+
+Can then replace color names after that one by doing this
+
+/\['(Special Name)'\]/ => "['\\c[3]\\1']",

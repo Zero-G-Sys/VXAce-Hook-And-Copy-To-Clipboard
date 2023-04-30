@@ -391,7 +391,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   * Returns the replaced name or an empty string if it wasn't replaced
   */
   function replaceNames(text){
-    let name = text.replace(/(\\|)?(c|C)\\?\[\d{1,2}\]/g, ''); // Remove color codes
+    let name = text.replace(/(\\|)?C\\?\[\d{1,2}\]/gi, ''); // Remove color codes
     name = name.replace(//g, ''); // Sanitize name
     name = name.replace(/|/g, ''); 
     name = name.trim();
@@ -400,7 +400,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     let fileNames = readFile('savedNames');
     let replacementsCombined = Object.assign({}, fileNames, $.replacements); // merge dictionaries
     for (const [key, value] of Object.entries(replacementsCombined)) {
-      let savedName = key.replace(/(\\|)?(c|C)\\?\[\d{1,2}\]/g, ''); // Remove color codes
+      let savedName = key.replace(/(\\|)?C\\?\[\d{1,2}\]/gi, ''); // Remove color codes
       let re = new RegExp('^' + savedName + '$'); // Create regex that matches whole sentence with key given      
 
       // If name matches, replace
@@ -449,7 +449,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
         clipboardText = clipboardText.replace(/\./g, ''); // remove .
         clipboardText = clipboardText.replace(/\?/g, '\\?'); // replace ? with escaped ?
         newName = newName.replace(/\?/g, '\\?'); // replace ? with escaped ?
-        newName = newName.replace(/?(c|c)\\?\[\d{1,2}\]/g, ''); // Remove color code if it has it
+        newName = newName.replace(/?C\\?\[\d{1,2}\]/gi, ''); // Remove color code if it has it
         clipboardText = clipboardText.replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase()); // Capitalize first letter of each word
 
         // If name was ??? replace translated name to ??? (DeepL delivers what or broken text)
@@ -459,7 +459,8 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
         // Used when you have names like: Villager A, Villager B, Villager C, etc
         // Only using capital letters [A-Z] instead of uppercase and lowercase [A-Za-z] in case it registers false positives
         if(/([A-Z]|[Ａ-Ｚ])$/.test(newName)){
-          newName = newName.replace(/([A-Z]|[Ａ-Ｚ])$/, '([Ａ-Ｚ])?');
+          newName = newName.replace(/[Ａ-Ｚ]$/, '([Ａ-Ｚ])?');
+          newName = newName.replace(/[A-Z]$/, '([A-Z])?');
           clipboardText = clipboardText.replace(/[A-Z]$|[Ａ-Ｚ]$/, '$1');
         }
         // Same but with circled numbers

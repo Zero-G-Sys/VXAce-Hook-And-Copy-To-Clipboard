@@ -846,6 +846,19 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       text = text.slice(0, -1); // delete last '.'
     }
 
+    // Add replacement from ClipboardLlule (Copied code)
+    // Replace names with honorifics first
+    for (const [key, value] of Object.entries(nameReplacementsWitHonorifics)) {
+      let re = new RegExp(key,"g");
+      text = text.replace(re, value);
+    }
+
+    // Replace words (for names, etc)
+    for (const [key, value] of Object.entries(replacements)) {
+      let re = new RegExp(key,"g");
+      text = text.replace(re, value); 
+    }
+
     text = replaceHeartCharacter(text);
 
     previousClipboardText = text;
@@ -968,7 +981,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
       // remove special characters that make choice length more than it is
       let choice = translatedChoices[i].replace(/(i|I)\{(\d{1,2})\}/g, 'aa'); // Two characters for icons
-      choice = choice.replace(/(c|C)\{(\d{1,2})\}/g, ''); // Remove color codes
+      choice = choice.replace(/C\{(\d{1,2})\}/gi, ''); // Remove color codes
       if(choice.length > maxWidth.length) maxWidth = choice; // get choice with max length
     }
 
@@ -2113,6 +2126,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       let rawData = fs.readFileSync(absolutePath);
       let jsonData = JSON.parse(rawData);
       return jsonData;
+    } else { // Create an empty file if it doesn't exist
+      writeFile(file, {});
     }
   }
  
