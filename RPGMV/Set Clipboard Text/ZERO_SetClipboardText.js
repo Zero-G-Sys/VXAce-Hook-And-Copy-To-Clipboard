@@ -37,8 +37,13 @@
  explanation in the configuration variables.
 
  * SpellCheck Requirements:
- Needs node module simple-spellchecker (https://www.npmjs.com/package/simple-spellchecker?activeTab=readme) in www folder
- as a node_modules folder (can be copied, no need to do npm install for each game).
+ Needs node module simple-spellchecker (https://www.npmjs.com/package/simple-spellchecker?activeTab=readme) 
+ Two ways to get it:
+  - Globally: Do a 'npm install -g simple-spellchecker', then set the proper path
+  for NODE_PATH on your os (For windows it's: %APPDATA%/npm/node_modules, and do 
+  a restart afterwards).
+  - Locally for each game: paste the node_modules in the SpellCheck folder into
+  the www folder.
  To get typos underscore you must set chrome flags on both package.json files to:
  "chromium-args":"--enable-spell-checking",
 
@@ -1084,8 +1089,20 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var replaceTextTranslationWindow = false;
   var textToReplaceTranslationWindow = '';
   var stopCustomInterval = false;
-  var choiceWindowText = ''; // Tried to use previousClipboardText, but it makes as undefined in populateTranslationWindow(), don't know why
-  var SpellChecker = require(getAbsolutePath() + '\\node_modules\\simple-spellchecker\\index');
+  var choiceWindowText = ''; // Tried to use previousClipboardText, but it makes as undefined in populateTranslationWindow(), don't know why (Hoisting?)
+  // Load Spellcheck module global or locally
+  var SpellChecker;
+  try{ 
+    SpellChecker = require('simple-spellchecker');
+    console.log('Loaded Spellcheck globally');
+  } catch(ex){
+    try{
+      SpellChecker = require(getAbsolutePath() + '\\node_modules\\simple-spellchecker\\index');
+      console.log('Loaded Spellcheck locally');
+    } catch(ex){
+      console.log('Failed to load Spellcheck, no Node module found');
+    }
+  }
 
   var ZERO_WindowMessage_updateTranslationWindow = Window_Message.prototype.update;
   Window_Message.prototype.update = function () {
@@ -1161,8 +1178,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             });
 
             // Add spellcheck event
-            translationWindow.window.document.querySelector('#current').addEventListener('contextmenu', function(event) {
-              spellCheck(this, event);
+            translationWindow.window.document.querySelector('#current').addEventListener('contextmenu', function(event) { // Don't use arrow function so we can send 'this' as textbox
+              if(SpellChecker) spellCheck(this, event);
             });
         };
     });
@@ -1173,20 +1190,13 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     var text = textarea.value;
     var start = textarea.selectionStart;
     var end = textarea.selectionEnd;
-    var borderChars = [' ','\n','\r','\t','¿','?','\'','"','!','.',',',';',':','$','&','/','\\','(',')','=','*','-','+','_'];
     while (start > 0) {
-      if (borderChars.indexOf(text[start - 1]) === -1) {
-          --start;
-      } else {
-          break;
-      }                        
+      if (/[A-Za-z]/.test(text[start - 1])) --start;
+      else break;                        
     }
     while (end < text.length) {
-      if (borderChars.indexOf(text[end]) === -1) {
-          ++end;
-      } else {
-          break;
-      }
+        if (/[A-Za-z]/.test(text[end])) ++end;
+        else break;
     }
     var currentWord = text.substring(start, end);
 
@@ -1451,7 +1461,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         let currentText = LastMemTextSend;
 
         // Restore text (if it was previously set to romaji)
-        if(normalCall && this._romajiSet){
+        if(normalCall && this._romajiSet && this._translatedText !== ''){
           this._romajiSet = false;
           storedTranslations[currentText] = this._translatedText;
           this.replaceText(this._translatedText);
