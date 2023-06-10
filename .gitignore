@@ -3,6 +3,9 @@
 
 !.gitignore
 
+!/_Tyrano/
+/_Tyrano/
+
 !/RPGMV/
 /RPGMV/_Nw.js/
 /RPGMV/schach-pathfinding/

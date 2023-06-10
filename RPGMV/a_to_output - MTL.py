@@ -6,7 +6,7 @@ from distutils.dir_util import copy_tree
 
 filenames_patch = [ # Add path to plugins_patch.txt, file must be in unicode (UTF-16LE)
     'Separator/plugins_patch.txt',
-    'Message Backlog (YEP)/plugins_patch.txt',
+    'Message Backlog/YEP/plugins_patch.txt',
     'Hide Message Window Z/plugins_patch.txt',
     'Set Clipboard Text/plugins_patch.txt',
     'Auto Save/plugins_patch.txt',
@@ -25,7 +25,7 @@ filenames_patch = [ # Add path to plugins_patch.txt, file must be in unicode (UT
 
 filenames = { # Add path to plugin file. Key: path, Value: filename
     'Separator': '--------------------.js',
-    'Message Backlog (YEP)': 'YEP_X_MessageBacklog - setClipboard compatible.js',
+    'Message Backlog/YEP': 'YEP_X_MessageBacklog - setClipboard compatible.js',
     'Hide Message Window Z': 'ZERO_HideMessageWindowZ (ALT for setClipboardText and nameboxes).js',
     'Set Clipboard Text': 'ZERO_ClipboardLlule.js',
     'Auto Save': 'FELSKI_AUTOSAVE.js',
@@ -70,7 +70,7 @@ for fpath, fname in filenames.items():
             # Copy spellcheck files
             copyfile(fpath+'/Spellcheck/package.json', 'zOutput/www/package.json')
             copyfile(fpath+'/Spellcheck/packageBase.json', 'zOutput/package.json')
-            copy_tree(fpath+'/Spellcheck/node_modules', 'zOutput/www/node_modules')
+            #copy_tree(fpath+'/Spellcheck/node_modules', 'zOutput/www/node_modules')
 
         else:
             copyfile(fpath+'/'+fname, 'zOutput/www/js/plugins/'+fname)

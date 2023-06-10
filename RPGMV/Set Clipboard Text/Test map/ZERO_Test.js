@@ -62,7 +62,7 @@ function writeFileTestMAP(file, data){
     absolutePath = absolutePath + '\\' + file + '.json';
     fs.writeFileSync(absolutePath, JSON.stringify(data, JSONreplacer, 2)/*, 'utf16le'*/);
 }
-
+map 31
 console.time('Read OBJ');
 var storedTranslationsOBJ = readFileTest('translationsCacheOBJ')
 console.timeEnd('Read OBJ');

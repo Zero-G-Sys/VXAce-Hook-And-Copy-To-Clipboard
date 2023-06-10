@@ -47,7 +47,7 @@ class Game_Player < Game_Character
     end
   end
 
-  # Cange character speed (4 normal, 5 fast)
+  # Change character speed (4 normal, 5 fast)
   def real_move_speed
     return @move_speed + (dash? ? 1 : 0) if @@duringEvent == 1
     return ZERO::MOVE_SPEED + (dash? ? 1 : 0)

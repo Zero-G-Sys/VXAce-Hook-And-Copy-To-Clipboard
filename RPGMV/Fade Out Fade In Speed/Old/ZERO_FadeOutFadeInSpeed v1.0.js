@@ -4,13 +4,13 @@
 /*:
  * @ZERO_FadeOutFadeInSpeed
  * @plugindesc Change Fade out/fade in speed
- * @version 1.1
+ * @version 1.0
  * @author Zero_G
  * @filename ZERO_FadeOutFadeInSpeed.js
  * @help
  -------------------------------------------------------------------------------
  == Description ==
- This plugin lets you change the default Fade out/fade in speed
+ This plugin lets you change the deafult Fade out/fade in speed
 
  == Terms of Use ==
  - Free for use in non-commercial projects with credits
@@ -19,27 +19,23 @@
 
  == Usage ==
  Just add the plugin.
-
- == Changelog ==
- v1.1 - Stop overriding startFadeOut and startFadeIn methods and instead
-        override the fadeSpeed method. Makes fade speed more global.
-
+ 
  -------------------------------------------------------------------------------
- @param Fade speed
- @desc Default fade speed
+ @param Fade out speed
+ @desc Default fade out speed
  @default 10
  
- @param Override slow fade speed
- @desc Make slow fade speed as fast as fade speed
- @default true
+ @param Fade in speed
+ @desc Default fade in speed
+ @default 10
  -------------------------------------------------------------------------------
 
 */
 
 var Imported = Imported || {};
 var ZERO = ZERO || {};
-Imported.ZERO_FadeOutFadeInSpeed = 1;
-ZERO.FadeOutFadeInSpeed = ZERO.FadeOutFadeInSpeed || {};
+Imported.ZERO_FadeOutFedeInSpeed = 1;
+ZERO.FadeOutFedeInSpeed = ZERO.FadeOutFedeInSpeed || {};
 
 (function ($) {
   // Get plugin name and parameters
@@ -48,17 +44,22 @@ ZERO.FadeOutFadeInSpeed = ZERO.FadeOutFadeInSpeed || {};
   var scriptName = document.currentScript.src.substring(substrBegin+1, substrEnd);
   $.params = PluginManager.parameters(scriptName);
   
-  $.fadeSpeed = $.params['Fade speed'];
-  $.overrideSlowFade = ($.params['Override slow fade speed'] === 'true');
+  $.fadeOutSpeed = $.params['Fade out speed'].trim();
+  $.fadeInSpeed = $.params['Fade in speed'].trim();
 
-  // Override FadeIn and FadeOut speed
-  Scene_Base.prototype.fadeSpeed = function() {
-    return $.fadeSpeed;
+  Scene_Base.prototype.startFadeOut = function (duration, white) {
+    this.createFadeSprite(white);
+    this._fadeSign = -1;
+    //this._fadeDuration = duration || $.fadeOutSpeed;
+    this._fadeDuration = $.fadeOutSpeed;
+    this._fadeSprite.opacity = 0;
   };
 
-  // Override slow fade, option to leave as default (double of fade speed) or same as fade speed
-  Scene_Base.prototype.slowFadeSpeed = function() {
-    if ($.overrideSlowFade) return this.fadeSpeed();
-    else return this.fadeSpeed() * 2;
+  Scene_Base.prototype.startFadeIn = function (duration, white) {
+    this.createFadeSprite(white);
+    this._fadeSign = 1;
+    //this._fadeDuration = duration || $.fadeInSpeed;
+    this._fadeDuration = $.fadeInSpeed;
+    this._fadeSprite.opacity = 255;
   };
-})(ZERO.FadeOutFadeInSpeed);
+})(ZERO.FadeOutFedeInSpeed);

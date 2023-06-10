@@ -1,0 +1,98 @@
+# Zero_G Mod 
+# Set a dummy for archievements calls like this
+#steam = SteamUserStatsLite.instance
+#steam.set_achievement 'BOSS_1'
+#steam.update
+class SteamUserStatsLite
+
+  # Instantiates a new instance of +SteamUserStatsLite+.
+#~   def initialize
+#~   end
+
+  def shutdown
+    return true
+  end
+
+  def initted?
+    return true
+  end
+
+  def self.restart_app_if_necessary(app_id)
+    return true
+  end
+
+  def update
+    return true
+  end
+
+  def is_subscribed
+    return true
+  end
+
+  def is_dlc_installed(app_id)
+    return true
+  end
+
+  def request_current_stats
+    return true
+  end
+
+  def get_stat_int(name)
+    return true
+  end
+
+  def get_stat_float(name)
+    return true
+  end
+
+  def set_stat(name, val)
+    return true
+  end
+
+  def update_avg_rate_stat(name, count_this_session, session_length)
+    return true
+  end
+
+  def get_achievement(name)
+    return true
+  end
+
+  # Sets an achievement as unlocked.
+  def set_achievement(name)
+    return true
+  end
+
+  # Sets an achievement as locked.
+  def clear_achievement(name)
+    return true
+  end
+
+  # Gets an achievement's state and unlock time.
+  def get_achievement_and_unlock_time(name)
+    return true
+  end
+
+  def get_achievement_display_attribute(name, key)
+    return true
+  end
+
+  def get_num_achievements
+    return true
+  end
+
+  def get_achievement_name(achievement)
+    return true
+  end
+
+  def reset_all_stats(achievements_too)
+    return true
+  end
+
+  # Gets the global instance of SteamUserStatsLite.
+  def self.instance
+    @@instance
+  end
+
+  @@instance = self.new
+
+end

@@ -6,7 +6,7 @@
 * @plugindesc Hide textbox or make textbox invisible while showing text.
 * @title Hide Message Window Z
 * @author Zero_G
-* @version 2.2.4
+* @version 2.2.5
 * @filename ZERO_HideMessageWindowZ.js
 * @help 
 -------------------------------------------------------------------------------
@@ -55,6 +55,8 @@ HideMessageWindowZ_Lunatlazur = Window_ActorName;
 == Change Log ==
 TODO in 2.2.1 notes
 
+2.2.5
+ - Fixed a bug where YEP_MessageCore Namebox would show up if hiding a textbox with no namebox
 2.2.4
  - Added a modded version of MPP_MessageEX
 2.2.3
@@ -63,7 +65,7 @@ TODO in 2.2.1 notes
  - Changed all hide nameboxes variables to a global one instead of a local
 2.2.1
  - Fixed Lunatlazur next namebox didn't change opacity if triggered from a non named window.
- - TODO: YEP one somethimes behaves like that, may need to investigate for a fix (Find a game 
+ - TODO: YEP one sometimes behaves like that, may need to investigate for a fix (Find a game 
       that does that and replicate the issue constantly, otherwise I can't find why it's doing it)
  - Typo: Ocupacy to Opacity
 2.2
@@ -71,7 +73,7 @@ TODO in 2.2.1 notes
 2.1
  - Added YEP_MessageCore name window handling
  - Added MPP_MessageEX namebox handling (requires editing the script)
-2.0 Code rewriten
+2.0 Code rewritten
  - Deprecated using command 101
  - Dim background properly hidden
  - Restoring window from mode 2 will now recover proper state
@@ -182,7 +184,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     ZERO_WindowMessage_update.call(this);
   };
   
-  // Prevent from advancint text when message is hidden - By HIME
+  // Prevent from advancement text when message is hidden - By HIME
   var ZERO_WindowMessage_updateMessage = Window_Message.prototype.updateMessage;
   Window_Message.prototype.updateMessage = function() {
     if (isHidden) return false;
@@ -200,6 +202,9 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
   // Check if YEP plugin exists
   if(typeof Window_NameBox == 'function'){
+    // Variable to check if there is a namebox in the current text so it can prevent
+    // showing a namebox in case there wasn't one originally.
+    var nameboxHide = false; 
 
     // Overwrite YEP_MessageCore update
     // Add inputs 
@@ -207,8 +212,18 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       Window_Base.prototype.update.call(this);
       
       if (Input.isTriggered($.buttonHide) || TouchInput.isCancelled()) {
-        if (isHidden) this.visible = false;
-        else this.visible = true;
+        if (isHidden){ // Hide
+          if(this.visible) { // Check if there was a namebox
+            this.visible = false;
+            nameboxHide = true;
+          }
+        } 
+        else { // Restore
+          if(nameboxHide) { // There was a namebox, restore it
+            this.visible = true;
+            nameboxHide = false
+          }
+        }
       }
       if (Input.isTriggered($.buttonHideOpacity)) {
         if (isHiddenOpacity) this.opacity = 0;
@@ -222,7 +237,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       if (this._closeCounter-- > 0) return;
 
       // Added line. Prevent from showing namebox when restoring message box if 
-      // there was none in the current message
+      // there was none in the current message (May be deprecated by nameboxHide variable)
       if (this._parentWindow.isClosing()) {
         this._openness = this._parentWindow.openness;
       }
@@ -237,6 +252,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 		var text = ZERO_Window_NameBox_prototype_refresh.call(this, text, position);
 
 		if (isHiddenOpacity) this.opacity = 0;
+    nameboxHide = false; // Reset var on new namewindow
   
 		return text;
     }
@@ -276,7 +292,13 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
   // Check if MPP plugin exists
   if (typeof HideMessageWindowZ_Lunatlazur !== 'undefined'){
-    // Unmodded version
+    // Un-modded version
+    // Alt version need to add on luna script, first line of code:
+    // var HideMessageWindowZ_Lunatlazur;
+    // and on prev of last line (inside anonymous function) })();
+    // HideMessageWindowZ_Lunatlazur = Window_ActorName;
+    // Making a global variable to access the required function without
+    // de-anonymizing the plugin
     /*
     var ZERO_HideMessageWindowZ_Lunatlazur_prototype_update = HideMessageWindowZ_Lunatlazur.prototype.update;
     HideMessageWindowZ_Lunatlazur.prototype.update = function () {

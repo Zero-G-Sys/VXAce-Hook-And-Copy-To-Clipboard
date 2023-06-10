@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.16.5
+ * @version 1.16.6
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -36,6 +36,13 @@
  the next time it sees an already translated text. More options with their
  explanation in the configuration variables.
 
+ * Translation Window
+ Can open a translation window to make quick edits to current displayed text
+ When editing choices, they will be in this format: [Choice1].[Choice2].[ChoiceN].WindowTextIfAny
+  -For changing color of a choice add º{colorcode}, instead of \C[colorcode]
+     (Though this script will still recognize C[xx] and I[xx] accordingly and
+      convert to color and icons)
+      
  * SpellCheck Requirements:
  Needs node module simple-spellchecker (https://www.npmjs.com/package/simple-spellchecker?activeTab=readme) 
  Two ways to get it:
@@ -51,6 +58,8 @@
  - Free for use
 
  == Changelog ==
+ 1.16.6  -Change postTranslationReplacements to Map, add util functions so it can replace to another word with the same
+          case when using a callback.
  1.16.5  -Add possibility to restore translated text after changing it to romaji by pressing romaji key again (even on 
           Translation Window textareas)
          -Add spellcheck to "Current" textarea on Translation Window (See notes on description for dependencies)
@@ -173,6 +182,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 (function ($) {
   // Custom inputs, enter as a single letter string
   // Can be an array of keys. Ex: ['a', 'b']
+  //   There is a bug with MV core Input.update that if (using array) you press 'a' then 'b'
+  //   it will trigger it two times. If this is a problem bind the key normally and use 
+  //   ahk for the rest of the keys
   // To disable key use null or empty string ''
   var CustomInputs = {};
  /*---------------------------------------------------------------------------------------*/
@@ -337,7 +349,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // Copy: 'kuroshiro.min.js', 'kuroshiro-analyzer-kuromoji.min' and 'dict' folder to js/libs
  // and load them before plugins.js in index.html
  $.replaceToRomaji = true;
- CustomInputs.replaceToRomajiButton = ['g', 'm']; // Default ['g', 'm']
+ CustomInputs.replaceToRomajiButton = 'g'; // 'g'
  // Set path to kuromoji dictionaries. 
  // If you want them to be in the lib folder alongside the scripts: './js/libs/dict'
  // Or you can use a fixed folder in your system so every game looks for them there
@@ -360,63 +372,53 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // configurations do it in these variables
  CustomInputs.configurationWindowKey = '3';
 
- //* Description: Replacements to be made to text after translation. Left if text to be replaced
- // right is replacement. Left accepts regex, be careful, as it is a string and it will
- // need (two) \\ instead of (one) \ . Also don't replace special characters ex: []
+ //* Description: Replacements to be made to text after translation. 
+ // Left is text to be replaced. Right is replacement. (Can use callback function)
+ // Left accepts a regex, remember to use the 'g' modifier for a replace all
  // Pre translation replacements in clipboard_llule.
- // Useful when a replacement before translation isn't working.
- // Note: script with replace # with a heart symbol.
- const postTranslationReplacements = {
+ // Useful when a replacement before translation isn't working. Or need to correct
+ // a translation from DeepL
+ // Note: A script with replace # with a heart symbol.
+ const postTranslationReplacements = new Map([
     // DeepL Translation Errors
-    'I\'m not sure what to say, but I\'m sure you\'ll understand.': 'Translation Error',
-    'I\'m not sure what to say, but I\'ll try.': 'Translation Error',
-    'I\'m not sure what to do, but I\'m going to do it.': 'Translation Error',
-    'I\'m sure you\'ll be happy to hear that.​': 'Translation Error',
-    'I\'m not sure what to make of it.': 'Translation Error',
-    'I\'m not sure if this is a good idea or not, but I think it\'s a good idea.': 'Translation Error',
-    'In the event that you\'ve got any questions, please do not hesitate to contact us.​': 'Translation Error',
-    'I\'m not sure what to do, but I\'m sure you can do it.': 'Translation Error',
-    'I\'m sure you\'ve heard of it, but I\'m not sure if you\'ve seen it.': 'Translation Error',
-    'I\'m sure you\'ll be able to figure out what\'s going on.': 'Translation Error',
-    'I\'m sure you\'ll have a lot of fun with this one.': 'Translation Error',
-    'I\'m not sure what to say, but I\'m going to say it.': 'Translation Error',
+    ["I'm not sure what to say, but I'm sure you'll understand.", 'Translation Error'],
+    ["I'm not sure what to say, but I'll try.", 'Translation Error'],
+    ["I'm not sure what to do, but I'm going to do it.", 'Translation Error'],
+    ["I'm sure you'll be happy to hear that.​", 'Translation Error'],
+    ["I'm not sure what to make of it.", 'Translation Error'],
+    ["I'm not sure if this is a good idea or not, but I think it's a good idea.", 'Translation Error'],
+    ["In the event that you've got any questions, please do not hesitate to contact us.​", 'Translation Error'],
+    ["I'm not sure what to do, but I'm sure you can do it.", 'Translation Error'],
+    ["I'm sure you've heard of it, but I'm not sure if you've seen it.", 'Translation Error'],
+    ["I'm sure you'll be able to figure out what's going on.", 'Translation Error'],
+    ["I'm sure you'll have a lot of fun with this one.", 'Translation Error'],
+    ["I'm not sure what to say, but I'm going to say it.", 'Translation Error'],
     // Normal replacements
-    '(B|b)lack (F|f)airy': 'Dark Elf',
-    '(B|b)lack (E|e)elf': 'Dark Elf',
-    '(B|b)lack (F|f)airies': 'Dark Elves',
-    'Zzz#': 'Zun#',
-    '(B|b)ing#': 'Bikun#',
-    '(Q|q)uinn#': 'Kiyun#',
-    '(C|c)hup#': 'Chiyupa#',
-    'Senior': 'Senpai',
-    'senior': 'senpai',
-    'nasty': 'lewd',
-    'Nasty': 'Lewd',
-    'Sunken nipples': 'Inverted nipples',
-    'sunken nipples': 'inverted nipples',
-    'Pang': 'Pan',
-    'pang': 'pan',
-    '~': '～',
-    'â': '♪',
-    'Â': '♪',
-    'Virgin membrane': 'Hymen',
-    'virgin membrane': 'hymen',
-    'Baboon': 'Hihi',
-    'Hexenbiest': 'Monster',
-    'hexenbiest': 'monster',
-    '　': ' ',
-    'Brave': 'Hero',
-    'brave': 'hero',
-    'Demon King': 'Demon Lord',
-    'Witch King': 'Demon Lord',
-    'Crotch': 'Vagina',
-    'crotch': 'vagina',
-    'Monk': 'Saint',
-    'monk': 'saint',
-    '⁉': '?!',
-    'Uterus': 'Womb',
-    'uterus': 'womb',
- }
+    [/Black (Fairy|Elf)/gi, 'Dark Elf'],
+    [/Black Fairies/gi, 'Dark Elves'],
+    ['Zzz#', 'Zun#'],
+    [/Bing#/gi, 'Bikun#'],
+    [/Quinn#/gi, 'Kiyun#'],
+    [/Chup#/gi, 'Chiyupa#'],
+    [/(S|s)enior/g, '$1enpai'],
+    [/Nasty/gi, m => 'Lewd'.replaceWithProperCase(m)],
+    [/Sunken nipples/gi, m => 'Inverted nipples'.replaceWithProperCase(m)],
+    [/(P|p)ang/g, '$1an'],
+    ['~', '～'],
+    ['â', '♪'],
+    ['Â', '♪'],
+    [/Virgin membrane/gi, m => 'Hymen'.replaceWithProperCase(m)],
+    ['Baboon', 'Hihi'],
+    [/Hexenbiest/gi, m => 'Monster'.replaceWithProperCase(m)],
+    ['　', ' '], // Double width space with half width space
+    [/Brave/gi, m => 'Hero'.replaceWithProperCase(m)],
+    [/(Demon|Witch) King/gi, 'Demon Lord'],
+    [/Crotch/gi, m => 'Vagina'.replaceWithProperCase(m)],
+    [/Monk/gi, m => 'Saint'.replaceWithProperCase(m)],
+    ['⁉', '?!'],
+    [/Uterus/gi, m => 'Womb'.replaceWithProperCase(m)],
+    // Custom
+ ]);
 
  /*--------------------------------------------------------------------------------------*/
  /* End of manual configuration                                                          */
@@ -673,6 +675,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     $.replacingChoicesStopLlule = false;
     stopDrawingText = false;
 	  jpTextSentToMem = false;
+    this._translatedText = '';
+    this._romajiSet = false;
 
     if(clipboardDisabledBattle){ // ClipboardLlule disabled during battle, send text manually
       let text = this.convertEscapeCharacters($gameMessage.allText());
@@ -918,9 +922,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       && clipboardText.localeCompare('') != 0){
 		startChoiceReplaceNormalLocal = false; // Stop entering previous block (as it is an update function)
         // Post-translation replacements
-        for (const [key, value] of Object.entries(postTranslationReplacements)) {
-          let re = new RegExp(key,'g');
-          clipboardText = clipboardText.replace(re, value);
+        for (var [key, value] of postTranslationReplacements) {
+          if(typeof key === 'string') key = new RegExp(key.escapeRegExp(),'g');
+          clipboardText = clipboardText.replace(key, value);
         }
         // Remove "" if there wasn't 『|』on text
         if(!/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
@@ -952,8 +956,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     text = text.replace(/\] *\[/g, '].['); // If separation came without dot add it
 	  text = text.replace(/(?<!\.{2,3})\.\] \.?/g, '].'); // There's a . inside a choice at the end, put it outside (Ignore is choice has ...)
 
+    // Replace º to  (so that colors can be used in translation window) [Not really necessary to use]
+    text = text.replace(/º/g, '');
+
     // Replace [] in icons and color codes to {} (otherwise they get in the way of the split of choices)
-    text = text.replace(/(\\|)?(I|C)\[(\d{1,2})\]/gi, '$2{$3}');
+    text = text.replace(/(\\|)?(I|C)\[(\d{1,3})\]/gi, '$2{$3}');
 
     translatedChoices = text.split('].');
     let maxWidth = '123';
@@ -973,7 +980,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
         for(const key in savedNames){
           let name = savedNames[key];
-          name = name.replace(/\\C\[\d{1,2}\]/gi, '')                // Remove color codes
+          name = name.replace(/\\C\[\d{1,2}\]/gi, '')                   // Remove color codes
           if(name.includes('$1')) name = name.replace(' $1', '.{0,3}'); // Remove regex for multi names
           else name = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');   // Escape special characters for regex (if there is a [ for example use it as text not as regex special character)
 
@@ -998,7 +1005,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       translatedChoices[i] = translatedChoices[i].charAt(0).toUpperCase() + translatedChoices[i].slice(1); // Capitalize first letter
 
       // remove special characters that make choice length more than it is
-      let choice = translatedChoices[i].replace(/I\{(\d{1,2})\}/gi, 'aa'); // Two characters for icons
+      let choice = translatedChoices[i].replace(/I\{(\d{1,3})\}/gi, 'aa'); // Two characters for icons
       choice = choice.replace(/C\{(\d{1,2})\}/gi, ''); // Remove color codes
       if(choice.length > maxWidth.length) maxWidth = choice; // get choice with max length
     }
@@ -1020,7 +1027,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     // Replace choices with translated ones (no direct assignment in case translation wrongly gives fewer choices)
     for (let i = 0; i < $gameMessage.choices().length; i++) {
       // Restore escaped
-      translatedChoices[i] = translatedChoices[i].replace(/(I|C){(\d{1,2})}/gi, '$1[$2]');
+      translatedChoices[i] = translatedChoices[i].replace(/(I|C){(\d{1,3})}/gi, '$1[$2]');
       // Remove ending .
       translatedChoices[i] = translatedChoices[i].replace(/\.$/g, '');
 
@@ -1255,6 +1262,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
     // Send to textbox (trigger flag in Window_Message update)
     if($gameMessage.isChoice()){
+      previousClipboardText = JPTextInTranslationWindow; // Make sure choice replace is trigged with the proper text, as previousClipboardText is used there to determine the cached text to use
       startChoiceReplaceStored = true;
     } else {
       textOverflowed = false; // Reset overflow (YEP)
@@ -1362,6 +1370,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     text = text.replace(/tsu((?![a-z])|(?=tsu))/gi, '~'); // っ , will fuck up some works, but this functions is to be used on sex lines mostly so it's fine (Tried to fix it with negative lookahead)
     text = text.replace(/ ~/gi, '~');
     text = text.replace(/゛/gi, '~');					            // Could cause conflicts, check
+    text = text.replace(/"/gi, '~');					            // Could cause conflicts, check
     text = text.replace(/~/g, '～');	
     text = text.replace(/ ?… ?/g, '...');                 // Fix spaces
     text = text.replace(/ ?\./g, '.');
@@ -1540,9 +1549,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         && previousClipboardText.localeCompare(clipboardText) // Compare that previous clipboard text is different
         && clipboardText.localeCompare('') != 0){ // Check if text is empty
             // Post translation replacements
-            for (const [key, value] of Object.entries(postTranslationReplacements)) {
-              let re = new RegExp(key,"g");
-              clipboardText = clipboardText.replace(re, value);
+            for (var [key, value] of postTranslationReplacements) {
+              if(typeof key === 'string') key = new RegExp(key.escapeRegExp(),'g');
+              clipboardText = clipboardText.replace(key, value);
             }
             // Remove "" if there wasn't 『|』on text
             if(!/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
@@ -1627,10 +1636,11 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         
   stopDrawingText = true;
 
-	// Restore icons (would like to do this before it is being sent here
+	// Restore icons escape (would like to do this before it is being sent here
 	//  so it's stored in cache but can't put it choice replace, look into it) 
-	if(text.includes('i[') && text[text.indexOf('i[')-1] !== '\\')
-		text = text.replace(/i\[/g, '\\i[')
+	if(/\\?i\[/gi.test(text)){
+    text = text.replace(/\\?i\[/gi, '\\I[');
+  }
 
 	// Restore heart to text
 	if(hasHeartCharacter && (!text.includes('#') && !text.includes('%23') && !text.includes('♡') && !text.includes('♥') && !text.includes('❤'))){
@@ -2181,7 +2191,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     }
   }
 
-  function configAutoAdvanceText(){ // For auto reading text
+  function configAutoAdvanceText2(){ // For auto reading text
     autoAdvanceText = !autoAdvanceText
     if(autoAdvanceText){
       $.autoSelectFirstChoice = false; 
@@ -2354,6 +2364,29 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   /* -----------------\
   /* End of Popup Text \
   /*----------------------------------------------------------------------------------*/
+
+  /**
+   * Utils
+   */
+  // Convert string to a string with escaped characters for regex 
+  String.prototype.escapeRegExp = function(){
+    return this.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Check if a string starts with upper case
+  String.prototype.isUpperCase = function(){
+    let str = this;
+    if(str.length === 0) return false;
+    if(str.length !== 1) str = str[0];
+    return str === str.toUpperCase();
+  }
+
+  // Return a word capitalized if the caseWord was capitalized
+  String.prototype.replaceWithProperCase = function(caseWord){
+    let replaceToWord = this.toString();
+    if(caseWord.isUpperCase()) return replaceToWord[0].toUpperCase() + replaceToWord.substring(1);
+    else return replaceToWord[0].toLowerCase() + replaceToWord.substring(1); 
+  }
 
 })(ZERO.SetClipboardText);
 

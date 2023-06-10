@@ -1,0 +1,10 @@
+-Use WinMerge to compare data folder (unmodified, pre translation) to new version (
+-See what files are changed, and copy those files
+
+-If you modified some data with tranlation, do a compare between unmodified backup and current files first
+
+-Do a manual (VSCode) compare of system.json (can be formated F1, and saved)
+
+-Do the same with js (can be manually done)
+
+-Copy and replace rest of files (pictures etc)

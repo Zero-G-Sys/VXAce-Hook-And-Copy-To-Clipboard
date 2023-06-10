@@ -126,9 +126,10 @@ module Input
           ozpause_update
           #Audio.update
           pause = false if Input.trigger?(OZPause::PAUSE_BUTTON)
+          pause = false if Input.trigger?(:B) # Zero_G exit pause with x
         end
         Audio.bgm_restore(bgmpos)
-        Audio.bgs_restore(bgspos)
+        #Audio.bgs_restore(bgspos) # Zero_G disable BGS restore
         pause_layer.bitmap.dispose
         pause_layer.bitmap = nil
         pause_layer.dispose

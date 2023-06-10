@@ -145,6 +145,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   // How to use: For colors use the default regex.
   // If name is between quotations or special characters regex should be 
   // for []: /^\[(.*)\]/
+  // for 【】:/^【(.*)】/
   // for "": /^"(.*)"/
   const forceNameboxMethod1 = false;
   var regexTextStartsWithName = new RegExp(/^c\[\d{1,2}\](.*)\n?c\[\d{1,2}\]/, 'i');
