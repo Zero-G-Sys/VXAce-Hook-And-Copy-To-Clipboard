@@ -5,7 +5,7 @@ The main functionality of this program is to get text from a RPG Maker VX Ace ga
 
 While you could use Textractor hook, some games have problems when switching between message box types, the first message for that type will not hook. The other benefit is that you can better process the captured text with this program, only textboxes and choices will be captured, and no unwanted text should appear (can optionally capture item/skill descriptions, and some other plugins text).
 
-While RGSS is capable is sending text to the clipboard through WinApi32 (No gems or packages can be used here). It will do so with wrong encoding. So the workaround is to store all captured text to a file, then have a Node app watch for changes on that file, and then copy it's contents to clipboard after doing some processing to it.
+While RGSS is capable of sending text to the clipboard through WinApi32 (No gems or packages can be used here). It will do so with wrong encoding. So the workaround is to store all captured text to a file, then have a Node app watch for changes on that file, and then copy it's contents to clipboard after doing some processing to it.
 
 You can:
  - Do some replacements and advanced replacements with the javascript replace callback function. 
