@@ -2,6 +2,7 @@
  *  Proof of concept of a queue (FIFO) of Promises to resolve multiple translations attempts
  *  Base code from here https://www.ccdatalab.org/blog/queueing-javascript-promises
  *  Not tested
+ *  May want to change it to LIFO to give priority to the last message on display
  */
 
 // Create queue object (Utility function, don't replace anything here)
@@ -12,7 +13,7 @@ const Queue = (onResolve, onReject) => {
     // no work to do
     if (!items[0]) return;
 
-    stack[0]()
+    items[0]()
       .then(onResolve)
       .catch(onReject)
       .then(() => items.shift())
@@ -45,14 +46,14 @@ function deepLTranslate(jpText){
             // TODO: add logic to check that here, create vars translationDone:Boolean and translation:String with translated text
             // probably cleaner to do that on a function and return null on translation not done and text on done
             // and bellow instead of checking for translationDone:Boolean check for not null
-            if(translationDone) resolve({jpText: jpText, translation: translation}); // return an object with jptext and translation. Would be better if you defined that object and didn't use an anonymous one
+            if(translationDone) resolve({jpText: jpText, translation: translation}); // return an object with jpText and translation. Would be better if you defined that object and didn't use an anonymous one
         }, intervalTime);
     });
 }
 
 // Create a queue and handle promises callbacks
 // Define here how it will handle translation results
-deepLTranslationQueue = Queue(
+const deepLTranslationQueue = Queue(
     // Translation successful
     (responseObject) => { // change variable name to proper one once you create one for it in line 48
         // Access results like this: responseObject.jpText and responseObject.translation
@@ -71,6 +72,9 @@ deepLTranslationQueue = Queue(
         // Manege error
     }
 );
+
+// Important that Queue and deepLTranslationQueue (enqueue) cont functions be declared before being used, so either put the at top of the file or have them in another
+// and import them. Both are using closures, so they can't be converted to normal functions
 
 // Finally call the created queue and add promises to it
 // ex:

@@ -23,6 +23,17 @@
 !/RPGVXAce/
 /RPGVXAce/_Optimize image size/FileOptimizer/
 /RPGVXAce/_Project1/
+/RPGVXAce/_Clipboard/*
+!/RPGVXAce/_Clipboard/.babelrc
+!/RPGVXAce/_Clipboard/_Transform Textractor NameReplacements
+!/RPGVXAce/_Clipboard/_Transform Textractor Raplacements
+!/RPGVXAce/_Clipboard/FileMonitor.js
+!/RPGVXAce/_Clipboard/Ignore.mjs
+!/RPGVXAce/_Clipboard/NameReplacements.mjs
+!/RPGVXAce/_Clipboard/package-lock-json
+!/RPGVXAce/_Clipboard/package.json
+!/RPGVXAce/_Clipboard/Replacements.mjs
+!/RPGVXAce/_Clipboard/VXACE_SaveTextToFile.rb
 
 !/RPGXP/
 /RPGXP/Project1

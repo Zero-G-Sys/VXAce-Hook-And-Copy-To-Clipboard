@@ -1,0 +1,112 @@
+Have two objects, one for normal translations (translationsCache.json) and one for regexes (translationsRegexCache.json)
+
+The need for two objects is because direct asignment of object (obj[key]) is far faster than iterating through it, so we make the regex one smaller, iterate through it, and use direct on the other normal object.
+
+For even more performance we use worker threads to check both at the same time, PoC code for that at the end of this file
+
+Changes to be done (and why this was discarded for v1). For every check on cache you will call the workers, but that is either an async wait, or a .then() promise (code for now is set to await, if you need a .then() ask chatgpt to convert it. this will return the value (translated text) or null if not found. We need the await because we want only that race to be async, and the next code should wait for the resolution of that.
+
+Translation window should also check both objects and smartly know which one is which, so it can save to the corresponding one.
+
+Add a watch for translationsRegexCache.json, and in writeFile should add it to the watch exclusion while writing.
+
+
+Before saving to cache if it wasn't found, you need to check if the JP text has numbers, if so, modify JP text to be a regex (change digits to (\\d+) ex: ‚¾‚¯‚Å500 to ‚¾‚¯‚Å(\\d+)) and modify the translated text numbers to be $n (ex: lala500 to lala$1)
+
+when restoring cache we compare the current JP text with the JP regex text into the translated one
+  /**
+   * Convert translated text with the corresponding numbers in the current jp text in the textbox
+   * @param {String} jpTextRegex the JP text in cache with the digit symbols
+   * @param {String} jpText the JP text in the current window (with the values)
+   * @param {String} translatedText translated text with $n symbols
+   * @returns the translated text with the numbers replaced
+   */
+  function processCachedTextRegexReplace(jpTextRegex, jpText, translatedText){
+    return jpText.replace(new RegExp(jpTextRegex), translatedText);
+  }
+
+The following is the worker threads code, need to modify the workers, rest should work as is
+
+If I want to implement this on v1 a .then() may be better, set a variable flag once search is done
+and let the update function pick it up, make the return variable have 3 values, null when it starts (reseted on stratMessage), value when found and 'not found' on not found, so a normal replace can start on 'not found' and a cache replace on value found (all on update functions, waiting of the flag)
+
+const { Worker } = require('worker_threads');
+
+function createObjectSearchWorker() {
+  const workerCode = `
+    const { parentPort, workerData } = require('worker_threads');
+    parentPort.on('message', (message) => {
+      const { key, object } = message;
+      //const result = object.find(obj => obj.hasOwnProperty(key)); //this is deepl not efficient solution
+      const result = object[key];
+      parentPort.postMessage(result); // will return undefined on not found, maybe change that to null
+    });
+  `;
+
+  return new Worker(workerCode, { eval: true });
+}
+
+function createRegexSearchWorker() {
+  const workerCode = `
+    const { parentPort, workerData } = require('worker_threads');
+    parentPort.on('message', (message) => {
+      const { regex, objects } = message;
+      const result = objects.find(obj => regex.test(obj));
+      // call processCachedTextRegexReplace() before returning (may need to pass JPtext var to worker)
+      parentPort.postMessage(result);
+    });
+  `;
+
+  return new Worker(workerCode, { eval: true });
+}
+
+async function searchObjectsAndStrings(key, searchString, objects) {
+  const keySearchPromise = new Promise((resolve, reject) => {
+    const worker = createObjectSearchWorker();
+    worker.on('message', (message) => {
+      worker.terminate();
+      resolve(message);
+    });
+    worker.on('error', reject);
+    worker.postMessage({ key, objects });
+  });
+
+  const regexSearchPromise = new Promise((resolve, reject) => {
+    const worker = createRegexSearchWorker();
+    worker.on('message', (message) => {
+      worker.terminate();
+      resolve(message);
+    });
+    worker.on('error', reject);
+    worker.postMessage({ regex: new RegExp(searchString), objects });
+  });
+
+  const [keySearchResult, regexSearchResult] = await Promise.all([
+    keySearchPromise,
+    regexSearchPromise
+  ]);
+
+  return keySearchResult || regexSearchResult;
+}
+
+async function main() {
+  const keyToSearch = 'name';
+  const searchString = 'Jo';
+  const objects = [
+    { name: 'John', age: 30 },
+    { name: 'Jane', age: 25 },
+    { title: 'Manager', department: 'HR' }
+  ];
+
+  try {
+    const result = await searchObjectsAndStrings(keyToSearch, searchString, objects);
+    console.log(
+      `Search for key '${keyToSearch}' or string '${searchString}' returned:`,
+      result || 'No match found'
+    );
+  } catch (error) { // try-catch not needed?
+    console.error('An error occurred:', error);
+  }
+}
+
+main();

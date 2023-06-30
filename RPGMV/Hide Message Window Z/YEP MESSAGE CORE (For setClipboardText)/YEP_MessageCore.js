@@ -968,15 +968,23 @@ Window_Base.prototype.textWidthExCheck = function(text) {
 
 Yanfly.Message.Window_Help_setItem = Window_Help.prototype.setItem;
 Window_Help.prototype.setItem = function(item) {
-		if (eval(Yanfly.Param.MSGDescWrap)) {
-			// Zero_G mod, reduce size of text if it overflows the window
-			if(item && item.description.length >= 105)
-				this.setText('<WordWrap>' + '\\}' + item.description);	
-			else
-				this.setText(item ? '<WordWrap>' + item.description : '');
-		} else {
-			Yanfly.Message.Window_Help_setItem.call(this, item);
+	if (eval(Yanfly.Param.MSGDescWrap)) {
+		if(item && item.description.length >= 105)
+			this.setText('<WordWrap>' + '\\}' + item.description);	
+		else
+			this.setText(item ? '<WordWrap>' + item.description : '');
+	} else {
+		// If not using YEP wordwrap decrease size of a line that overflows
+		if(item && item.description){
+			let lines = item.description.split('\n');
+			for(index in lines){
+				// IMPORTANT: Set here manually the length of the max line
+				if(lines[index].length > 77 && !lines[index].includes('\\}')) lines[index] = '\\}' + lines[index] + '\\FR';
+			}
+			item.description = lines.join('\n');
 		}
+		Yanfly.Message.Window_Help_setItem.call(this, item);
+	}
 };
 
 //=============================================================================

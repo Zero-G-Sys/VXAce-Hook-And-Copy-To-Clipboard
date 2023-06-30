@@ -1,0 +1,60 @@
+#In this updated code, we encode the text as UTF-16LE (text.encode('UTF-16LE')) and use CF_TEXT format by passing 1 as the first parameter to SetClipboardData.call.
+
+OpenClipboard = Win32API.new('user32', 'OpenClipboard', 'L', 'L')
+EmptyClipboard = Win32API.new('user32', 'EmptyClipboard', 'V', 'V')
+CloseClipboard = Win32API.new('user32', 'CloseClipboard', 'V', 'V')
+SetClipboardData = Win32API.new('user32', 'SetClipboardData', 'LL', 'L')
+GlobalAlloc = Win32API.new('kernel32', 'GlobalAlloc', 'LL', 'L')
+GlobalLock = Win32API.new('kernel32', 'GlobalLock', 'L', 'P')
+GlobalUnlock = Win32API.new('kernel32', 'GlobalUnlock', 'L', 'L')
+RtlMoveMemory = Win32API.new('kernel32', 'RtlMoveMemory', 'LPL', 'V')
+CloseHandle = Win32API.new('kernel32', 'CloseHandle', 'L', 'L')
+CreateFile = Win32API.new('kernel32', 'CreateFile', 'PILLPILLPL', 'L')
+
+def copy_to_clipboard(text)
+  game_directory = Dir.pwd  # Get the current working directory (game directory)
+
+  temp_file = File.join(game_directory, 'clipboard_temp.txt')
+
+  # Write the text content to the temporary file
+  File.open(temp_file, 'wb') do |file|
+    file.write(text.encode('UTF-16LE'))
+  end
+
+  # Open the temporary file
+  file_handle = CreateFile.call(temp_file, 0x80000000, 1, 0, 3, 0, 0, 0)
+
+  # Get the size of the file
+  file_size = File.size(temp_file)
+
+  # Allocate memory for the text
+  buffer = GlobalAlloc.call(0x2000, file_size + 2)
+  ptr = GlobalLock.call(buffer)
+
+  # Read the file content and copy it to the allocated memory
+  File.open(temp_file, 'rb') do |file|
+    file.read(file_size, ptr)
+  end
+
+  # Unlock the memory
+  GlobalUnlock.call(buffer)
+
+  # Open the clipboard
+  OpenClipboard.call(0)
+
+  # Clear the clipboard
+  EmptyClipboard.call
+
+  # Set the clipboard data
+  SetClipboardData.call(1, buffer)
+
+  # Close the clipboard
+  CloseClipboard.call
+
+  # Close and delete the temporary file
+  CloseHandle.call(file_handle)
+  File.delete(temp_file)
+end
+
+text = "Hello, world!"
+copy_to_clipboard(text)

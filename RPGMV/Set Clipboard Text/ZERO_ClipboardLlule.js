@@ -80,6 +80,8 @@ const replacements = {
   '<.「': '<「',
   '^\\. *「': '「',
   '^\\. *': '', // Text starts with dot (remove)
+  // DeepL corrections
+  '！{2,}/': '！', // DeepL doesn't like multiple use of ！
   // General replacements
   'お兄さん': 'Oniisan',
   'おにいさん': 'Oniisan',
@@ -87,14 +89,14 @@ const replacements = {
   '後輩': 'Kouhai',
   'パイズリフェラ': 'Paizuri Blowjob',
   'パイズリ': 'Paizuri',
-  '爺さん': 'Jiisan',
-  'じいさん': 'Jiisan',
   'お婆さん': 'Obaasan', // Grandma
   'おばさん': 'Obasan', // Aunty
   'おじさん': 'Ojisan',
   'おじいさん': 'Ojisan',
   'オジサン': 'Ojisan',
   'おじさん': 'Ojisan',
+  '爺さん': 'Jiisan',
+  'じいさん': 'Jiisan',
   'おっさん': 'Ossan',
   '親父': 'Oyaji',
   'お嬢ちゃん': 'Ojouchan',
@@ -133,12 +135,35 @@ const replacements = {
   '嬢ちゃん': 'Jou-chan',
   '退魔師': 'Exorcist',
   'お札': 'Talisman',
+  'ぐふふっ': 'Gufufu～',
+  'ぐふふ': 'Gufufu',
+  'くふふっ': 'Kufufu～',
+  'くふふ': 'Kufufu',
   'ふふふ': 'Fufufu',
   'ふふ': 'Fufu',
+  'ウフフ': 'Ufufu',
+  'フフ': 'Fufu',
   'ｹｹｹ': 'Kekeke',
   'ｹｹ': 'Keke',
-  '^(「|（|\\()?あらあら': 'Ara ara',
+  'おいおい': 'Oioi',
+  'ほら': 'Horahora',
+  //'^(「|（|\\()?あらあら': 'Ara ara',
   'あらあら': 'Ara ara',
+  'えっとね': 'E~to ne',
+  'えっと': 'E~to',
+  '^(「|（|\\()?えとね': 'Etone',
+  '^(「|（|\\()?えと': 'Eto',
+  'う～ん': 'U~n',
+  '^(「|（|\\()?うん': 'Un',
+  '^(「|（|\\()?いやぁ～': 'Iyaa～',
+  'もう！(！+)?': 'Mou!$1 ',
+  '^(「|（|\\()?もう( |、|・|。|．|！|\\.|…)': 'Mou$2', // Interferes with normal words if alone
+  '^(「|（|\\()?あら( |、|・|。|．|！|\\.|…)': 'Ara$2',
+  '^(「|（|\\()?あらら( |、|・|。|．|！|\\.|…)': 'Arara$2',
+  '^(「|（|\\()?ん～': 'Nn～',
+  '^(「|（|\\()?くぅ～': 'Kwu～',
+  '^(「|（|\\()?おっと': 'O～to',
+  '^(「|（|\\()?アッレ(～)?': 'A～re$2',
   'お母様': 'Okaasama',
   'お母さま': 'Okaasama',
   '淫魔': 'Succubus',
@@ -146,12 +171,13 @@ const replacements = {
   '全く$': 'Mattaku',
   'オヤジ': 'Oyaji',
   'ショタコン': 'Shotacon',
-  'もう！(！+)?': 'Mou!$1 ',
-  //'^(（|「)?まったく': '$1Mataku',  // Deactivated until tested that works
+  '^(（|「)?まったく': '$1Mataku',  // Deactivated until tested that works
   '(『|』)': '\"', // Set " for important words (Needs filter rules in firefox plugin deactivated and custom code on SetClipboardText), so not compatible with older caches
   'うひひ': 'Uhihi',
   'マ〇コ': 'マンコ', // katakana for manko (pussy) will also work for オマ〇コ -> オマンコ (omanko)
   'チ〇ポ': 'チンポ', // Katakana for chinpo (penis)
+  'やれやれ': 'Yareyare',
+  // Custom
 }
 
 // Put names to be replaced here, this will add to each name the suffixes/honorifics [san, sama, chan, kun]
@@ -211,6 +237,8 @@ var IgnoreRegExtextbloc = [
   /(Save|Load) to which.*/,
   /New Game.*/,
   /Heal.*/, // Replace with first spell or skill (when entering menus)
+  /Lv。/, // Status menu
+  // Custom
 ];
 
 /*--------------------------------------------------------------------------*/
@@ -541,9 +569,6 @@ function ClipTimerSend() {
         MemText = MemText.replace('「', '');
         MemText = MemText.replace('」', '');
     }
-
-    // DeepL doesn't like multiple use of ！
-    MemText = MemText.replace(/！{2,}/g, '！');
 
     if (!LastMemTextSend.startsWith(MemText)){ // IF clause to fix repeating text when a choice window is displayed. May break if previous memtext start the same
       if(!$gameMessage.isChoice()){ //Don't send on choice text (handled by SetClipboardText)

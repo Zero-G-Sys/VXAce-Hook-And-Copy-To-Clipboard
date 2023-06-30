@@ -1,0 +1,51 @@
+// Replace cache with newly added replacements, this will make a line that for example didn't have a name replaceded to romaji be used: ex
+
+"運転手の名前を変更出来ます" to "Driverの名前を変更出来ます"
+
+Useful if you already managed to corrected the proper translation as you played, otherwise it's better to not do this and get a better trasnlation when you play that part again
+
+How to use: put this code in ZERO_ClipboardLlule after
+
+// Merge dictionaries
+Object.assign(replacements, nameReplacements);
+
+
+Important: need to comment in replacments: Punctuations and DeepL Corrections
+
+
+/*-------------------------*/
+var cache = readFile('translationsCache');
+var cache2 = {};
+
+for(var [key,value] of Object.entries(cache)){
+
+  // Replace names with honorifics first
+  for (const [keyHon, valueHon] of Object.entries(nameReplacementsWitHonorifics)) {
+    let re = new RegExp(keyHon,"g"); // Create regex with variable
+    key = key.replace(re, valueHon); // Use regular expression to replace all values and not the first one only
+  }
+
+  // Replace words (for names, etc)
+  for (const [keyRep, valueRep] of Object.entries(replacements)) {
+    let re = new RegExp(keyRep,"g"); // Create regex with variable
+    key = key.replace(re, valueRep); // Use regular expression to replace all values and not the first one only
+  }
+
+  cache2[key] = value;
+}
+
+function getAbsolutePath(){
+  let absolutePath = process.cwd();
+  if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
+  return absolutePath;
+}
+function getAbsolutePathJson(file){
+  return getAbsolutePath() + '\\' + file + '.json';
+}
+function writeFileOld(file, data){
+  fs.writeFileSync(getAbsolutePathJson(file), JSON.stringify(data, null, 2)); // The 2 passed to stringify is to make the JSON readable
+}
+
+writeFileOld('translationsCacheUpdated', cache2);
+
+/*------------------------*/

@@ -1,0 +1,24 @@
+{
+  "name": "copy_to_clipboard",
+  "version": "1.0.0",
+  "description": "Watch the contents of a txt the copy it to clipboard",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "npx babel-node FileMonitor.js",
+    "dev": "npx nodemon --exec npx babel-node --require @babel/register FileMonitor.js"
+  },
+  "author": "Zero_G",
+  "license": "GNU GPL",
+  "dependencies": {
+    "@babel/node": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "chokidar": "^3.5.3",
+    "clipboardy": "^3.0.0",
+    "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "@babel/register": "^7.22.5",
+    "nodemon": "^2.0.22"
+  }
+}

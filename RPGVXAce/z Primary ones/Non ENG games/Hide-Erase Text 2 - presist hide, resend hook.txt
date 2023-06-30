@@ -1,0 +1,77 @@
+=begin
+===============================================================================
+ HideErase Text
+===============================================================================
+ Author Zero_G
+
+ Erase text, this method hides faces in the textbox
+
+TODO Set module for opacity selection
+-------------------------------------------------------------------------------
+=end
+
+module ZERO
+  ERASE_TEXT_KEY = F5    # Set erase text key
+  REDRAW_TEXT_KEY = _s
+  INTANT_TEXT = true     # Set text to display instantly
+end
+
+if ZEROINTANT_TEXT
+  class Window_Message  Window_Base  
+    def update_show_fast
+      @show_fast = true
+    end
+  end
+end
+
+$updateChoices = false
+class Window_Message  Window_Base
+  @@hideText = false
+  alias zero_window_message_update_hide update
+  def update
+    if Input.trigger(ZEROERASE_TEXT_KEY) 
+      # Check if windows is open redraw text
+      if self.openness == 255
+        if self.contents_opacity == 255
+          @@hideText = true
+        else
+          @@hideText = false
+        end
+      end
+    end
+    if Input.trigger(ZEROREDRAW_TEXT_KEY)
+    # If windows is open redraw text
+      if self.openness == 255
+        @show_fast = true
+        process_all_text if $game_message.has_text
+      end
+      $updateChoices = true if $game_message.choice
+    end
+    processHide
+    zero_window_message_update_hide
+  end 
+  
+  # New method
+  def processHide
+    # Check if windows is open redraw text
+    if self.openness  200
+      if @@hideText
+        self.contents_opacity = 0
+      else
+        self.contents_opacity = 255
+      end
+    end
+  end
+end
+
+class Window_Selectable  Window_Base
+  def update
+    if $updateChoices
+      $updateChoices = false
+      draw_all_items
+    end
+    super
+    process_cursor_move
+    process_handling
+  end
+end

@@ -206,6 +206,22 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     // showing a namebox in case there wasn't one originally.
     var nameboxHide = false; 
 
+    // MOD Set same background as message box -- Keep opacity to next messages
+    // Need to call updateBackground on the earliest moments a new namebox is 
+    // created (the object Window_NameBox is created once per conversation
+    // but the contents are reset for each new textbox, each time it resets
+    // this function from Window_Base is called) 
+    var ZERO_Window_Base_createContents = Window_Base.prototype.createContents; 
+    Window_Base.prototype.createContents = function() { 
+      ZERO_Window_Base_createContents.call(this);
+      if(this.constructor.name == "Window_NameBox") this.updateBackground();
+    };
+    Window_NameBox.prototype.updateBackground = function() {
+      this._background = $gameMessage.background();
+      if (isHiddenOpacity) this.setBackgroundType(2);
+      else this.setBackgroundType(this._background);
+    };
+
     // Overwrite YEP_MessageCore update
     // Add inputs 
     Window_NameBox.prototype.update = function() {
@@ -221,13 +237,13 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
         else { // Restore
           if(nameboxHide) { // There was a namebox, restore it
             this.visible = true;
-            nameboxHide = false
+            nameboxHide = false;
           }
         }
       }
       if (Input.isTriggered($.buttonHideOpacity)) {
-        if (isHiddenOpacity) this.opacity = 0;
-        else this.opacity = 255;
+        if (isHiddenOpacity) this.setBackgroundType(2);
+        else this.setBackgroundType(this._background);
       }
     
       // Original code
@@ -238,6 +254,8 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
       // Added line. Prevent from showing namebox when restoring message box if 
       // there was none in the current message (May be deprecated by nameboxHide variable)
+      // **Probably useless as this is after the previous returns and will only 
+      // proc before a close
       if (this._parentWindow.isClosing()) {
         this._openness = this._parentWindow.openness;
       }
@@ -246,15 +264,11 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       this.close();
     };
     
-    // Prevent new namebox from regaining opacity after scene change
-	var ZERO_Window_NameBox_prototype_refresh = Window_NameBox.prototype.refresh;
+	  var ZERO_Window_NameBox_prototype_refresh = Window_NameBox.prototype.refresh;
     Window_NameBox.prototype.refresh = function(text, position) {
-		var text = ZERO_Window_NameBox_prototype_refresh.call(this, text, position);
-
-		if (isHiddenOpacity) this.opacity = 0;
-    nameboxHide = false; // Reset var on new namewindow
-  
-		return text;
+      var text = ZERO_Window_NameBox_prototype_refresh.call(this, text, position);
+      nameboxHide = false; // Reset var on new namewindow (NOTE: Could this go in updateBackground, need to test)
+      return text; 
     }
   }
 

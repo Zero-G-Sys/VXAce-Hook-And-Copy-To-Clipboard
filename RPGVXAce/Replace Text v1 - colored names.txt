@@ -33,13 +33,11 @@ module ZERO
   # ex: /word/
   # To match a whole word only put it between \b
   # ex: /\bword\b/
+  # use \\1 \\2 etc to get capture group contents (if using "", if using ' ' its \1)
 	REPLACEMENTS = {
     #"Text to replace" => "Replacement text",
     #/Text to replace/ => "Replacement text",
-    "Cleff\n「" => "\eC[14]Cleff\n\eC[0]「",
-    "Cleff\n(" => "\eC[14]Cleff\n\eC[0](",
-    "Tiana\n「" => "\eC[27]Tiana\n\eC[0]「",
-    "Tiana\n(" => "\eC[27]Tiana\n\eC[0](",
+    "(Cleff)\n(「|\()" => "\eC[14]\\1\n\eC[0]\\2",
   }
 end
 

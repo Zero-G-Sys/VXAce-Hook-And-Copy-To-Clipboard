@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.16.8
+ * @version 1.16.7
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -22,7 +22,7 @@
  discard the current text, regardless if there where more pages seen or not).
 
  Plugin has wordwrap functionality, but the max characters must be set the in 
- options. (No longer needed if using the YEP one, set as default)
+ options.
 
  The script has a functionality to ignore and not re display japanese text that 
  was copied to the clipboard. There are two options, only one must be used.
@@ -42,9 +42,6 @@
   -For changing color of a choice add º{colorcode}, instead of \C[colorcode]
      (Though this script will still recognize C[xx] and I[xx] accordingly and
       convert to color and icons)
- Can use hotkeys:
-  -Control + s or Control + Enter: Save
-  -Escape: Discard
       
  * SpellCheck Requirements:
  Needs node module simple-spellchecker (https://www.npmjs.com/package/simple-spellchecker?activeTab=readme) 
@@ -57,18 +54,23 @@
  To get typos underscore you must set chrome flags on both package.json files to:
  "chromium-args":"--enable-spell-checking",
 
+ * Use of Regex in Translation Cache:
+ The script will automatically make a regex if the JP text has numbers, but you can make one yourself.
+ Due to performance, the regex JP string will be in the value of the [key,value] of the object. This is due to
+ obj[key] search being far far faster that iterating the object. Thus we can't have the regex on the key.
+ Example of a regex translation
+ "には手を100しゃい200": "|r:には手を(\\d+)しゃい(\\d+)|Translated $1 text $2"
+ If doing it manually, never modify the key, only add "|r:regex|" to the value part before the translation.
+ As it's a string to be converted to regex, '\' must be escaped two times and all regex must be inside capturing groups.
+ In case of a choice replace text it will be like this:
+ "[はい].[いいえ].映像 2000Ｇ 額9000Ｇ": "[Yes]. [No]. |r:[はい].[いいえ].映像 (\\d+)Ｇ 額(\\d+)Ｇ|translated $1G text $2G"
+
  == Terms of Use ==
  - Free for use
 
  == Changelog ==
- 1.16.8  -Add choices padding variable
-         -Changed auto font size to a more readable code
-         -Add maintain text color if only one color code and at beginning of text
-         -Hide translation window on new message if it wasn't closed
-         -Close/Discard translation window with Escape key
-         -Fix some code on close events for translation window and configuration window
- 1.16.7  -Changed writeFile from Sync to Async, using a FIFO Promise Queue (as normal async doesn't guarantee the order
-          of writes). More performance when writing files as the program can continue processing.
+ 1.16.7  -Add detecting numbers in JP text and automatically make a regex so it doesn't translate variations of the 
+          same text but with different numbers
  1.16.6  -Change postTranslationReplacements to Map, add util functions so it can replace to another word with the same
           case when using a callback.
  1.16.5  -Add possibility to restore translated text after changing it to romaji by pressing romaji key again (even on 
@@ -218,11 +220,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  //* Default: 'r'
  CustomInputs.copyChoicesButton = 'r';
 
- //* Description: Disable ClipboardLlule
- // The code for that is in that script and not here, this custom input is only to remember and 
- // note that the 't' biding is already being used there (with an event)
- CustomInputs.disableClipboardLlule = 't';
-
  //* Description: Select type of WordWrap. 
  // YEP: Yanfly MessageCore word wrap. Automatic, preferred.
  // ZERO: Legacy word wrap. Must input max characters manually.
@@ -269,10 +266,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
  // Disable if breaking the game (changing plugin order may fix this)
  //* Default: true
  $.autoReplaceChoices = true;
- // Add padding to choices
- // When choice box resize ends smaller than it should increase the number. 
- // Increment it by 1 for each extra character you want the box to be bigger.
- $.choicesPadding = 0;
 
  //* Description: Ignore text that starts with a specific character/word. Enable/Disable
  // This is useful when some unwanted text is being copied to the clipboard, normally that
@@ -437,23 +430,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     [/Monk/gi, m => 'Saint'.replaceWithProperCase(m)],
     ['⁉', '?!'],
     [/Uterus/gi, m => 'Womb'.replaceWithProperCase(m)],
-    [/Coco/gi,'here'], // Can also be 'this (place)'. This is 'koko' being badly translated
-    [/…/g, '...'],
-    [/(・{2,})/g, m => '.'.repeat(m.length)],
-    // DeepL sometimes returns honorifics with capital letters, fix it
-    ['-San', '-san'],
-    ['-Neesan', '-neesan'],
-    ['-Sama', '-sama'],
-    ['-Kun', '-kun'],
-    ['-Chan', '-chan'],
-    ['-Tan', '-tan'],
-    ['-Senpai', '-senpai'],
-    ['-Sensei', '-sensei'],
-    ['-Onechan', '-onechan'],
-    ['-Anesama', '-anesama'],
-    ['-Onisama', '-onisama'],
-    ['-Neechan', '-neechan'],
-    ['-Niichan', '-niichan'],
     // Custom
  ]);
 
@@ -466,10 +442,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   $.escapeText = true;
   $.replacingChoicesStopLlule = false; // used to stop Llule when replacing choices
   
-  // Nwjs imports
-  const gui = require('nw.gui');
-  const clipboard = gui.Clipboard.get();
-  const fs = require('fs');
+  // Nwjs
+  var gui = require('nw.gui');
+  var clipboard = gui.Clipboard.get();
 
   // Local variables
   // Word Wrapping
@@ -484,8 +459,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   var wait = true;
   var timeout;
   var stopDrawingText = false;
-  var storedTranslations; // contents of translationCache.json
-  var savedNames; // contents of savedNames.json
+  var storedTranslations = readFile('translationsCache') || {};
+  var savedNames = readFile('savedNames') || {};
   var cacheOverwrite = false;
   var autoAdvanceText = false;
   var autoAdvanceTextTimeout;
@@ -557,38 +532,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       $.replaceToRomaji = false;
     }
   }
-
-  // Create FIFO Promise Queue
-  const Queue = (onResolve, onReject) => {
-    const items = [];
-  
-    const dequeue = () => {
-      // no work to do
-      if (!items[0]) return;
-  
-      items[0]()
-        .then(onResolve)
-        .catch(onReject)
-        .then(() => items.shift())
-        .then(dequeue);
-    };
-  
-    const enqueue = (func) => {
-      items.push(func);
-      if (items.length === 1) dequeue();
-    };
-  
-    return enqueue;
-  };
-  
-  const IOQueue = Queue(
-    (success) => { }, // Success or failure on Promise as it is next to writeFile code (better organized)
-    (er) => { }
-  );
-
-  // Read files after defining queue
-  storedTranslations = readFile('translationsCache') || {};
-  savedNames = readFile('savedNames') || {};
 
   // Make a backup of stored translations when game loads
   if($.useTranslationCache){
@@ -748,10 +691,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     this._translatedText = '';
     this._romajiSet = false;
 
-    // Hide translation window if left open and a new message was requested
-    if(translationWindow) translationWindow.hide();
-
-    /* ----Start Battle Message---- */
     if(clipboardDisabledBattle){ // ClipboardLlule disabled during battle, send text manually
       let text = this.convertEscapeCharacters($gameMessage.allText());
       if(text !== '' && isJapaneseRegex.test(text)){  // Check that text is in JP
@@ -808,7 +747,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         }
       }
     }
-    /* ----End of Battle Message----  */
 
     messageCounter++;
     
@@ -1001,15 +939,19 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
           if(typeof key === 'string') key = new RegExp(key.escapeRegExp(),'g');
           clipboardText = clipboardText.replace(key, value);
         }
-        // Remove "" if there wasn't 『|』on text (If there is a textbox)
-        if($gameMessage._texts.length && !/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
+        // Remove "" if there wasn't 『|』on text
+        if(!/『|』/.test($gameMessage.allText())) clipboardText = clipboardText.replace(/"|''/g, '');
 
         // Store translation in cache
         if ($.useTranslationCache){
           if(!(previousClipboardText == '' || previousClipboardText == ' ' || clipboardText == '' || clipboardText == ' ')){ // Don't store if empty
+            // Detect numbers in jpText, make a regex compatible translation if there are any lala
+            clipboardText = checkAndSetRegexReplaceTranslation(previousClipboardText, clipboardText, true);
+
+            // Store
             storedTranslations[previousClipboardText] = clipboardText;
             writeFile('translationsCache', storedTranslations);
-            setTimeout(() => { // Needs a wait when storing to cache, reason unknown (This may not be necessary anymore with the new async write, need to test)
+            setTimeout(() => { // Needs a wait when storing to cache, reason unknown
               this.replaceChoices(clipboardText);
             }, 100);
           }
@@ -1039,6 +981,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     text = text.replace(/(\\|)?(I|C)\[(\d{1,3})\]/gi, '$2{$3}');
 
     translatedChoices = text.split('].');
+    let maxWidth = '123';
 
     // If there was a window message, separate translated text from translated choices
     if($gameMessage._texts.length){
@@ -1068,12 +1011,24 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         translatedWindowText = processTextStartsWithDots(translatedWindowText);
         translatedWindowText = processTextBetweenParentheses(translatedWindowText);
 
+        // Process cache regex replace
+        if(translatedWindowText.includes('|r:')){ // Check if cache text has a regex
+          // Get window text message from cache, removing choices
+          let jpText = previousClipboardText.substring(previousClipboardText.lastIndexOf('].')+2);
+          // Get jpRegexText text (from translated text)
+          // Separate between |r:jpTextRegex|translatedText
+          let jpTextRegex = translatedWindowText.substring(translatedWindowText.indexOf('|r:')+3, translatedWindowText.lastIndexOf('|')); // get |r:jpTextRegex|
+          translatedWindowText = translatedWindowText.substring(translatedWindowText.lastIndexOf('|')+1); // get translatedText
+          // Get translated text with values replaced
+          translatedWindowText = processCachedTextRegexReplace(jpTextRegex, jpText, translatedWindowText);
+        }
+
         translatedChoices = translatedChoices.splice(0, $gameMessage.choices().length);
       }
     }
 
+
     // Get choice with max length and remove []
-    let maxWidth = '123';
     for (let i = 0; i < translatedChoices.length; i++) {
       translatedChoices[i] = translatedChoices[i].replace(/\[? ?\[/, ''); // remove '['
       translatedChoices[i] = translatedChoices[i].replace(']', ''); // remove ']'
@@ -1084,9 +1039,6 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       choice = choice.replace(/C\{(\d{1,2})\}/gi, ''); // Remove color codes
       if(choice.length > maxWidth.length) maxWidth = choice; // get choice with max length
     }
-
-    // Add padding to choice with max length (increase characters for each number in variable) 
-    if($.choicesPadding > 0) maxWidth = maxWidth + ' '.repeat(Number($.choicesPadding));
 
     // Resize choice window with choice with max length or max game window size
     if($.wordWrapType == 'YEP'){
@@ -1221,11 +1173,18 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         });        
 
         // Force close the translation (bypass close event) when main game window is closed
-        gameWindow.on('close', function () {
-          translationWindow.close(true);
-          if(configurationWindow) configurationWindow.close(true); // This can be replaced by a get all windows in newer version of nwjs
-          this.close(true);
-        });
+        if(!configurationWindow){ // Check if configuration window already made a modification on close event
+          gameWindow.on('close', function () {
+            translationWindow.close(true);
+            this.close(true);
+          });
+        } else {
+          gameWindow.on('close', function () {
+            translationWindow.close(true);
+            configurationWindow.close(true);
+            this.close(true);
+          });
+        }
 
         // Add events to buttons and populate for the first time
         translationWindow.window.onload = () => {
@@ -1250,23 +1209,15 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
               translationWindow.height -= 45; // On fullscreen sizes are smaller don't know why, windowed it should be 140
             }
 
-            // Add event to save with control+s or control+enter
-            // close with esc
+            // Add event to save with control+s
             translationWindow.window.document.addEventListener('keydown', event => {
               if(event.ctrlKey && event.code == 'KeyS' || event.ctrlKey && event.code == 'Enter') translationWindowSave();
-              if(event.code == 'Escape') {
-                translationWindow.hide();
-                gameWindow.focus();
-              }
             });
 
             // Add spellcheck event
             translationWindow.window.document.querySelector('#current').addEventListener('contextmenu', function(event) { // Don't use arrow function so we can send 'this' as textbox
               if(SpellChecker) spellCheck(this, event);
             });
-
-            // Focus on translated text area
-            translationWindow.window.document.querySelector('#current').focus();
         };
     });
   }
@@ -1604,6 +1555,17 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
           } else {
             // Text in cache found, display it
             let text = storedTranslations[clipboardText.replace(/·/g,'')];
+
+            // Process cache regex replace
+            if(text.includes('|r:')){ // Check if cache text has a regex
+              // Get jpRegexText text (from translated text)
+              // Separate between |r:jpTextRegex|translatedText
+              let jpTextRegex = text.substring(text.indexOf('|r:')+3, text.lastIndexOf('|')); // get |r:jpTextRegex|
+              text = text.substring(text.lastIndexOf('|')+1); // get translatedText
+              // Get translated text with values replaced
+              text = processCachedTextRegexReplace(jpTextRegex, clipboardText.replace(/·/g,''), text);
+            }
+
             this._translatedText = text;
             this.replaceText(text, messageCounter);
           }
@@ -1642,6 +1604,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
             if($.useTranslationCache && typeof(LastMemTextSend) != "undefined"){
               if(storedTranslations[LastMemTextSend] === undefined){ // string not found on cache, save it
                 if(!(LastMemTextSend == '' || LastMemTextSend == ' ' || clipboardText == '' || clipboardText == '')){ // Don't store if empty
+                  // Detect numbers in jpText, make a regex compatible translation if there are any
+                  clipboardText = checkAndSetRegexReplaceTranslation(LastMemTextSend, clipboardText);
+
                   storedTranslations[LastMemTextSend] = clipboardText;
                   writeFile('translationsCache', storedTranslations);
                 }
@@ -1689,6 +1654,42 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     return ZERO_WindowMessage_update.call(this);
   };
 
+  /**
+   * Convert translated text with the corresponding numbers in the current jp text in the textbox
+   * @param {String} jpTextRegex the JP text in cache with the digit symbols
+   * @param {String} jpText the JP text in the current window (with the values)
+   * @param {String} translatedText translated text with $n symbols
+   * @returns the translated text with the numbers replaced
+   */
+  function processCachedTextRegexReplace(jpTextRegex, jpText, translatedText){
+    return jpText.replace(new RegExp(jpTextRegex), translatedText);
+  }
+
+  /**
+   * To be used before storing into cache. Check if the current jp text has numbers
+   * if so, return the translated string with the jpTextRegex at the beginning
+   * @param {*} jpText the JP text in the current window
+   * @param {*} translatedText the translated text
+   * @returns translatedText with |r:regex|translatedText if there were numbers or translatedText without modifications if there weren't
+   */
+  function checkAndSetRegexReplaceTranslation(jpText, translatedText, choiceReplace = false){
+    jpText = jpText.replace(/%23/g, '#'); // Temporally convert %23 hearts to #
+    if(choiceReplace) jpText = jpText.substring(jpText.lastIndexOf('].')+2); // If choice string, remove choices
+    if(/\d/.test(jpText)) {
+      jpText = jpText.replace(/\d+/g, '(\\d+)'); // Replace all digits with a regex digit symbol
+      jpText = jpText.replace(/#/g, '%23');
+      // Set $n to digits in the translated text
+      let latterPart = translatedText;
+      if(choiceReplace) latterPart = translatedText.substring(translatedText.lastIndexOf('].')+2);
+      let replacementIndex = 1;
+      latterPart = latterPart.replace(/\d+/g, () =>{ return '$' + replacementIndex++ });
+      // Set jpTextRegex at beginning of translated text divided by |r:jpTextRegex|translatedText
+      if(choiceReplace) translatedText = translatedText.substring(0,translatedText.lastIndexOf('].')+2) + '|r:' + jpText + '|' + latterPart;
+      else translatedText = '|r:' + jpText + '|' + latterPart;
+    }
+    return translatedText;
+  }
+
   // New method
   // Get translated text, wordwrap it and insert it in current textbox
   Window_Message.prototype.replaceText = function (text, localMessageCounter = false){
@@ -1711,111 +1712,100 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       }
     }
         
-    stopDrawingText = true;
+  stopDrawingText = true;
 
-    // Restore icons escape (would like to do this before it is being sent here
-    //  so it's stored in cache but can't put it choice replace, look into it) 
-    if(/\\?i\[/gi.test(text)){
-      text = text.replace(/\\?i\[/gi, '\\I[');
-    }
+	// Restore icons escape (would like to do this before it is being sent here
+	//  so it's stored in cache but can't put it choice replace, look into it) 
+	if(/\\?i\[/gi.test(text)){
+    text = text.replace(/\\?i\[/gi, '\\I[');
+  }
 
-    // Restore heart to text
-    if(hasHeartCharacter && (!text.includes('#') && !text.includes('%23') && !text.includes('♡') && !text.includes('♥') && !text.includes('❤'))){
-      text = text + heartCharacter; 
-    } else {
-      text = text.replace(/#|%23/g, heartCharacter);
-    }
+	// Restore heart to text
+	if(hasHeartCharacter && (!text.includes('#') && !text.includes('%23') && !text.includes('♡') && !text.includes('♥') && !text.includes('❤'))){
+		text = text + heartCharacter; 
+	} else {
+		text = text.replace(/#|%23/g, heartCharacter);
+	}
+	
+	// Restore music note to text
+	if(hasMusicNoteCharacter && (!text.includes('@') && !text.includes('♪'))){
+		text = text + '♪'; 
+	} else {
+		text = text.replace(/@/g, '♪');
+	}	
     
-    // Restore music note to text
-    if(hasMusicNoteCharacter && (!text.includes('@') && !text.includes('♪'))){
-      text = text + '♪'; 
-    } else {
-      text = text.replace(/@/g, '♪');
-    }	
-      
-    // Word Wrap Selection
-    if($.wordWrapType == 'YEP'){
-      wordWrap = true;
-      wordWarpLinesCount = 0;
-      text = this.processLongWords(text);
-    } 
-    // ZERO Legacy Wrapper
-    else { 
-      // Get text from clipboard or if text overflowed rest of the text
-      if (textOverflowed) text = overflowedText;
-      else previousClipboardText = text;
+	// Word Wrap Selection
+	if($.wordWrapType == 'YEP'){
+		wordWrap = true;
+		wordWarpLinesCount = 0;
+		text = this.processLongWords(text);
+	} 
+	// ZERO Legacy Wrapper
+	else { 
+		// Get text from clipboard or if text overflowed rest of the text
+		if (textOverflowed) text = overflowedText;
+		else previousClipboardText = text;
 
-      //console.log('Before wordwrap: ' + text);
-      let wordWrapWidth = $.maxWidth;
-      if ($gameMessage._faceName == '') wordWrapWidth = $.maxWidthWithoutFace;
+		//console.log('Before wordwrap: ' + text);
+		let wordWrapWidth = $.maxWidth;
+		if ($gameMessage._faceName == '') wordWrapWidth = $.maxWidthWithoutFace;
 
-      text = wordWrapper(text, wordWrapWidth);
-      //console.log('After wordwrap: ' + text);
+		text = wordWrapper(text, wordWrapWidth);
+		//console.log('After wordwrap: ' + text);
 
-      // Check if text overflows from page
-      if (isOverflowing(text)) {
-        textOverflowed = true;
-        
-        // Split text
-        let p = getPosition(text, '\n', $.textboxLines);
-        overflowedText = text.substring(p+1);
-        text = text.substring(0, p) + '*'; // Add marker
-      }else{
-        textOverflowed = false;
-      }
-    }
-
-    // Override font size
+		// Check if text overflows from page
+		if (isOverflowing(text)) {
+			textOverflowed = true;
+			
+			// Split text
+			let p = getPosition(text, '\n', $.textboxLines);
+			overflowedText = text.substring(p+1);
+			text = text.substring(0, p) + '*'; // Add marker
+		}else{
+			textOverflowed = false;
+		}
+	}
+    
+  // Process colors and other special characters in new text (must be manually added)
+  text = this.convertEscapeCharacters(text);
+	
+	// Prepare text for textbox
+	if(textOverflowed && $.wordWrapType == 'YEP' ){
+		this._textState1 = overflowedTextState;
+	} else{
+		this._textState1 = {};
+		this._textState1.index = 0;
+		this._textState1.line = 1;
+		//console.log('text to display: ' + text);
+		this._textState1.text = text;
+	}
+    
+    this.newPage(this._textState1);
     if($.fontSize != 0) this.contents.fontSize = $.fontSize;
     else if ($.decreaseFontFaceWindow && $gameMessage._faceName !== '') // Decrease font for textboxes with face
       this.contents.fontSize -= $.decreaseFontAmountFaceWindow; 
 
     // Increase or decrease fontsize by one step if text started with { or } (original escape characters to change font size)
-    const firstLine = $gameMessage._texts[0] || '';
-    const secondLine = $gameMessage._texts[1] || '';
-    // Check for font size command at the start of sentence but after namebox command
-    // Or check if sentence starts with font size command (no namebox)
-    // Or check if it's in the second line (if there is a namebox command in the first line, but rare) [this could generate false positives?]
-    if(/>.?\\}/.test(firstLine) || firstLine.startsWith('\\}')|| secondLine.startsWith('\\}')) 
-      this.makeFontSmaller();
-    if(/>.?\\{/.test(firstLine) || firstLine.startsWith('\\{') || secondLine.startsWith('\\{')) 
-      this.makeFontBigger();
-
-    //* Maintain color of sentence if there is only one color tag (at the beginning)
-    // NOTE: This will conflict with a name that has color. Ideally we would want to get
-    // the text after removing the name, that text code is in HideMessageWindowZ
-    // if it's important to separate that, get the post proceed text from HideMessageWindowZ
-    // via a $ variable. Some more info: if the name only has one color code it means that
-    // dev intended for text to also have the text with color; contrary if the name ends with \c[0]
-    let regexColor = /\\c\[(\d+)\]/gi
-    if(((firstLine + secondLine).match(regexColor) || []).length == 1){
-      if(firstLine.startsWith('\\c[') || secondLine.startsWith('\\c[')){
-        let colorCode = regexColor.exec(firstLine + secondLine)[1];
-        text = '\\c[' + colorCode + ']' + text;
-      }
-    }
+    if(/^\\n/i.test($gameMessage._texts[0])){ // Text has namebox
+      // Make font smaller
+      if(/>.?}/.test($gameMessage._texts[0])) this.contents.fontSize -= 12; // command for font size is at start (after namebox command)
+      else if(/^\\}/.test($gameMessage._texts[1])) this.contents.fontSize -= 12; // rare but command for font size is on second line
+      // Make font bigger
+      if(/>.?{/.test($gameMessage._texts[0])) this.contents.fontSize += 12; 
+      else if(/^\\{/.test($gameMessage._texts[1])) this.contents.fontSize += 12;
+    } else if ($gameMessage._texts[0]){
+      // Normal text (without namebox) Or textbox detection failed (need to re do that to more games) [So now checking 1st and 2nd lines]
+      if($gameMessage._texts[0].startsWith('\\}')) this.contents.fontSize -= 12;
+      else if ($gameMessage._texts[1]){ if($gameMessage._texts[1].startsWith('\\}')) this.contents.fontSize -= 12; }
       
-    // Process colors and other special characters in new text (must be manually added)
-    text = this.convertEscapeCharacters(text);
-    
-    // Prepare text for textbox
-    if(textOverflowed && $.wordWrapType == 'YEP' ){
-      this._textState1 = overflowedTextState;
-    } else{
-      this._textState1 = {};
-      this._textState1.index = 0;
-      this._textState1.line = 1;
-      //console.log('text to display: ' + text);
-      this._textState1.text = text;
+      if($gameMessage._texts[0].startsWith('\\{')) this.contents.fontSize += 12;
+      else if ($gameMessage._texts[1]){if($gameMessage._texts[1].startsWith('\\{')) this.contents.fontSize += 12; }
     }
-    
-    this.newPage(this._textState1);
     
     // If MessageWindowPopup plugin is used, resize popup window for new translated text
     if (PluginManager.isLoadedPlugin('MessageWindowPopup')) {
       this.resetLayout2(text);
     }
-
     this.updatePlacement();
     //this.updateBackground();
     //this.open();
@@ -1825,8 +1815,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       if($.wordWrapType == 'YEP' && typeof Window_NameBox == 'function'){
         $gameSystem.addMessageBacklog('<wordwrap>' + ZERO.HideMessageWindow.nameBacklog + text);
       } else {
-        // Using legacy word wrapper if YEP_MessageCore is not present. I could port that functionality 
-        // but it's a waste of time, as my legacy word wrapper works fine
+        // Using legacy wrapper if YEP_MessageCore is not present. I could port that functionality 
+        // but it's a waste of time, as my legacy wrapper works fine
         $gameSystem.addMessageBacklog(wordWrapper(ZERO.HideMessageWindow.nameBacklog + text, 55));
       }
     }
@@ -2188,7 +2178,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   /* -------------------------*/
 
   var configurationWindow;
-  // gameWindow variable already set on translation window
+  // gameWindow already set on translation window
   var configWindowReplaceText = false;
   var configWindowCopyText = false;
   var configWindowCopyChoices = false;
@@ -2222,11 +2212,18 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
       });
 
       // Force close the translation (bypass close event) when main game window is closed
-      gameWindow.on('close', function () {
-        if(translationWindow) translationWindow.close(true); // This can be replaced with get all windows on newer nwjs
-        configurationWindow.close(true);
-        this.close(true);
-      });
+      if(!translationWindow){ // Check if translation window already made a modification on close event
+        gameWindow.on('close', function () {
+          configurationWindow.close(true);
+          this.close(true);
+        });
+      } else {
+        gameWindow.on('close', function () {
+          translationWindow.close(true);
+          configurationWindow.close(true);
+          this.close(true);
+        });
+      }
 
       // Add events to checkboxes and buttons
       configurationWindow.window.onload = () => {
@@ -2300,31 +2297,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     return getAbsolutePath() + '\\' + file + '.json';
   }
 
-  // Write file async promise queue. Uses FIFO Queue (declared at beginning of file)
-  // Doing Promise manually because old Node on MV, on later versions you can use fs.promises
-  function writeFileAsync(path, data) {
-    return new Promise((resolve, reject) => { // Handle resolve reject code here so it stays next to writeFile function, only for easy of viewing it, otherwise it would have been handled on IOQueue
-      fs.writeFile(path, data, (error) => {
-        if (error) {
-          console.log('Error writing file: ', path, error);
-          reject(error);
-        }
-        else {
-          if(path.includes('translationsCache')) {setTimeout(() => { writingFile = false }, 500); } // Re enable watch files
-          console.log(path);
-          resolve(path);
-        }
-      });
-    });
-  }
-
   function writeFile(file, data){
-    if(file == 'translationsCache'){ writingFile = true; } // Prevent triggering a fs.watch (Should be changed to all when HideMessageTextbox names functionality is moved here)
-    IOQueue(() => writeFileAsync(getAbsolutePathJson(file), JSON.stringify(data, null, 2)));
-  }
+    let fs = require('fs');
 
-  // Sync write file, deprecated for the async promise queue
-  function writeFileOld(file, data){
     if(file == 'translationsCache'){ writingFile = true; } // Prevent triggering a fs.watch (Should be changed to all when HideMessageTextbox names functionality is moved here)
     fs.writeFileSync(getAbsolutePathJson(file), JSON.stringify(data, null, 2)); // The 2 passed to stringify is to make the JSON readable
     if(file == 'translationsCache') {setTimeout(() => { writingFile = false }, 500); }
@@ -2332,6 +2307,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
   function readFile(file){
     let absolutePath = getAbsolutePathJson(file);
+    let fs = require('fs');
 
     if(fs.existsSync(absolutePath)){
       let rawData = fs.readFileSync(absolutePath);
@@ -2348,7 +2324,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
    * prevent multiple calls with a setTimeOut
   */
   var writingFile = false;
-  function watchFiles(){
+  function watchFiles(){ //
+    let fs = require('fs');
     let savedNamesTimeOut = true;
     let translationsCacheTimeOut = true;
 

@@ -1,0 +1,5 @@
+// Convert constant import into variables
+// (Not needed anymore as I'm converting them to variables in the async import)
+// var replacements = replacementsImport;
+// var nameReplacements = nameReplacementsImport;
+// var ignoreArray = ignoreArrayImport;

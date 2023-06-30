@@ -1,0 +1,11 @@
+Use Copy to Clipboard along the NodeApp ProcessText (_Clipboard Folder)
+
+-Add Copy to Clipboard plugin (will capture text and store it in the txt "clipboard_temp" in game folder.
+-Hide-Erase Text (If you don't use this for some reason, put instant_text logic into previous script or as a separate script before it)
+
+-Edit the NodeApp with the path to game folder, copy 'Replacemnts.js', 'NameRaplecements.js' and 'Ignore.js' to game folder "_Clipboard" (make clipboard_temp.txt if it doesn't exist)
+-Run the NodeApp with "npm start". And it will start to get the text from from the txt and copy it to clipboard after running all the replacements.
+
+-Use Translator Aggregator in clipboard mode to translate
+-Replacements and nameReplacements can be edited while the program is running
+-Close NodeApp with ctrl+z

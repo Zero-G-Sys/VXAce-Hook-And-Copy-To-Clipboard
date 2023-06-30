@@ -1,0 +1,136 @@
+# Mod Changed when to marquesee by text length
+# Handles better when descriptions has multiple lines, but only one goes off the box
+
+module ZERO
+	MAX_TEXT_LENGTH = 61
+end
+
+class Sprite
+  # For icons only
+  def draw_icon(icon_index, x, y, enabled = true)
+    bitmap = Cache.system("Iconset")
+    rect = Rect.new(icon_index % 16 * 24, icon_index / 16 * 24, 24, 24)
+    self.bitmap.blt(x, y, bitmap, rect, enabled ? 255 : 128)
+  end
+end
+
+class Window_Help < Window_Base 
+  @@SCROLL_DELAY = 1 # seconds
+  @@SCROLL_SPEED = 2 # pixels / frame (60 frames / sec)
+  @@SHOW_ICONS = false # display icons for items and skills?
+  alias :scroll_init :initialize
+
+  def initialize(*args)
+    scroll_init(*args)
+    @internal_frame_count = 0
+    @text_is_long = false
+    @icon_sprite = Sprite.new
+    @icon_sprite.x = self.x + 16
+    @icon_sprite.y = self.y + 16
+    @icon_sprite.z = self.z + 1
+    @icon_sprite.bitmap = Bitmap.new(32, 32)
+    self.windowskin = get_altered_skin
+  end 
+
+  def get_altered_skin
+    default = Cache.system('Window')
+    window = Bitmap.new(default.width, default.height)
+    window.blt(0, 0, default, default.rect)
+    window.fill_rect(80, 16, 32, 32, Color.new(0,0,0,0))
+    return window
+  end
+
+  def set_text(text, align = 0)
+    unless (text == @text) && (align == @align)
+      @internal_frame_count = 0
+      #txt_width = self.contents.text_size(text).width
+      #@text_is_long = txt_width > (self.width - 32)    
+      # Zero_G mod length
+      if text.is_a? String and !text.nil?
+        puts text
+        length = 0
+        lines = text.split(/[\r\n]/) # Split only on first line
+        lines.each do |line|
+          length = line.length if line.length > length
+        end
+        @text_is_long = length > ZERO::MAX_TEXT_LENGTH
+      else
+        length = self.contents.text_size(text).width
+      end
+     
+      self.contents.dispose
+      #w = @text_is_long ? (txt_width + self.width - 32) : self.width - 32
+      w = @text_is_long ? (length + self.width + 60) : self.width - 32
+      self.contents = Bitmap.new(w, self.height - 20) # Zero_G mod rect text height, changed from 32 to 20
+      self.contents.clear
+      self.ox = 0
+      self.contents.font.color = normal_color
+      i = get_icon_index(text)
+    
+      unless i.nil?
+        draw_sprite(i, 0, 0)
+        self.contents.draw_text(32, 0, self.contents.width, fitting_height(1), text, align)
+      else
+        @icon_sprite.bitmap.clear
+        self.contents.draw_text(4, 0, self.contents.width, fitting_height(1), text, align)
+      end
+    
+      @text = text
+      @align = align
+      refresh
+    end
+  end
+
+  # For icons only
+  def draw_sprite(icon_index, x, y)
+    @icon_sprite.bitmap.clear
+    # get the background image at 'rect'
+    # so that text does not appear under the icon
+    bitmap = Graphics.snap_to_bitmap
+    rect = Rect.new(@icon_sprite.x, @icon_sprite.x,
+    @icon_sprite.bitmap.width, @icon_sprite.bitmap.height)
+    @icon_sprite.bitmap.blt(x, y, bitmap, rect)
+    @icon_sprite.draw_icon(icon_index, x, y)
+  end
+  
+  # For icons only
+  def get_icon_index(desc)
+    return nil unless @@SHOW_ICONS
+    
+    $data_items.each do |item|
+      return item.icon_index if !item.nil? && item.description == desc
+    end
+    
+    $data_weapons.each do |weapon|
+      return weapon.icon_index if !weapon.nil? && weapon.description == desc
+    end
+
+    $data_armors.each do |armor|
+      return armor.icon_index if !armor.nil? && armor.description == desc
+    end
+
+    $data_skills.each do |skill|
+      return skill.icon_index if !skill.nil? && skill.description == desc
+    end
+    return nil
+  end
+
+  def update
+    super
+    @internal_frame_count += 1
+    
+    if ((@internal_frame_count > @@SCROLL_DELAY * 60) && @text_is_long)
+      if self.ox >= (self.contents.width - self.width + 48)
+        self.ox = 0
+        @internal_frame_count = 0
+      else
+        self.ox += @@SCROLL_SPEED
+      end
+    end
+  end 
+  
+  def dispose
+    super
+    @icon_sprite.dispose
+  end
+end

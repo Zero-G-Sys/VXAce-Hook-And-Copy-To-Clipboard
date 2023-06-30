@@ -129,8 +129,6 @@ the message window and turning opacity.
 
 -------------------------------------------------------------------------------
  */ 
-"use strict";
-
 var Imported = Imported || {};
 var ZERO = ZERO || {};
 Imported.ZERO_HideMessageWindow = 1;
@@ -499,7 +497,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
           writeFile('savedNames', fileNames);
         
           // Remove name from Translation Cache line
-          let storedTranslations = readFile('translationsCache') || storedTranslations;
+          let storedTranslations = readFile('translationsCache');
           let translationCacheKey = '';
 
           for (const [key, value] of Object.entries(storedTranslations)) {
@@ -552,7 +550,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     }
 
     // Hide message window but keep text
-    if (Input.isTriggered($.buttonHideOpacity) || TouchInput.isCancelled()) {
+    if (Input.isTriggered($.buttonHideOpacity)) {
       isHiddenOpacity = !isHiddenOpacity
 
       if (isHiddenOpacity) this.setBackgroundType(2);
@@ -580,25 +578,51 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
   // Check if YEP plugin exists
   if(typeof Window_NameBox == 'function'){
+    // Variable to check if there is a namebox in the current text so it can prevent
+    // showing a namebox in case there wasn't one originally.
+    var nameboxHide = false;
 
-    let isHiddenNamebox = false;
+    // MOD Set same background as message box -- Keep opacity to next messages
+    // Need to call updateBackground on the earliest moments a new namebox is 
+    // created (the object Window_NameBox is created once per conversation
+    // but the contents are reset for each new textbox, each time it resets
+    // this function from Window_Base is called) 
+    var ZERO_Window_Base_createContents = Window_Base.prototype.createContents; 
+    Window_Base.prototype.createContents = function() { 
+      ZERO_Window_Base_createContents.call(this);
+      if(this.constructor.name == "Window_NameBox") this.updateBackground();
+    };
+    Window_NameBox.prototype.updateBackground = function() {
+      this._background = $gameMessage.background();
+      if (isHiddenOpacity) this.setBackgroundType(2);
+      else this.setBackgroundType(this._background);
+    };
 
     // Overwrite YEP_MessageCore update
     // Add inputs 
     Window_NameBox.prototype.update = function() {
       Window_Base.prototype.update.call(this);
-
       // Disable nameboxes
       //this.visible = false;
-      
-      if (Input.isTriggered($.buttonHide) && this.isOpen()) {
-        isHiddenNamebox = !isHiddenNamebox;
 
-        if (isHiddenNamebox) this.visible = false;
-        else this.visible = true;
+      if (Input.isTriggered($.buttonHide) || TouchInput.isCancelled()) {
+        if (isHidden){ // Hide
+          if(this.visible) { // Check if there was a namebox
+            this.visible = false;
+            nameboxHide = true;
+          }
+        } 
+        else { // Restore
+          if(nameboxHide) { // There was a namebox, restore it
+            this.visible = true;
+            nameboxHide = false;
+          }
+        }
       }
-      if (isHiddenOpacity) this.opacity = 0;
-      else this.opacity = 255;
+      if (Input.isTriggered($.buttonHideOpacity)) {
+        if (isHiddenOpacity) this.setBackgroundType(2);
+        else this.setBackgroundType(this._background);
+      }
     
       // Original code
       if (this.active) return;
@@ -608,23 +632,23 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
       // Added line. Prevent from showing namebox when restoring message box if 
       // there was none in the current message
-      /*if (this._parentWindow.isClosing()) {
+      // **Probably useless as this is after the previous returns and will only 
+      // proc before a close
+      if (this._parentWindow.isClosing()) {
         this._openness = this._parentWindow.openness;
-      }*/
+      }
 
       // Original code
       this.close();
     };
 
-    
-    // Prevent new namebox from regaining opacity after scene change
     // Alt: Replace names with translated ones
     var MSGNameBoxText = Yanfly.Param.MSGNameBoxText; // Alt save state of "Name Box Added Text"
     Yanfly.Param.MSGNameBoxText = ''; // Prevent changes to replacedName after being replaced
     var ZERO_Window_NameBox_prototype_refresh = Window_NameBox.prototype.refresh;
     Window_NameBox.prototype.refresh = function(text, position) {
-      if (isHiddenOpacity) this.opacity = 0;
-
+      nameboxHide = false; // Reset on new window
+      
       // Add YEP added text now, before doing sending my text to replaced names
       // Own YEP will be ignored (as it was set to an empty string)
       text = MSGNameBoxText + text;

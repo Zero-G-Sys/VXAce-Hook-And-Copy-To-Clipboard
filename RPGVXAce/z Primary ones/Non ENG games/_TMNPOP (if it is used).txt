@@ -1,0 +1,39 @@
+-This script puts a name at top of events, usually used for naming buildings, etc
+
+-Problem is that it doesn't admit spaces, so use _ instead of spaces in the events ex:<namepop Squire_Lana>
+then mod the script to turn those _ to ' '
+
+-As I've seen variations of this script I'll put here only the line to be modified
+
+at the end of 
+
+    def setup_page_settings
+
+put:
+
+    # Zero_G replace _ characters
+    @namepop.gsub! '_', ' ' if !@namepop.nil?
+
+
+should look like this:
+
+...
+  def setup_page_settings
+    tmnpop_game_event_setup_page_settings
+    @namepop = nil
+    @namepop_sprite_strs = nil
+    if @list
+      @namepop = $1 if /<namepop\s*(\S+?)>/i =~ @event.name
+      @list.each do |list|
+        if list.code == 108 || list.code == 408
+          @namepop = $1 if /<namepop\s*(\S+?)>/i =~ list.parameters[0]
+        else
+          break
+        end
+      end
+    end
+    
+    # Zero_G replace _ characters
+    @namepop.gsub! '_', ' ' if !@namepop.nil?
+  end
+end

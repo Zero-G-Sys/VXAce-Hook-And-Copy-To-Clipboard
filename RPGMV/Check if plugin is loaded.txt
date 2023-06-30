@@ -1,5 +1,5 @@
 // Helper function
-PluginManager.isLoadedPlugin = function (name) {
+  PluginManager.isLoadedPlugin = function (name) {
     return $plugins.some(plugin => plugin.name === name && plugin.status);
   };
 
@@ -8,3 +8,18 @@ PluginManager.isLoadedPlugin = function (name) {
   if (PluginManager.isLoadedPlugin("YEP_MessageCore")) {
     console.log('lalalalala');
   }
+
+
+----------------------------------------------------------------
+
+Alternatively use the imported variable if the plugin uses it
+
+ex:
+
+var Imported = Imported || {};
+Imported.ZERO_HideMessageWindow = true;
+
+
+if(Imported.ZERO_HideMessageWindow){
+  //plugin exists
+}
