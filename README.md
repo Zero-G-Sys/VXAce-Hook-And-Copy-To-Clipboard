@@ -21,6 +21,7 @@ There is a more through description in the VX Ace script and the javascript file
 You will first need to load a script into the game you want to capture the text. To do this you will need two things:
 - RPG Maker VX Ace Editor
 - (Depending on the game) Decrypting of the file Game.rgss3a
+
 How to get and do those points, you should get help elsewhere.
 
 So once you got your game decrypted and opened with the editor, go to the scripts section and add [the capture text script](VXACE_SaveTextToFile.rb) after all other scripts, but before Main.
