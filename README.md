@@ -12,7 +12,7 @@ You can:
  - Add name replacements, and it will auto add all honorifics for the name
  - Add ignore text
 
-The main concept of this, is that you are in control of the code, and what you want to do with the text.
+The main concept of this, is that you are in control of the code, and you can do whatever you want with the preprocessing of the text before sending it to the clipboard, assuming you know minimum programming. If not just use the replacements modules that come by default, and read their description.
 
 There is a more through description in the VX Ace script and the javascript files, that you should read first.
 
@@ -20,22 +20,29 @@ There is a more through description in the VX Ace script and the javascript file
 #### Part 1
 You will first need to load a script into the game you want to capture the text. To do this you will need two things:
 - RPG Maker VX Ace Editor
-- (Depending on the game) Decrypt Game.rgss3a
+- (Depending on the game) Decrypting of the file Game.rgss3a
 How to get and do those points, you should get help elsewhere.
 
 So once you got your game decrypted and opened with the editor, go to the scripts section and add [the capture text script](VXACE_SaveTextToFile.rb) after all other scripts, but before Main.
 
-On the game folder create a directory called "_Clipboard".
+On the game folder create a directory called `_Clipboard`.
 
-Set the desired configurations by modifying the module constants in the script, then save the project and run your game once. You should have created the file "clipboard_temp.txt" inside "_Clipboard".
+Set the desired configurations by modifying the module constants in the script, then save the project and run your game once. You should have created the file "clipboard_temp.txt" inside `_Clipboard`.
 
 #### Part 2
 Copy [Replacements](Replacements.mjs), [NameReplacements](NameReplacements.mjs) and [Ignore](Ignore.mjs) from this folder to the newly created "_Clipboard" folder in your game folder. Set their contents as you see fit.
 
-If you don't have Node installed in your pc yet, install them.
-Open your favorite console and do a "npm install --production"
+Edit [FileMonitor](FileMonitor.js) and set the constant "gameFolder" with the path to your game. Also set other configurations that you may want there.
 
-To run the NodeApp just run "npm start"
-To stop the app press control + c
+If you don't have Node installed in your pc yet, install it.
+Open your favorite console and do a `npm install --production`
+
+To run the NodeApp just run `npm start`
+To stop the app press `control + c`
 
 You will see the helpful log in the console.
+
+<details>
+  <summary>For advanced users</summary>
+    Do a normal "npm install" and run with "npm run dev" so you can run the app with nodemon, letting you auto reload it when changes are made to "FileMonitor.js"
+</details>
