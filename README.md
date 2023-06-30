@@ -5,7 +5,7 @@ The main functionality of this program is to get text from a RPG Maker VX Ace ga
 
 While you could use Textractor hook, some games have problems when switching between message box types, the first message for that type will not hook. The other benefit is that you can better process the captured text with this program, only textboxes and choices will be captured, and no unwanted text should appear (can optionally capture item/skill descriptions, and some other plugins text).
 
-While RGSS is capable is sending text to the clipboard through WinApi32 (No gems or packages can be used here). It will do so with wrong encoding. So the workaround is to store all captured text to a file, then have a Node app watch for changes on that file, and then copy it's contents to clipboard after doing some processing to it.
+While RGSS is capable of sending text to the clipboard through WinApi32 (No gems or packages can be used here). It will do so with wrong encoding. So the workaround is to store all captured text to a file, then have a Node app watch for changes on that file, and then copy it's contents to clipboard after doing some processing to it.
 
 You can:
  - Do some replacements and advanced replacements with the javascript replace callback function. 
@@ -21,6 +21,7 @@ There is a more through description in the VX Ace script and the javascript file
 You will first need to load a script into the game you want to capture the text. To do this you will need two things:
 - RPG Maker VX Ace Editor
 - (Depending on the game) Decrypting of the file Game.rgss3a
+
 How to get and do those points, you should get help elsewhere.
 
 So once you got your game decrypted and opened with the editor, go to the scripts section and add [the capture text script](VXACE_SaveTextToFile.rb) after all other scripts, but before Main.

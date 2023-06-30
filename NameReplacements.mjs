@@ -1,5 +1,5 @@
 /**
- *  Theese replacements will be done before copying the text into clipboard.
+ *  These replacements will be done before copying the text into clipboard.
  *  Name replacements, add each name to the const nameReplacements.
  *  The output will be a list with all names with honorifics added.
  */
