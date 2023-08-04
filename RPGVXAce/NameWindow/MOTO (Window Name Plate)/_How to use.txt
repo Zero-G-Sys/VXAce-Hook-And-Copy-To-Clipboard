@@ -1,0 +1,37 @@
+On the plugin config set a variable to use
+
+NAME_PLATE_ID = 2
+
+Then before a text set that variable to a numerical value for an actor, then it will use the name of that actor (in actors)
+
+in the text start text with:
+
+\#Example text
+
+-----------------
+
+So if you have 3 actors
+
+1-Alice
+2-Red
+3-Horo
+
+And the event looks like this
+
+Control Variables: 2 -> set to 1
+
+Text: \#Hello good sir
+
+---------------
+
+It will end display like
+
+ -----
+|Alice|
+ -----
+ Hello good sir
+
+---------------------------------------------------
+
+For non main characters you can designate an actor (or various) in the database that the name will be changed multiple times.
+so each time you have a textbox you can change that actor name before.

@@ -5,6 +5,7 @@ from shutil import copyfile
 
 filenames_patch = [ # Add path to plugins_patch.txt, file must be in unicode (UTF-16LE)
     'Separator/plugins_patch.txt',
+    'Auto Save/Custom Save Window/Mod/plugins_patch.txt',
     'Auto Save/plugins_patch.txt',
     'Auto Battle/plugins_patch.txt',
     'Fade Out Fade In Speed/plugins_patch.txt',
@@ -20,10 +21,12 @@ filenames_patch = [ # Add path to plugins_patch.txt, file must be in unicode (UT
     'Enable Debug Switches Menu/plugins_patch.txt',
     'Pause/plugins_patch.txt',
     'Core Render Fix/plugins_patch.txt',
+    'Error Log File (ConsoleTrace)/plugins_patch.txt',
 ]
 
 filenames = { # Add path to plugin file. Key: path, Value: filename
     'Separator': '--------------------.js',
+    'Auto Save/Custom Save Window/Mod': 'BB_CustomSaveWindowMod.js',
     'Auto Save': 'FELSKI_AUTOSAVE.js',
     'Auto Battle': 'AutoBattle.js',
     'Fade Out Fade In Speed': 'ZERO_FadeOutFadeInSpeed.js',
@@ -39,6 +42,7 @@ filenames = { # Add path to plugin file. Key: path, Value: filename
     'Enable Debug Switches Menu': 'ZERO_enable_debug_menu.js',
     'Pause': 'Luna_GamePauseMV.js',
     'Core Render Fix': 'GraphicsRenderFix.js',
+    'Error Log File (ConsoleTrace)': 'ConsoleTrace.js',
 }
 
 # Check if output folder exists, create it otherwise
@@ -54,9 +58,9 @@ for fpath, fname in filenames.items():
     except:
         print('Error copying file: ' + fpath + '/' + fname)
 
-# Create ouput file will all plugin parameters
+# Create output file will all plugin parameters
 
-if path.exists('zOutput/zoutput.txt'): # Check if file exists, if exits erase it
+if path.exists('zOutput/zoutput.txt'): # Check if file exists, if exits blank it
     print('Erasing zoutput.txt file')
     output = open('zOutput/zoutput.txt', 'r+', encoding='utf-16-le')
     output.truncate(0)

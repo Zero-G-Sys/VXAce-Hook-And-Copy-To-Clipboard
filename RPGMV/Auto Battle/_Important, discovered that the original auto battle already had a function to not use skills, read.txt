@@ -1,0 +1,6 @@
+See on the config below how the parameter "Auto Battle Use Skill" is mapped to switch 1778
+Modify plugin for that to always be one. Or use plugin to add option to menu
+
+
+
+{"name":"AutoBattle","status":false,"description":"ver1.03/戦闘中にキー入力でオートバトルを開始できるようにします。また、オートバトル中は高速化します。","parameters":{"Invalidate Auto Battle Switch":"11","Show X":"0","Show Y":"0","Auto Battle Speed":"4","Show Window":"true","Auto Battle Use Skill":"1778","Window Hide Switch":"7","Auto Battle Key":"shift","Auto Battle Usable Message":"Auto-Battle Off: _key","Auto Battle Message":"Auto-Battle On: _key"}},

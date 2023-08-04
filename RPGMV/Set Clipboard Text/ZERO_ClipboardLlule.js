@@ -74,6 +74,7 @@ const replacements = {
   // Punctuations
   '・・・': '...',
   '・': '',
+  '。': '.',
   '（': '.（',
   '「.（': '「（',
   //'「': '.「',
@@ -157,6 +158,7 @@ const replacements = {
   '^(「|（|\\()?うん': 'Un',
   '^(「|（|\\()?いやぁ～': 'Iyaa～',
   'もう！(！+)?': 'Mou!$1 ',
+  'もうっ！(！+)?': 'Mou～!$1 ',
   '^(「|（|\\()?もう( |、|・|。|．|！|\\.|…)': 'Mou$2', // Interferes with normal words if alone
   '^(「|（|\\()?あら( |、|・|。|．|！|\\.|…)': 'Ara$2',
   '^(「|（|\\()?あらら( |、|・|。|．|！|\\.|…)': 'Arara$2',
@@ -171,12 +173,13 @@ const replacements = {
   '全く$': 'Mattaku',
   'オヤジ': 'Oyaji',
   'ショタコン': 'Shotacon',
-  '^(（|「)?まったく': '$1Mataku',  // Deactivated until tested that works
+  '^(（|「)?(まったく|全く)(?=\\.|…)': '$1Mataku',  // Only at start of sentence and if followed by a dot
   '(『|』)': '\"', // Set " for important words (Needs filter rules in firefox plugin deactivated and custom code on SetClipboardText), so not compatible with older caches
   'うひひ': 'Uhihi',
   'マ〇コ': 'マンコ', // katakana for manko (pussy) will also work for オマ〇コ -> オマンコ (omanko)
   'チ〇ポ': 'チンポ', // Katakana for chinpo (penis)
   'やれやれ': 'Yareyare',
+  'オーク': 'Orc',
   // Custom
 }
 
@@ -560,6 +563,10 @@ function ClipTimerSend() {
     if(/^「…/.test(MemText)) textStartsWithDots = true;
     else textStartsWithDots = false;
 
+    // Remove repetition of 「 and 」
+    MemText = MemText.replace(/「+/, '「');
+    MemText = MemText.replace(/」+/, '」');
+
     // DeepL gives bad translations when 「 and 」 are used
     // Delete them only when there are one of each
     // And when text starts and finishes with it
@@ -568,6 +575,12 @@ function ClipTimerSend() {
        /^「.*」$/.test(MemText)){
         MemText = MemText.replace('「', '');
         MemText = MemText.replace('」', '');
+    }
+
+    // Fix a bug where it leaving a 」 at the end of text
+    if((MemText.match(/」/g) || []).length == 1 &&
+    /」$/.test(MemText)){
+      MemText = MemText.replace('」', '');
     }
 
     if (!LastMemTextSend.startsWith(MemText)){ // IF clause to fix repeating text when a choice window is displayed. May break if previous memtext start the same

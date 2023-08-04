@@ -130,7 +130,7 @@ fileWatcher.on('change', (path) => {
 
       // Perform text replacements based on imported modules
       let modifiedContents = fileContents;
-//console.log(replacements);
+
       for (const [key, value] of Object.entries(nameReplacements)) {
         modifiedContents = modifiedContents.replace(new RegExp(key, 'g'), value);
       }

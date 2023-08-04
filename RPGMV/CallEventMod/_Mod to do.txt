@@ -1,6 +1,6 @@
 if the script call 
- -call to map 0, it should use the current map
- -same for event, it should use the current event
+ -call to map 0, it should use the current map (EDIT: already done, just don't use map and it will default to current map)
+ -same for event, it should use the current event (EDIT: no native way to do this, can use my get current map script way to get current event, but need to test)
 
 See if map 0 or event 0 exists, else change it for a sign, like *
 

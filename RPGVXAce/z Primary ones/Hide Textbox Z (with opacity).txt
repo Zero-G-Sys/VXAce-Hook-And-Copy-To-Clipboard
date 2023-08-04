@@ -1,6 +1,6 @@
 =begin
 ===============================================================================
- Hide Textbox Z (with opacity) v2.2.2
+ Hide Textbox Z (with opacity) v2.2.3
  Author: Zero_G
  Version: RGSS3
 ===============================================================================
@@ -33,6 +33,7 @@
  R = w
  
  == Changelog ==
+ v2.2.3 Added hiding nameboxes for MOTO's Window Name Plate
  v2.2.2 Added hiding nameboxes for plugins that use @name_window
  v2.2.1 Added hiding nameboxes from MessageEnhance (for opacity only, whole 
         hiding should be left to MessageEnhance plugin)
@@ -123,6 +124,7 @@ class Window_Message < Window_Base
         @name_window.opacity = 0 unless @name_window.nil? # MessageEnhance Name Window
         if @background == 0
           self.opacity = 0
+          @name_plate_window.opacity = 0 unless @name_plate_window.nil? #MOTO (Window Name Plate)(IMPORTANT: Needs mod for textspeed)
           @@normalBackground = true
           @@dimBackground = false
         elsif @background == 1
@@ -139,6 +141,7 @@ class Window_Message < Window_Base
         @name_window.opacity = 255 unless @name_window.nil? # MessageEnhance Name Window
         if @@normalBackground 
           @background = 0
+          @name_plate_window.opacity = ZERO::DEFAULT_OPACITY #MOTO (Window Name Plate)
           self.opacity = ZERO::DEFAULT_OPACITY
         elsif @@dimBackground
           @background = 1

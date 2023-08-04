@@ -9,6 +9,7 @@ filenames_patch = [ # Add path to plugins_patch.txt, file must be in unicode (UT
     'Message Backlog/YEP/plugins_patch.txt',
     'Hide Message Window Z/plugins_patch.txt',
     'Set Clipboard Text/plugins_patch.txt',
+    'Auto Save/Custom Save Window/Mod/plugins_patch.txt',
     'Auto Save/plugins_patch.txt',
     'Auto Battle/plugins_patch.txt',
     'Fade Out Fade In Speed/plugins_patch.txt',
@@ -21,6 +22,7 @@ filenames_patch = [ # Add path to plugins_patch.txt, file must be in unicode (UT
     'Enable Debug Switches Menu/plugins_patch.txt',
     'Pause/plugins_patch.txt',
     'Core Render Fix/plugins_patch.txt',
+    'Error Log File (ConsoleTrace)/plugins_patch.txt',
 ]
 
 filenames = { # Add path to plugin file. Key: path, Value: filename
@@ -28,6 +30,7 @@ filenames = { # Add path to plugin file. Key: path, Value: filename
     'Message Backlog/YEP': 'YEP_X_MessageBacklog - setClipboard compatible.js',
     'Hide Message Window Z': 'ZERO_HideMessageWindowZ (ALT for setClipboardText and nameboxes).js',
     'Set Clipboard Text': 'ZERO_ClipboardLlule.js',
+    'Auto Save/Custom Save Window/Mod': 'BB_CustomSaveWindowMod.js',
     'Auto Save': 'FELSKI_AUTOSAVE.js',
     'Auto Battle': 'AutoBattle.js',
     'Fade Out Fade In Speed': 'ZERO_FadeOutFadeInSpeed.js',
@@ -40,6 +43,7 @@ filenames = { # Add path to plugin file. Key: path, Value: filename
     'Enable Debug Switches Menu': 'ZERO_enable_debug_menu.js',
     'Pause': 'Luna_GamePauseMV.js',
     'Core Render Fix': 'GraphicsRenderFix.js',
+    'Error Log File (ConsoleTrace)': 'ConsoleTrace.js',
 }
 
 # Check if output folder exists, create it otherwise

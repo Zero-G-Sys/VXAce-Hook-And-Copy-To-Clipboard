@@ -1,0 +1,1 @@
+"chromium-args": "--limit-fps=60"

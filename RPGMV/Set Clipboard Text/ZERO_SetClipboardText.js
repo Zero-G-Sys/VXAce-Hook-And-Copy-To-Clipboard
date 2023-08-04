@@ -4,7 +4,7 @@
 /*:
  * @ZERO_SetClipboardText
  * @plugindesc Insert clipboard text into game textbox
- * @version 1.16.8
+ * @version 1.16.9
  * @author Zero_G
  * @filename ZERO_SetClipboardText.js
  * @help
@@ -61,6 +61,10 @@
  - Free for use
 
  == Changelog ==
+ 1.16.9  -Fix hearts in choice translations
+         -Add more options to symbols a name can have when removing name from choices textbox
+         -Fixed make font smaller and bigger at start of text
+         -Removed timeout to writingFile variable, it wasn't necessary and it was causing problems
  1.16.8  -Add choices padding variable
          -Changed auto font size to a more readable code
          -Add maintain text color if only one color code and at beginning of text
@@ -1022,8 +1026,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
 
   Window_Selectable.prototype.replaceChoices = function(text){
     // Restore heart characters (must escape code manually)
-    clipboardText = clipboardText.replace(/#/g, 'c{27}♥c{0}'); 
-    clipboardText = clipboardText.replace(/%23/g, 'c{27}♥c{0}');
+    text = text.replace(/#/g, 'c{27}♥c{0}'); 
+    text = text.replace(/%23/g, 'c{27}♥c{0}');
 
     // Sanitize
     text = text.replace(/\] *\. *\.* *\[?/g, '].['); // Make variations of '] . [' to '].['
@@ -1052,14 +1056,13 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         //by ClipboardLlule block ignore. That won't trigger here, so we need to remove it here.
         //this code is mostly the same as in ClipboardLlule
         //let savedNames = readFile('savedNames'); // If there is no file or it's empty, the next for will be skipped
-
         for(const key in savedNames){
           let name = savedNames[key];
           name = name.replace(/\\C\[\d{1,2}\]/gi, '')                   // Remove color codes
           if(name.includes('$1')) name = name.replace(' $1', '.{0,3}'); // Remove regex for multi names
           else name = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');   // Escape special characters for regex (if there is a [ for example use it as text not as regex special character)
 
-          re = new RegExp('^ *' + name + '\\.?(-| |:|：)*', 'i');       // Add possible name endings (ex 'Name: ')
+          re = new RegExp('^ *' + name + '\\.?(-| |:|：|"|])*', 'i');       // Add possible name endings (ex 'Name: ')
           translatedWindowText = translatedWindowText.replace(re, '');
         }
         // -End- remove name from text
@@ -1067,6 +1070,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         // Would like to do this before storing into cache, but too much trouble
         translatedWindowText = processTextStartsWithDots(translatedWindowText);
         translatedWindowText = processTextBetweenParentheses(translatedWindowText);
+        if(!translatedWindowText.includes('♥')) hasHeartCharacter = false;
 
         translatedChoices = translatedChoices.splice(0, $gameMessage.choices().length);
       }
@@ -1335,6 +1339,7 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   function translationWindowSave(){
     //console.log('Saved');
     let text = translationWindow.window.document.querySelector('#current').value;
+    text = text.replace(/~/g, '～');
     // Modify savedCache
     storedTranslations[JPTextInTranslationWindow] = text;
     writeFile('translationsCache', storedTranslations);
@@ -1777,9 +1782,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     // Or check if sentence starts with font size command (no namebox)
     // Or check if it's in the second line (if there is a namebox command in the first line, but rare) [this could generate false positives?]
     if(/>.?\\}/.test(firstLine) || firstLine.startsWith('\\}')|| secondLine.startsWith('\\}')) 
-      this.makeFontSmaller();
+      text = '\\}' + text; // this.makeFontSmaller() or this.makeFontBigger() doesn't seem to work here
     if(/>.?\\{/.test(firstLine) || firstLine.startsWith('\\{') || secondLine.startsWith('\\{')) 
-      this.makeFontBigger();
+      text = '\\{' + text;
 
     //* Maintain color of sentence if there is only one color tag (at the beginning)
     // NOTE: This will conflict with a name that has color. Ideally we would want to get
@@ -2310,8 +2315,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
           reject(error);
         }
         else {
-          if(path.includes('translationsCache')) {setTimeout(() => { writingFile = false }, 500); } // Re enable watch files
-          console.log(path);
+          if(path.includes('translationsCache')) writingFile = false; // Re enable watch files
+          //console.log(path);
           resolve(path);
         }
       });

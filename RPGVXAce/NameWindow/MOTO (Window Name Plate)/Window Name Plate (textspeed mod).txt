@@ -1,0 +1,250 @@
+=begin
+RGSS3 ネームプレート ver.1.10 20120219 mo-to
+
+ＴＫＯＯＬ　ＣＯＯＬ
+httpmototkool.blog.fc2.com
+
+★使用法★
+スクリプトの▼ 素材　以下  ▼ メイン　以上にこれをコピーして張り付ける。
+カスタマイズポインツの『NAME_PLATE_ID』で任意のゲーム変数をひとつ指定してください。
+イベント文章の表示でネームプレートを使用する際は、指定したゲーム変数に
+名前を表示したいアクターＩＤの番号を代入し、文章の表示で制御文字　#　を
+入力したのち、任意の文章を書き込んでください。
+制御文字を入力しない場合は、ネームプレートが非表示となります。
+また、Ver1.1.0からネームプレートの初期位置を調整することができます。
+
+★概要★
+セリフを表示させる際に、別ウィンドウで名前表示をさせることができる。
+
+★注意・仕様★
+このスクリプトはゲーム変数をひとつ必要とします。
+初期状態では１となっていますので、ご自身の作品に合わせて
+設定を変更してください。
+
+=end
+
+module MOTO
+  
+  NAME_PLATE_ID = 2 # アクターＩＤを代入するゲーム変数のＩＤ番号
+  #ネームプレートの初期位置
+  NAME_PLATE_X = 0 #値を+すると→へプレートを移動、－にすると←へ移動　0で初期位置
+  NAME_PLATE_Y = 0 #値を+すると↑へプレートを移動、－にすると↓へ移動　0で初期位置
+  
+end
+
+class Window_Name_Plate  Window_Base
+  #--------------------------------------------------------------------------
+  # ☆ オブジェクト初期化
+  #--------------------------------------------------------------------------
+  def initialize
+    super(0, 0, window_width, fitting_height(1))
+    create_back_bitmap
+    create_back_sprite
+    refresh
+  end
+  #--------------------------------------------------------------------------
+  # ☆ ウィンドウ幅の取得
+  #--------------------------------------------------------------------------
+  def window_width
+    return 128
+  end
+  #--------------------------------------------------------------------------
+  # ☆ リフレッシュ
+  #--------------------------------------------------------------------------
+  def refresh
+    contents.clear
+    draw_text(0, 0, window_width - 28, line_height, 
+    actor_name($game_variables[MOTONAME_PLATE_ID]), 1)
+  end
+  #--------------------------------------------------------------------------
+  # ☆ 解放
+  #--------------------------------------------------------------------------
+  def dispose
+    super
+    dispose_back_bitmap
+    dispose_back_sprite
+  end
+  #--------------------------------------------------------------------------
+  # ☆ フレーム更新
+  #--------------------------------------------------------------------------
+  def update
+    super
+    update_back_sprite
+  end
+  #--------------------------------------------------------------------------
+  # ☆ 背景ビットマップの作成
+  #--------------------------------------------------------------------------
+  def create_back_bitmap
+    @back_bitmap = Bitmap.new(width, height)
+    rect1 = Rect.new(0, 0, width, 12)
+    rect2 = Rect.new(0, 12, width, height - 24)
+    rect3 = Rect.new(0, height - 12, width, 12)
+    @back_bitmap.gradient_fill_rect(rect1, back_color2, back_color1, true)
+    @back_bitmap.fill_rect(rect2, back_color1)
+    @back_bitmap.gradient_fill_rect(rect3, back_color1, back_color2, true)
+  end
+  #--------------------------------------------------------------------------
+  # ☆ 背景色 1 の取得
+  #--------------------------------------------------------------------------
+  def back_color1
+    Color.new(0, 0, 0, 160)
+  end
+  #--------------------------------------------------------------------------
+  # ☆ 背景色 2 の取得
+  #--------------------------------------------------------------------------
+  def back_color2
+    Color.new(0, 0, 0, 0)
+  end
+  #--------------------------------------------------------------------------
+  # ☆ 背景スプライトの作成
+  #--------------------------------------------------------------------------
+  def create_back_sprite
+    @back_sprite = Sprite.new
+    @back_sprite.bitmap = @back_bitmap
+    @back_sprite.visible = false
+    @back_sprite.z = z - 1
+  end
+  #--------------------------------------------------------------------------
+  # ☆ 背景ビットマップの解放
+  #--------------------------------------------------------------------------
+  def dispose_back_bitmap
+    @back_bitmap.dispose
+  end
+  #--------------------------------------------------------------------------
+  # ☆ 背景スプライトの解放
+  #--------------------------------------------------------------------------
+  def dispose_back_sprite
+    @back_sprite.dispose
+  end
+  #--------------------------------------------------------------------------
+  # ☆ 背景スプライトの更新
+  #--------------------------------------------------------------------------
+  def update_back_sprite
+    @back_sprite.visible = ($game_message.background == 1)
+    @back_sprite.y = y
+    @back_sprite.opacity = openness
+    @back_sprite.update
+  end
+  #--------------------------------------------------------------------------
+  # ☆ ウィンドウを開く
+  #--------------------------------------------------------------------------
+  def open
+    refresh
+    super
+  end
+end
+
+class Window_Message  Window_Base
+  #--------------------------------------------------------------------------
+  # ○ 全ウィンドウの作成
+  #--------------------------------------------------------------------------
+  alias ori_create_all_windows create_all_windows
+  def create_all_windows
+    ori_create_all_windows
+    
+    @name_plate_window = Window_Name_Plate.new
+    @name_plate_window.x = 0 + MOTONAME_PLATE_X
+    @name_plate_window.y = (Graphics.height - height) - @name_plate_window.height
+    @name_plate_window.z = self.z + 1
+    @name_plate_window.openness = 0
+  end
+  #--------------------------------------------------------------------------
+  # ○ 全ウィンドウの解放
+  #--------------------------------------------------------------------------
+  alias ori_dispose_all_windows dispose_all_windows
+  def dispose_all_windows
+    ori_dispose_all_windows
+    
+    @name_plate_window.dispose
+  end
+  #--------------------------------------------------------------------------
+  # ○ 全ウィンドウの更新
+  #--------------------------------------------------------------------------
+  alias ori_update_all_windows update_all_windows
+  def update_all_windows
+    ori_update_all_windows
+    
+    @name_plate_window.update
+  end
+  #--------------------------------------------------------------------------
+  # ○ ウィンドウ背景の更新
+  #--------------------------------------------------------------------------
+  alias ori_update_background update_background
+  def update_background
+    ori_update_background
+    
+    @name_plate_window.opacity = @background == 0  255  0
+  end
+  #--------------------------------------------------------------------------
+  # ○ ウィンドウ位置の更新
+  #--------------------------------------------------------------------------
+  alias ori_update_placement update_placement
+  def update_placement
+    ori_update_placement
+    
+    if @position == 2
+      @name_plate_window.y = (Graphics.height - height) - @name_plate_window.height + MOTONAME_PLATE_Y
+    elsif @position == 0      
+      @name_plate_window.y = @name_plate_window.height  2.5 - MOTONAME_PLATE_Y
+    else
+      @name_plate_window.y = @name_plate_window.height  2.1 + MOTONAME_PLATE_Y
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● 制御文字の本体を破壊的に取得  ※オーバーライド
+  #--------------------------------------------------------------------------
+  def obtain_escape_code(text)
+    text.slice!(^[$#.^!{}]^[A-Z]+i)
+  end
+  #--------------------------------------------------------------------------
+  # ● 制御文字の処理
+  #     code  制御文字の本体部分（「C[1]」なら「C」）
+  #     text  描画処理中の文字列バッファ（必要なら破壊的に変更）
+  #     pos   描画位置 {x, y, new_x, height}
+  #--------------------------------------------------------------------------
+  def process_escape_character(code, text, pos)
+    case code.upcase
+    when '$'
+      @gold_window.open
+    when '.'
+      wait(15)
+    when ''
+      wait(60)
+    when '!'
+      input_pause
+    when ''
+      @line_show_fast = true
+    when ''
+      @line_show_fast = false
+    when '^'
+      @pause_skip = true
+    when '#'
+      @name_plate_window.open  
+    else
+      super
+    end
+  end
+  #--------------------------------------------------------------------------
+  # ● ファイバーのメイン処理
+  #--------------------------------------------------------------------------
+  def fiber_main
+    $game_message.visible = true
+    update_background
+    update_placement
+    loop do
+      process_all_text if $game_message.has_text
+      process_input
+      $game_message.clear
+      @gold_window.close
+      @name_plate_window.close
+      for i in 2..3                # Balance the fiber resumes
+      	Fiber.yield                # Zero_G moved from text speed to here
+			end                          # Hardcoded to 3
+      Fiber.yield
+      break unless text_continue
+    end
+    close_and_wait
+    $game_message.visible = false
+    @fiber = nil
+  end
+end

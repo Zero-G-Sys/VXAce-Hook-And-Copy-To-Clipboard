@@ -1,5 +1,5 @@
 /**
- *  Theese replacements will be done before copying the text into clipboard.
+ *  These replacements will be done before copying the text into clipboard.
  *  First field is the original text, can be a regex.
  *  Second field is to what it should be replaced with, it can also be a
  *  callback (check replace documentation for more info).
@@ -11,13 +11,14 @@ try {
     ['♡', '#'],
     // Punctuations
     ['・・・', '...'],
+    [/。/g, '. '],
+    [/^(「|（|\()?\. */g, ''], // Text starts with dot (remove)
     // '・', ''],
     // '（', '.（'],
     // '「.（', '「（'],
     // //'「', '.「'],
     // '<.「', '<「'],
     // /\\. *「', '「'],
-    [/\. */g, ''], // Text starts with dot (remove)
     // DeepL corrections
     [/！{2,}/g, '！'], // DeepL doesn't like multiple use of ！
     // General replacements
@@ -91,16 +92,17 @@ try {
     [/^(「|（|\()?えとね/g, 'Etone'],
     [/^(「|（|\()?えと/g, 'Eto'],
     ['う～ん', 'U~n'],
-    [/(「|（|\()?うん/g, 'Un'],
-    [/(「|（|\()?いやぁ～/g, 'Iyaa～'],
+    [/^(「|（|\()?うん/g, 'Un'],
+    [/^(「|（|\()?いやぁ～/g, 'Iyaa～'],
     [/もう！(！+)?/g, 'Mou!$1 '],
-    [/(「|（|\()?もう( |、|・|。|．|！|\\.|…)/g, 'Mou$2'], // Interferes with normal words if alone
-    [/(「|（|\()?あら( |、|・|。|．|！|\\.|…)/g, 'Ara$2'],
-    [/(「|（|\()?あらら( |、|・|。|．|！|\\.|…)/g, 'Arara$2'],
-    [/(「|（|\()?ん～/g, 'Nn～'],
-    [/(「|（|\()?くぅ～/g, 'Kwu～'],
-    [/(「|（|\()?おっと/g, 'O～to'],
-    [/(「|（|\()?アッレ(～)?/g, 'A～re$2'],
+    [/^(「|（|\()?もう( |、|・|。|．|！|\\.|…)/g, 'Mou$2'], // Interferes with normal words if alone
+    [/^(「|（|\()?あら( |、|・|。|．|！|\\.|…)/g, 'Ara$2'],
+    [/^(「|（|\()?あらら( |、|・|。|．|！|\\.|…)/g, 'Arara$2'],
+    [/^(「|（|\()?ん～/g, 'Nn～'],
+    [/^(「|（|\()?くぅ～/g, 'Kwu～'],
+    [/^(「|（|\()?おっと/g, 'O～to'],
+    [/^(「|（|\()?アッレ(～)?/g, 'A～re$2'],
+    [/^(「|（|\()?まったく/g, '$1Mataku'], // May be generate problems depending con context, 
     ['お母様', 'Okaasama'],
     ['お母さま', 'Okaasama'],
     ['淫魔', 'Succubus'],
@@ -108,7 +110,6 @@ try {
     [/全く$/g, 'Mattaku'],
     ['オヤジ', 'Oyaji'],
     ['ショタコン', 'Shotacon'],
-    [/(（|「)?まったく/g, '$1Mataku'], // Deactivated until tested that works
     [/(『|』)/g, '"'], // Set " for important words (Needs filter rules in firefox plugin deactivated and custom code on SetClipboardText), so not compatible with older caches
     ['うひひ', 'Uhihi'],
     ['マ〇コ', 'マンコ'], // katakana for manko (pussy) will also work for オマ〇コ -> オマンコ (omanko)

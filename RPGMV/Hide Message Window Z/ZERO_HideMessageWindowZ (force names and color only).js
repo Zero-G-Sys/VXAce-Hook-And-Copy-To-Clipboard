@@ -380,11 +380,11 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   var isHidden = false;
   var isHiddenOcupacy = false;
 
-  // Overwrite updateBackground
-  // Keep ocupacy to next messages
+  // Keep opacity to next messages
+  var ZERO_Window_Message_updateBackground = Window_Message.prototype.updateBackground;
   Window_Message.prototype.updateBackground = function() {
-    this._background = $gameMessage.background();
-    if (isHiddenOcupacy) this.setBackgroundType(2);
+    ZERO_Window_Message_updateBackground.call(this);
+    if (isHiddenOpacity) this.setBackgroundType(2);
     else this.setBackgroundType(this._background);
   };
   

@@ -1,0 +1,5 @@
+Snap internal and external frames go wrong on other games
+
+Felsky autosave slots 1 and 2 aren't being renamed, and game assumes save 1 is 3
+
+Felsky doesn't remember position of save, and goes to slot 1 (the auto save1)

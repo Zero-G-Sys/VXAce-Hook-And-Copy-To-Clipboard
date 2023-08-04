@@ -155,10 +155,10 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   var isHidden = false;
   var isHiddenOpacity = false;
 
-  // Overwrite updateBackground
   // Keep opacity to next messages
+  var ZERO_Window_Message_updateBackground = Window_Message.prototype.updateBackground;
   Window_Message.prototype.updateBackground = function() {
-    this._background = $gameMessage.background();
+    ZERO_Window_Message_updateBackground.call(this);
     if (isHiddenOpacity) this.setBackgroundType(2);
     else this.setBackgroundType(this._background);
   };
@@ -280,6 +280,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 	// so MPP_MessageEX isn't in an anonymous function (can't access its functions otherwise)
 
   // Check if MPP plugin exists
+  // TODO: Need to update this with ALT fork method, as it seems that fork one is ahead, but need a translated game that uses this method to test
   if(typeof Window_MessageName == 'function'){
 
     Window_MessageName.prototype.update = function() {
@@ -304,7 +305,8 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   /* For Lunatlazur_ActorNameWindow namebox */ 
   /* ------------------------------------- */
 
-  // Check if MPP plugin exists
+  // Check if Luna plugin exists (with var mod) (used in the newer version of the plugin, where de anonymize method doesn't work)
+  // !This method got mixed with mpp one, may need to delete it outright, or check previous versions of how it was done
   if (typeof HideMessageWindowZ_Lunatlazur !== 'undefined'){
     // Un-modded version
     // Alt version need to add on luna script, first line of code:
@@ -385,6 +387,12 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   // **IMPORTANT** NEED TO UN-ANONYMISE THAT PLUGIN
   if(typeof Window_ActorName == 'function'){
 
+    Window_ActorName.prototype.updateBackground = function() {
+      this._background = $gameMessage.background();
+      if (isHiddenOpacity) this.setBackgroundType(2);
+      else this.setBackgroundType(this._parentWindow._background);
+    };
+
     Window_ActorName.prototype.update = function () {
       Window_Base.prototype.update.call(this);
 
@@ -399,8 +407,10 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
         if (isHidden) this.visible = false;
         else this.visible = true;
       }
-      if (isHiddenOpacity) this.opacity = 0;
-      else this.opacity = 255;
+
+      if (Input.isTriggered($.buttonHideOpacity) && this.isOpen()) {
+        this.updateBackground();
+      }
 
       if (this.active) return;
       

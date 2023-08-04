@@ -1,0 +1,8 @@
+Best used for 'Lewdness' variables, etc
+
++All done on plugins.js
+ -Change "Item4title" to what you want to call it in the save screen
+ -(Optional) modify "TitleFramelength4" if the title is too long
+ -Change "Item4" to 6
+ -Put number of variable to track on "ItemValue1"
+ -(Optional) Append something (a unit symbol) to the right of the value by adding it to "ItemValue1unit"

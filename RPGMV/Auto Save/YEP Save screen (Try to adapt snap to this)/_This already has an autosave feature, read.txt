@@ -1,0 +1,5 @@
+By default it saves on the last slot, when convined with felsky, it will save in the last slot-2, so it's conflicting.
+
+Either edit code to disable the auto save,
+
+or see if the autosave is more efficient than felski, in that case keep it

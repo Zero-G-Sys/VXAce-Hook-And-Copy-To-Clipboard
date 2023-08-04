@@ -1,0 +1,28 @@
+##############  In sui:
+
+module SUI::LOG
+  LOG = []
+  #--------------------------------------------------------------------------
+  # œ —š—ð‚Ì’Ç‰Á
+  #--------------------------------------------------------------------------
+  def self.push(text)
+    return if $game_switches[SW_ONOFF]    # Ver1.02
+    #Zero_G mod to put names from Window_Name_Plate in log
+    if text.match(/\A\e#/) # Starts with escape#
+      text = $actor_name_for_log + ": " + text
+    end
+    LOG.push(text)
+    LOG.shift if LOG.size > MAX_ROW
+  end
+end
+
+##############  In Window_Name_Plate
+
+Add global at the beginning:
+
+   $actor_name_for_log = ""
+
+set global with actor name in the refresh method
+
+   name = actor_name($game_variables[MOTO::NAME_PLATE_ID])
+   $actor_name_for_log = name

@@ -1,0 +1,5 @@
+{"name":"CustomizeConfigItem","status":true,"description":"オプション任意項目作成プラグイン","parameters":{"スイッチ項目1":"Allow skill usage during auto-battle:ON:1778:OFF:","数値項目1":"","音量項目1":"","文字項目1":"","スイッチ項目2":"","数値項目2":"","音量項目2":"","文字項目2":""}},
+
+
+
+Need to set the variable (in this case 1778, to one not used in the game, and set that variable to "Auto Battle Use Skill" in autobattle plugin

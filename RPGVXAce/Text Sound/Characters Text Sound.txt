@@ -1,0 +1,61 @@
+#==============================================================================
+# Text Sound Effect (version 2)
+# NEW FEATURE: Switch to turn off sound effect
+#------------------------------------------------------------------------------
+# by Zerbu
+#==============================================================================
+module Text_Sound_Effect
+  #--------------------------------------------------------------------------
+  # Options
+  #--------------------------------------------------------------------------
+  # The sound effect to play
+  #MESSAGE_SOUND = RPG::SE.new("Knock", 70, 80)
+  MESSAGE_SOUND = RPG::SE.new("button63", 50, 150)
+
+  # The number of characters to display before each time the sound plays
+  # The default is 3, it's recommended you keep it as this unless you
+  # know what you're doing
+  MESSAGE_SOUND_FRAMES = 5
+
+  # Switch to disable sound effect
+  # If you need to turn off the sound effect for any part of the game,
+  # turn this switch on
+  # Set to nil to disable this feature
+  MESSAGE_SOUND_DISABLE = nil
+  
+end
+
+module ZERO
+  DISALBE_SOUND = :_g
+end
+  
+class Window_Message < Window_Base
+  include Text_Sound_Effect
+  @@message_sound_disable = false
+  
+  alias zero_sound_window_message_update update
+  def update
+    zero_sound_window_message_update
+    if Input.trigger?(ZERO::DISALBE_SOUND)
+      @@message_sound_disable = !@@message_sound_disable
+    end
+  end
+  #--------------------------------------------------------------------------
+  # alias method: process_characer
+  #--------------------------------------------------------------------------
+  alias textsound_process_character_normal process_character
+  def process_character(c, text, pos)
+    if !MESSAGE_SOUND_DISABLE or !$game_switches[MESSAGE_SOUND_DISABLE]
+      if !@@message_sound_disable
+        @sound_frames = 0 if !defined?(@sound_frames)
+        puts @sound_frames
+        MESSAGE_SOUND.play if @sound_frames == 0
+        
+        @sound_frames+=1
+        
+        @sound_frames = 0 if @sound_frames == MESSAGE_SOUND_FRAMES
+      end
+    end
+    textsound_process_character_normal(c, text, pos)
+  end
+end

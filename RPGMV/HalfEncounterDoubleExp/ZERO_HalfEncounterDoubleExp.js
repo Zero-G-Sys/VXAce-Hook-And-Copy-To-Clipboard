@@ -1,6 +1,5 @@
 (function () {
     const encounterMultiplier = 2;
-    // Disabled this extraMultiplier for RJ222134 as values were already high
     const extraMultiplier = 1.25; // Default: 1.25 ; Add 25% extra to exp, gold and drops as we upped the min encounter rate
 
     Game_Player.prototype.makeEncounterCount = function() {

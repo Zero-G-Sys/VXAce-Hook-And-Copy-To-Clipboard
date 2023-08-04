@@ -3,7 +3,7 @@
  Half encounter rate
 ===============================================================================
  This script will set encounter rate to half, with a minumim steps of 15
- Also to compensate that, gold and exp gained is doubled
+ Also to compensate that, gold, exp gained and drop rates are doubled 
 -------------------------------------------------------------------------------
 =end
 
@@ -35,5 +35,11 @@ module BattleManager #This part is not tested
       actor.gain_exp(exp2)
     end
     wait_for_message
+  end
+end
+
+class Game_Enemy < Game_Battler
+  def drop_item_rate
+    $game_party.drop_item_double? ? 4 : 2
   end
 end

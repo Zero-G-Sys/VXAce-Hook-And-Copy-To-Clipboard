@@ -6,7 +6,7 @@
 * @plugindesc Hide textbox or make textbox invisible while showing text.
 * @title Hide Message Window Z
 * @author Zero_G
-* @version 2.3.13 alt
+* @version 2.3.12 alt
 * @filename ZERO_HideMessageWindowZ.js
 * @help 
 -------------------------------------------------------------------------------
@@ -48,19 +48,15 @@ and the closing of the anonymous function (line 2074)
 == Change Log ==
 TODO: Implement changes from main script, original forked at v2.1, currently is at v2.2.2)
 
-2.3.13 alt
- - Fixed bugs in saveNewName()
-   -Fix storing translated name if translated text didn't have a '.'
-   -Fixed replacing previous cache line with one without name block
 2.3.12 alt
- - Converted Window_NameBox.prototype.refresh into an alias. This was the main reason all translation logic is in this script
+ - Converted Window_NameBox.prototype.refresh into an alias. This was the main reson all translation logic is in this script
    later all this can be moved to setClipboardText, and stop using this modified script
  - Add names to YEP_Backlog
  - Added a handling of MPP_MessageEx, and a modded version of it.
 2.3.11 alt
  - Improved forceNameboxMethod1
 2.3.10.3 alt
- - Fixed Typos
+ - Typo 'Lenght' -> 'Length'
  - forceNameboxMethod2 now checks length of name without color codes
  - Fixed a replaceNames bug that failed if the savedName had color codes
 2.3.10.2 alt
@@ -166,72 +162,48 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   var usingQuotation = true; // text uses 「 or （ or 『 for dialogues?
   var usingSemiColon = false;  // Name ends with : or ： (JP width semicolon)
 
-  // Replace names that will be inside the textbox
-  // This variable also communicates with clipboard_Llule, to add them to
-  // the regex ignore bloc so the name doesn't appear in the dialogue textbox
-  // Names are also read from www/savedNames.json, so names can be added while the
-  // game is running.
-  $.replacements = { // Need to add translated to regex ignore in Clipboard_Llule
-    //'春': '\\c[14]Haru', // Names
-    '商人': 'Merchant',
-    'シスター': 'Sister',
-    '冒険者': 'Adventurer',
-    '店員': 'Clerk',
-    'お姉さん': 'Oneesan',
-  }
+  // Reduce message rows if a textbox is present (so far only if they were added)
+  // If you need this with already present nameboxes change logic from forceNameBoxMethod
+  // to each refresh or equivalent function (will also need to get current rows from
+  // $gameSystem._messageRows after the game is loaded)
+  const changeMessageRows = true;
 
+  // Replace names color
+  $.addColor = {
+    // By Eye colors
+    'Ovelia': '27',
+    'Hinagiku': '29',
+    'Fau': '28',
+    'Rosche': '25',
+    /* By Hair colors
+    'Ovelia': '27',
+    'Hinagiku': '7',
+    'Fau': '21',
+    'Rosche': '29',
+    */
+    'Hecate': '31',
+    'Onihime': '18',
+    'Farin': '11',
+    'Lyka': '31',
+  }
   /*** END OF MANUAL CONFIGURATION ***/
-
-  //var previousReplacements = {};
-  $.nameBacklog = '';
-  let fs = require('fs');
-  if(!fileExists('savedNames')) writeFile('savedNames', {});
   
-  function writeFile(file, data){
-    let absolutePath = process.cwd();
-    if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
-    absolutePath = absolutePath + '\\' + file + '.json';
-    fs.writeFileSync(absolutePath, JSON.stringify(data, null, 2));
-  }
+  var defaultMessageRows = Yanfly.Param.MSGDefaultRows;
+  var reducedMessageRows = Yanfly.Param.MSGDefaultRows - 1;
 
-  function readFile(file){
-    let absolutePath = process.cwd();
-    if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
-    absolutePath = absolutePath + '\\' + file + '.json';
-    if(fs.existsSync(absolutePath)){
-      let rawData = fs.readFileSync(absolutePath);
-      let jsonData = JSON.parse(rawData);
-      return jsonData;
-    }
-  }
+  if(!Yanfly.Param.MSGDefaultRows && changeMessageRows){
+    defaultMessageRows = 4; // Hard code them
+    reducedMessageRows = 3;
+
+    Window_Message.prototype.numVisibleRows = function() {
+      return $gameSystem.messageRows();
+    };
   
-  // Make a backup of stored names when game loads
-  (function() {
-    let fileNames = readFile('savedNames');
-    if(Object.keys(fileNames).length !== 0 // Check not empty
-      && fileNames.constructor === Object){
-        writeFile('savedNamesBackup', fileNames);
-      }
-  })()
-
-  function fileExists(file){
-    let absolutePath = process.cwd();
-    if(!absolutePath.includes('www')) absolutePath = absolutePath + '\\www';
-    absolutePath = absolutePath + '\\' + file + '.json';
-    return fs.existsSync(absolutePath);
+    Game_System.prototype.messageRows = function() {
+      var rows = eval(this._messageRows) || defaultMessageRows;
+      return Math.max(1, parseInt(rows));
+    };
   }
-
-  // Populates replacements2 only with new names added since previous called
-  // Used to add new names that were added while game is running to regex ignore in Llule
-  /*function compareFileNames(file){                          // Deprecated (To delete, not used)
-    let allNamesKeys = Object.keys(file).concat(Object.keys($.replacements));
-    let previousReplacementsKeys = Object.keys(previousReplacements);
-    let newNames = allNamesKeys.filter(val => !previousReplacementsKeys.includes(val));
-    $.replacements2 = {};
-    for(const name of newNames){
-      if(file[name] !== '') $.replacements2[name] = file[name];
-    }
-  }*/
 
   // Get plugin name and parameters
   var substrBegin = document.currentScript.src.lastIndexOf('/');
@@ -282,7 +254,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   /* Add nameboxes /
   /* ----------- */
 
-  // Names that start with \c[2] (red text)
+  // Names that are enclosed by special characters and follow a regex pattern (color codes, [], etc)
   if(forceNameboxMethod1){
     var ZERO_Window_Message_prototype_startMessage2 = Window_Message.prototype.startMessage;
     Window_Message.prototype.startMessage = function () {
@@ -302,7 +274,17 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       // All names
       if(regexTextStartsWithName.test(this._textState.text)){ // See the textbox text starts with name
           this._textState.text = this._textState.text.replace(regexTextStartsWithName, '\\N<$1>');
+          if(changeMessageRows) $gameSystem._messageRows = reducedMessageRows;
+      } else $gameSystem._messageRows = defaultMessageRows;
+
+      // Update rows
+      if(changeMessageRows){
+        height = this.windowHeight();
+        this.move(this.x, this.y, this.width, height);
+        this.updatePlacement();
+        this.updateBackground();
       }
+
       this._textState.text = this._textState.text.replace(/>\n/, '>');
       this._textState.text = this.convertEscapeCharacters(this._textState.text); //Call escape characters again to create namebox
     };
@@ -332,7 +314,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
       // add \n<> to name
       if(!/^(「|（|『| |\.|…)/.test(this._textState.text)                    // Check that text doesn't start with quotation or space or .
-      /*&& this._textState.text.indexOf('\n') < maxNamesLength*/              // if first line is x amount of characters
+      //&& this._textState.text.indexOf('\n') < maxNamesLength               // if first line is x amount of characters
       && (this._textState.text.indexOf('\n') !== -1 || nameInSameLine)       // text is more than one line
       && this._textState.text.indexOf('\n') !== 0){                          // text doesn't start with a line break
         if(nameInSameLine){
@@ -375,159 +357,18 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
           this._textState.text = this._textState.text.replace('\n', '');
         }
       }
+
+      // Update rows
+      if(changeMessageRows && /\\n</i.test(this._textState.text)) {
+        $gameSystem._messageRows = reducedMessageRows;
+        height = this.windowHeight();
+        this.move(this.x, this.y, this.width, height);
+        this.updatePlacement();
+        this.updateBackground();
+      } else $gameSystem._messageRows = defaultMessageRows;      
+     
       this._textState.text = this.convertEscapeCharacters(this._textState.text); //Call escape characters again to create namebox
     };
-  }
-  /* ---------------------------------------------------------------------------- */
-
-  /* ---------------------------------------------------------------------------- */
-  /* Helper functions for SetClipboardText /
-  /* ----------------------------------- */
-  // Nwjs (remove if this is merged to setClipboardText)
-  var gui = require('nw.gui');
-  var clipboard = gui.Clipboard.get();
-  var textWasTranslated = false;
-
-  /*
-  * Replace Names (For use with SetClipboardText)
-  * Receives a name (current name before it's displayed)
-  * Returns the replaced name or an empty string if it wasn't replaced
-  */
-  function replaceNames(text){
-    let name = text.replace(/(\\|)?C\\?\[\d{1,2}\]/gi, ''); // Remove color codes
-    name = name.replace(//g, ''); // Sanitize name
-    name = name.replace(/|/g, ''); 
-    name = name.trim();
-
-    let newName = '';
-    let fileNames = readFile('savedNames');
-    let replacementsCombined = Object.assign({}, fileNames, $.replacements); // merge dictionaries
-    for (const [key, value] of Object.entries(replacementsCombined)) {
-      let savedName = key.replace(/(\\|)?C\\?\[\d{1,2}\]/gi, ''); // Remove color codes
-      let re = new RegExp('^' + savedName + '$'); // Create regex that matches whole sentence with key given      
-
-      // If name matches, replace
-      if(re.test(name) && value !== ''){
-        re = new RegExp(key);
-        newName = text.replace(re, value); 
-      }
-    }
-    //compareFileNames(fileNames); // Check new names in file
-
-    return newName;
-  }
-
-  // Add unknown name to file with translation from clipboard
-  function saveNewName(newName){
-    newName = newName.replace(/\\C\[\d{1,2}\]/gi, '') // Remove color codes
-
-    // Escape regex special characters
-    // So that later they can be converted properly from string to regex
-    newName = newName.replace(/(\(|\)|\{|\}|\[|\]])/g, '\\$1');
-
-    var stopInterval = false
-    const stopIntervalTimeout = setTimeout(() => {
-      stopInterval = true;
-    }, 5000);
-
-    // Experimental changed the setTimeout of 5s to an interval that checks the state
-    // of escapeText every few millis
-    // This will wait until translation comes and saves it savedNames.json
-    // *
-    // this will not be necessary if this functionality is merged to 
-    // setClipboardText plugin, as you can call this from the replace text function
-    const i = setInterval((clipboard, newName) => {
-      // Refresh value and invert it
-      textWasTranslated = !ZERO.SetClipboardText.escapeText;
-
-      if(textWasTranslated || stopInterval){
-        clearInterval(i);
-        clearTimeout(stopIntervalTimeout);
-        // Get translated name
-        let clipboardText = clipboard.get('text');
-
-        if(clipboardText.includes('.')) clipboardText = clipboardText.substring(0, clipboardText.indexOf('.'));
-        clipboardText = clipboardText.replace(/"/g, ''); // remove "
-        clipboardText = clipboardText.replace(/\./g, ''); // remove .
-        clipboardText = clipboardText.replace(/\?/g, '\\?'); // replace ? with escaped ?
-        newName = newName.replace(/\?/g, '\\?'); // replace ? with escaped ?
-        newName = newName.replace(/?C\\?\[\d{1,2}\]/gi, ''); // Remove color code if it has it
-        clipboardText = clipboardText.replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase()); // Capitalize first letter of each word
-
-        // If name was ??? replace translated name to ??? (DeepL delivers 'what' or broken text)
-        if(/^\\\?\\\?\\\?$/.test(newName) || /^？？？$/.test(newName)) clipboardText = '\\?\\?\\?';
-        
-        // Convert to regex name if it ends with a capital letter or a number
-        // Used when you have names like: Villager A, Villager B, Villager C, etc
-        // Only using capital letters [A-Z] instead of uppercase and lowercase [A-Za-z] in case it registers false positives
-        if(/([A-Z]|[Ａ-Ｚ])$/.test(newName)){
-          newName = newName.replace(/[Ａ-Ｚ]$/, '([Ａ-Ｚ])?');
-          newName = newName.replace(/[A-Z]$/, '([A-Z])?');
-          clipboardText = clipboardText.replace(/[A-Z]$|[Ａ-Ｚ]$/, '$1');
-        }
-        // Same but with circled numbers
-        if(/[①-⑳]$/.test(newName)){
-          newName = newName.replace(/[①-⑳]$/, '([①-⑳])?');
-          //console.log(JSON.stringify(clipboardText));
-          clipboardText = clipboardText.replace(/\d{1,2}$|[①-⑳]$/, '$1');
-        }
-        // Same but with Full width numbers
-        if(/[１-９]$/.test(newName)){
-          newName = newName.replace(/[１-９]$/, '([１-９])?');
-          //console.log(JSON.stringify(clipboardText));
-          clipboardText = clipboardText.replace(/\d{1,2}$|[①-⑳]$/, '$1');
-        }
-        // Same but ending with a number
-        if(/\d$/.test(newName)){
-          newName = newName.replace(/\d$/, '(\\d){0,2}');
-          clipboardText = clipboardText.replace(/\d{1,2}$/, '$1');
-        }
-
-        // Trim spaces from newName
-        newName = newName.trim();
-
-        // If translated name was empty put untranslated one
-        if(clipboardText == '') clipboardText = newName;
-
-        // Remove 'The ' from beginning of name
-        if(clipboardText.startsWith('The ')) clipboardText = clipboardText.replace('The ', '');
-        if(clipboardText.startsWith('A ')) clipboardText = clipboardText.replace('A ', '');
-
-        // Write to file
-        if(newName !== ''){
-          let fileNames = readFile('savedNames');
-          fileNames[newName] = clipboardText.trim();
-          writeFile('savedNames', fileNames);
-        
-          // Remove name from Translation Cache line (don't modify it with translation window edit, otherwise it will restore it)
-          // ^Timeout because it's conflicting with the async write of SetClipboardText
-          // ^This and many parts won't be necessary once the code is merged there
-          setTimeout(() => {
-            let storedTranslations = readFile('translationsCache');
-            let translationCacheKey = LastMemTextSend;          
-            if(translationCacheKey !== undefined){
-              let translationCacheValue = storedTranslations[LastMemTextSend];
-              delete storedTranslations[LastMemTextSend];
-
-              translationCacheKey = translationCacheKey.substring(translationCacheKey.indexOf('.「')+1); // remove name in key (JP)
-              translationCacheKey = translationCacheKey.replace('「', '') // Remove quotations (Some games seem to store single lines without 
-              translationCacheKey = translationCacheKey.replace('（', '') // quotations) for now enable manually (uncomment)
-              translationCacheKey = translationCacheKey.replace('『', '') 
-              translationCacheKey = translationCacheKey.replace('」', '') 
-              translationCacheKey = translationCacheKey.replace('）', '') 
-              translationCacheKey = translationCacheKey.replace('』', '') 
-              translationCacheValue = translationCacheValue.substring(translationCacheValue.indexOf('.')+1); // Remove name from translation
-              translationCacheValue = translationCacheValue.trim();
-              if(translationCacheKey.trim() && translationCacheValue){ // Don't store if either is empty
-                storedTranslations[translationCacheKey] = translationCacheValue // Add modified translation
-                writeFile('translationsCache', storedTranslations); // Save to file  
-                
-              }
-            }
-          }, 200); 
-        }
-      }
-    }, 300, clipboard, newName);
   }
 
   /* ---------------------------------------------------------------------------- */
@@ -652,20 +493,22 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     var ZERO_Window_NameBox_prototype_refresh = Window_NameBox.prototype.refresh;
     Window_NameBox.prototype.refresh = function(text, position) {
       nameboxHide = false; // Reset on new window
+
+      // Replace color of name
+      if(Yanfly.Param.MSGNameBoxText){
+        let code = Yanfly.Param.MSGNameBoxText.replace(/\\c\[(\d{1,2})\]/i, '$1');
+        for (const [key, value] of Object.entries($.addColor)) {
+          if(key == text) text = text.replace(code, value); 
+        }
+      } else{
+        for (const [key, value] of Object.entries($.addColor)) {
+          if(key == text) text = '\\c[' + value + ']' + text;
+        }
+      }
       
       // Add YEP added text now, before doing sending my text to replaced names
       // Own YEP will be ignored (as it was set to an empty string)
       text = MSGNameBoxText + text;
-
-      // Replace names with entries in savedNames.json and $.replacements
-      let replacedName = replaceNames(text);
-      if(replacedName !== '') {
-        text = replacedName;
-        // Save replaced name for later use in backlog
-        $.nameBacklog = text + '\\c[0]: ';
-      }
-      // Add unknown name to file with translation from clipboard
-      else saveNewName(text);
 
       var text = ZERO_Window_NameBox_prototype_refresh.call(this, text, position);
       return text;
@@ -699,7 +542,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
         if (isHidden) this.visible = false;
         else this.visible = true;
       }
-      
+
       if (Input.isTriggered($.buttonHideOpacity) && this.isOpen()) {
         this.updateBackground();
       }
@@ -712,24 +555,20 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     //Replace Names (For use with SetClipboardText)
     Window_ActorName.prototype.setText = function (text) {
       this.updateBackground(); // Need to update background after forcing namebox
-      
-      this._text = text;
-      let color = params.textColor || 0; // Get text color from Lunatlazur params or set it to 0 (white)
-
-      // Replace names with entries in savedNames.json and $.replacements
-      let replacedName = replaceNames(this._text);
-      if(replacedName !== '') {
-        if(replacedName.startsWith('\\c') || replacedName.startsWith('\\C')){ // Manually add color to names
-          color = replacedName.substring(replacedName.indexOf('[')+1,replacedName.indexOf(']'));
-          replacedName = replacedName.substring(replacedName.indexOf(']')+1);
-        }
-        this._text = replacedName;
-        $.nameBacklog = replacedName + '\\c[0]: ';
+      let color;
+      if(/C\[\d{1,2}\]/i.test(text)){
+        color = text.replace(/C\[(\d{1,2})\].*/i, (...args) => { return args[1] });
+        text = text.replace(/C\[(\d{1,2})\]/gi, '');
+      } else {
+        color = params.textColor || 0; // Get text color from Lunatlazur params or set it to 0 (white)
       }
-      // Add unknown name to file with translation from clipboard
-      else saveNewName(this._text);
 
-      this.changeTextColor(this.textColor(color));
+      // Change text color
+      for (const [key, value] of Object.entries($.addColor)) {
+        if(key == text) color = value;
+      }
+
+      this._text = text;
 
       // Call this.refresh()
       // But modified for color
@@ -763,18 +602,10 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     };
 
     Window_MessageName.prototype.setName = function(name, colorIndex) {
-      // Replace names with entries in savedNames.json and $.replacements
-      let replacedName = replaceNames(name);
-      if(replacedName !== '') {
-        if(replacedName.startsWith('\\c') || replacedName.startsWith('\\C')){ // Manually add color to names
-          colorIndex = replacedName.substring(replacedName.indexOf('[')+1,replacedName.indexOf(']'));
-          replacedName = replacedName.substring(replacedName.indexOf(']')+1);
-        }
-        name = replacedName;
-        $.nameBacklog = replacedName + '\\c[0]: ';
+      // Add color
+      for (const [key, value] of Object.entries($.addColor)) {
+        if(key == name) colorIndex = value;
       }
-      // Add unknown name to file with translation from clipboard
-      else saveNewName(name);
 
       // Mod
       this.open();

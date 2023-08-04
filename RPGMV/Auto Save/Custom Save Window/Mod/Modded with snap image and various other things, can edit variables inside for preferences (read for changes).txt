@@ -1,0 +1,10 @@
++Merged with:
+ -KMS_AccelerateFileScene
+ -KMS_SaveWithSnap
+
++Deactivated top right item
+ -Changed to title of time (bottom right item)
+ -Can be deactivated with config var
+
++Added external and internal frame fro the snap
+ -Internal can be deactivated or changed color with config var
