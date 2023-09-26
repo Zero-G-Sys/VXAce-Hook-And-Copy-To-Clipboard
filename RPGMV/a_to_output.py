@@ -22,6 +22,7 @@ filenames_patch = [ # Add path to plugins_patch.txt, file must be in unicode (UT
     'Pause/plugins_patch.txt',
     'Core Render Fix/plugins_patch.txt',
     'Error Log File (ConsoleTrace)/plugins_patch.txt',
+    'Volume Control Anywhere/plugins_patch.txt'
 ]
 
 filenames = { # Add path to plugin file. Key: path, Value: filename
@@ -43,6 +44,7 @@ filenames = { # Add path to plugin file. Key: path, Value: filename
     'Pause': 'Luna_GamePauseMV.js',
     'Core Render Fix': 'GraphicsRenderFix.js',
     'Error Log File (ConsoleTrace)': 'ConsoleTrace.js',
+    'Volume Control Anywhere': 'ZERO_VolumeControlAnywhere.js',
 }
 
 # Check if output folder exists, create it otherwise

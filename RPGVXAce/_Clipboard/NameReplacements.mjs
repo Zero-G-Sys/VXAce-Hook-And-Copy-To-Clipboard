@@ -5,9 +5,10 @@
  */
 try {
   const nameReplacements = {
-    チャラ男: 'Playboy',
+    'チャラ男': 'Playboy',
   };
-  var nameReplacementsWitHonorifics = {};
+
+  var nameReplacementsWitHonorifics = {}; // Don't edit this
 
   for (let [key, value] of Object.entries(nameReplacements)) {
     nameReplacementsWitHonorifics[key + '姉さん'] = value + '-neesan';

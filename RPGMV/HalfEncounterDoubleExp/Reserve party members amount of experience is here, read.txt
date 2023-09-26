@@ -1,0 +1,7 @@
+Seems like they gain (1) or not (0)
+
+hardcode to 1 for them to always get exp
+
+Game_Actor.prototype.benchMembersExpRate = function() {
+    return $dataSystem.optExtraExp ? 1 : 0;
+};

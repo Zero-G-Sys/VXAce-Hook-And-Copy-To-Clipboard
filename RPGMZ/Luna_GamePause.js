@@ -2,7 +2,7 @@
 // Luna_GamePause.js
 //=============================================================================
 //=============================================================================
-// Build Date: 2020-10-15 18:54:20
+// Build Date: 2021-02-28 14:36:37
 //=============================================================================
 //=============================================================================
 // Made with LunaTea -- Haxe
@@ -66,6 +66,13 @@ SOFTWARE
 
 (function ($hx_exports, $global) { "use strict"
 var $estr = function() { return js_Boot.__string_rec(this,''); },$hxEnums = $hxEnums || {};
+
+// Zero_G Volume
+var bgmVolume;
+var bgsVolume;
+var meVolume;
+var seVolume;
+
 class EReg {
 	constructor(r,opt) {
 		this.r = new RegExp(r,opt.split("u").join(""))
@@ -134,6 +141,12 @@ class LunaScenePause extends Scene_MenuBase {
 	processExit() {
 		if(Input.isPressed("cancel") || TouchInput.isCancelled()) {
 			this.popScene()
+
+			// Zero_G Restore Volume
+			ConfigManager['bgmVolume'] = bgmVolume;
+			ConfigManager['bgsVolume'] = bgsVolume;
+			ConfigManager['meVolume'] = meVolume;
+			ConfigManager['seVolume'] = seVolume;
 		}
 	}
 }
@@ -182,6 +195,16 @@ class LunaGamePause {
 	}
 	static pauseGame() {
 		SceneManager.push(LunaScenePause)
+
+		// Zero_G Custom Code - Silence Volume
+		bgmVolume = ConfigManager['bgmVolume'];
+		bgsVolume = ConfigManager['bgsVolume'];
+		meVolume = ConfigManager['meVolume'];
+		seVolume = ConfigManager['seVolume'];
+		ConfigManager['bgmVolume'] = 0;
+		ConfigManager['bgsVolume'] = 0;
+		ConfigManager['meVolume'] = 0;
+		ConfigManager['seVolume'] = 0;
 	}
 	static params() {
 		return LunaGamePause.LGParams;
@@ -301,18 +324,6 @@ js_Boot.__name__ = true
 class _$LTGlobals_$ {
 }
 _$LTGlobals_$.__name__ = true
-class utils_Fn {
-	static proto(obj) {
-		return obj.prototype;
-	}
-	static updateProto(obj,fn) {
-		return (fn)(obj.prototype);
-	}
-	static updateEntity(obj,fn) {
-		return (fn)(obj);
-	}
-}
-utils_Fn.__name__ = true
 if(typeof(performance) != "undefined" ? typeof(performance.now) == "function" : false) {
 	HxOverrides.now = performance.now.bind(performance)
 }

@@ -458,6 +458,10 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
     ['-Onisama', '-onisama'],
     ['-Neechan', '-neechan'],
     ['-Niichan', '-niichan'],
+    [': ...', '...'],
+    ['…', '...'],
+    [/Pedophile/gi, m => 'Lolicon'.replaceWithProperCase(m)],
+    [/Publ?ic nucleus/gi, m => 'Clitoris'.replaceWithProperCase(m)],
     // Custom
  ]);
 
@@ -593,6 +597,18 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
   // Read files after defining queue
   storedTranslations = readFile('translationsCache') || {};
   savedNames = readFile('savedNames') || {};
+
+  /*-------------------------*/
+  /* Fix cache               */
+  /*-------------------------*/
+  // let newTL = {};
+  // for(var [key,value] of Object.entries(storedTranslations)){
+  //   value = value.replace(/　/g, ' ');
+  //   value = value.replace(/ {2,3}/g, ' ');
+  //   newTL[key] = value;
+  // }
+  // writeFile('newTL',newTL);
+  /*---------------------------*/
 
   // Make a backup of stored translations when game loads
   if($.useTranslationCache){
@@ -1071,6 +1087,9 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         translatedWindowText = processTextStartsWithDots(translatedWindowText);
         translatedWindowText = processTextBetweenParentheses(translatedWindowText);
         if(!translatedWindowText.includes('♥')) hasHeartCharacter = false;
+
+        // Restore escaped
+        translatedWindowText = translatedWindowText.replace(/(I|C){(\d{1,3})}/gi, '$1[$2]');
 
         translatedChoices = translatedChoices.splice(0, $gameMessage.choices().length);
       }
@@ -1718,11 +1737,8 @@ var clipboardDisabledBattle = clipboardDisabledBattle || false;
         
     stopDrawingText = true;
 
-    // Restore icons escape (would like to do this before it is being sent here
-    //  so it's stored in cache but can't put it choice replace, look into it) 
-    if(/\\?i\[/gi.test(text)){
-      text = text.replace(/\\?i\[/gi, '\\I[');
-    }
+    // If a color or icon came without escape characters fix it
+    text = text.replace(/(\\|)?(i|c)\[(\d{1,3})\]/gi, '\\$2[$3]')
 
     // Restore heart to text
     if(hasHeartCharacter && (!text.includes('#') && !text.includes('%23') && !text.includes('♡') && !text.includes('♥') && !text.includes('❤'))){

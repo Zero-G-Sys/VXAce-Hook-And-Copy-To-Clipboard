@@ -1,0 +1,16 @@
+put .vscode in www folder, or create new launch.json file (with the contents of this one
+
+now you can launch game directly from vs code in debug (bug and play icon) and "run nwjs Node debug"
+
+
+
+each time there is an error, it will be displayed in the game window with low information, find where the try catch is triggered and comment them
+
+ex  try {
+    } catch (e) {
+        this.catchException(e);
+    }
+
+should always start with SceneManager.run one
+
+this will give an extensive error info in the debug console in vs code

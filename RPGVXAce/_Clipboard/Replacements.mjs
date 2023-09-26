@@ -115,6 +115,19 @@ try {
     ['マ〇コ', 'マンコ'], // katakana for manko (pussy) will also work for オマ〇コ -> オマンコ (omanko)
     ['チ〇ポ', 'チンポ'], // Katakana for chinpo (penis)
     ['やれやれ', 'Yareyare'],
+    // Add ':' to names on first line
+    //~ Name isn't in between any special characters, only it's in the first line (TODO: fix it messes up node console log and translator aggregator)
+    // [/(.*)\n/, m=>{ // Add : at end of names (assume that first line is a name)
+    //   let name = m;
+    //   if (name.length < 12 && name.length > 0) return name.trim() + ': ';
+    //   else return '';
+    // }],
+    //~ Name starts with a special symbol. For ex: ◆
+    // [/◆(.*)/, m=>{ // As text comes in multiline and, we aren't using multiline modifier, the first match will be the 1st line
+    //   let name = m.replace('◆', '');
+    //   if (name.length < 12 && name.length > 0) return name + ': ';
+    //   else return '';
+    // }],
     // Custom (Game Specific)
   ]);
 } catch (error) {

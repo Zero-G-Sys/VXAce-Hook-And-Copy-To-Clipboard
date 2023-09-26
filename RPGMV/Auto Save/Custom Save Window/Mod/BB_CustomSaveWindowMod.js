@@ -350,6 +350,12 @@ Imported.BB_CustomSaveWindowMod = true;
   // Method2: Adapt to the other frames
   var snapFrameMethod = 2; // Be either 1 or 2
 
+  // Snap position correction
+  var snapPosCorX = 0;
+  var snapPosCorY = 0;
+  var snapFramePosCorX = 0;
+  var snapFramePosCorY = 0;
+
   var snapInternalBorder = true;
   var snapInternalBorderColor = 15; //black
 
@@ -430,6 +436,19 @@ Imported.BB_CustomSaveWindowMod = true;
     return info;
   };
 
+  // New method: Load image once only to get it's size
+  // As we real image for the snaps has to be loaded after the borders, otherwise
+  // they are drawn behind the snap
+  Window_SavefileList.prototype.getSnapSize = function (info, valid) {
+    if (!(valid && info.snapUrl)) return;
+
+    var bitmap = ImageManager.loadNormalBitmap(info.snapUrl);
+    var dh = this.itemHeight() - 8;
+    var dw = (bitmap.width * dh) / bitmap.height;
+
+    return {h: dh, w: dw}
+  };
+
   var _Window_SavefileList_prototype_drawItem = Window_SavefileList.prototype.drawItem;
   Window_SavefileList.prototype.drawItem = function (index) {
     var id = index + 1;
@@ -447,12 +466,14 @@ Imported.BB_CustomSaveWindowMod = true;
 
     // Zero_G reduce size of top frame (where save number is) (Idea discarded, move snap image at top of this)
     this.contents.fillRect(rect.x - 3, rect.y + 4, rect.width + 6, 28, this.textColor(BBSWInFC));
-    // Draw a frame for the snap
-    let snapSizeWidth = 122; // Get these two values from drawSnappedImage bitmap width and height if for some reason change
-    let snapSizeHeight = 93;
+    /* Draw a frame for the snap */
+    // Get snap h and w if it fails use hardcoded ones (to get the hardcoded ones check the values of dh and dw in drawSnappedImage method)
+    let snapSize = this.getSnapSize(info, valid);
+    let snapSizeWidth = snapSize ? snapSize.w : 122;
+    let snapSizeHeight = snapSize ? snapSize.h : 93;
     if (valid) {
-      if (snapFrameMethod == 1) this.contents.fillRect(rect.x + 520, rect.y + 0, snapSizeWidth + 10, snapSizeHeight + 10, this.textColor(BBSWInFC));
-      else this.contents.fillRect(rect.x + 515, rect.y + 32, snapSizeWidth + 20, snapSizeHeight - 25, this.textColor(BBSWInFC));
+      if (snapFrameMethod == 1) this.contents.fillRect(rect.x + 520 + snapFramePosCorX, rect.y + 0 + snapFramePosCorY, snapSizeWidth + 10, snapSizeHeight + 10, this.textColor(BBSWInFC));
+      else this.contents.fillRect(rect.x + 515 + snapFramePosCorX , rect.y + 32 + snapFramePosCorY, snapSizeWidth + 20, snapSizeHeight - 25, this.textColor(BBSWInFC));
     }
     this.contents.paintOpacity = BBSWOutFO;
     if (BBSWMaxItem >= 0) {
@@ -519,13 +540,15 @@ Imported.BB_CustomSaveWindowMod = true;
 
     // Add 2px internal black frame
     if (valid && snapInternalBorder) {
-      this.contents.fillRect(rect.x + 523, rect.y + 4, snapSizeWidth + 3, 2, 
+      let exX = snapFramePosCorX;
+      let exY = snapFramePosCorY;
+      this.contents.fillRect(rect.x + 523 + exX, rect.y + 4 + exY, snapSizeWidth + 3, 2, 
         this.textColor(snapInternalBorderColor)); //top bar
-      this.contents.fillRect(rect.x + 523, rect.y + snapSizeHeight + 4, snapSizeWidth + 3, 2, 
+      this.contents.fillRect(rect.x + 523 + exX, rect.y + snapSizeHeight + 4 + exY, snapSizeWidth + 3, 2, 
         this.textColor(snapInternalBorderColor)); //bottom bar
-      this.contents.fillRect(rect.x + 523 + snapSizeWidth + 2, rect.y + 4, 2, snapSizeHeight + 2, 
+      this.contents.fillRect(rect.x + 523 + snapSizeWidth + 2 + exX, rect.y + 4, 2 + exY, snapSizeHeight + 2, 
         this.textColor(snapInternalBorderColor)); //right bar
-      this.contents.fillRect(rect.x + 523, rect.y + 4, 2, snapSizeHeight + 2, 
+      this.contents.fillRect(rect.x + 523 + exX, rect.y + 4, 2 + exY, snapSizeHeight + 2, 
         this.textColor(snapInternalBorderColor)); //left bar
     }
     // Snap end
@@ -827,8 +850,8 @@ Imported.BB_CustomSaveWindowMod = true;
     var bitmap = ImageManager.loadNormalBitmap(info.snapUrl);
     var dh = this.itemHeight() - 8;
     var dw = (bitmap.width * dh) / bitmap.height;
-    var dx = rect.x + Math.max(rect.width - dw - 120, 0);
-    var dy = rect.y + 4;
+    var dx = rect.x + Math.max(rect.width - dw - 120, 0) + snapPosCorX;
+    var dy = rect.y + 4 + snapPosCorY;
 
     this.changePaintOpacity(true);
     this.contents.blt(bitmap, 0, 0, bitmap.width, bitmap.height, dx, dy, dw, dh);

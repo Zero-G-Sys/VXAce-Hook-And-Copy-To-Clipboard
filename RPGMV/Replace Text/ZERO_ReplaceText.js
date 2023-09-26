@@ -1,12 +1,12 @@
 //=============================================================================
-// ZERO_Replace_Text.js
+// ZERO_ReplaceText.js
 //=============================================================================
 /*:
- * @ZERO_Replace_Text
+ * @ZERO_ReplaceText
  * @plugindesc Replace text from game
- * @version 1.3
+ * @version 1.4
  * @author Zero_G
- * @filename ZERO_Replace_Text.js
+ * @filename ZERO_ReplaceText.js
  * @help
  -------------------------------------------------------------------------------
  == Description ==
@@ -24,6 +24,7 @@
  Just add the plugin.
 
  == Changelog ==
+ v1.4 - Added DarkPlasma Namebox
  v1.3 - Process text before processing escape characters
       - Changed main replacements from dictionary to map (so regex can be used directly)
       - Add name replace and change name color for 3 main name plugins
@@ -53,11 +54,14 @@ ZERO.Replace_Text = ZERO.Replace_Text || {};
     [/。/g, '.'],
     [/　/g, ' '],
     // Restore japanese honorifics
-    [/miss( |\n)(\w+)/gi, '$2-san'], // capturing group 3 because a line of code will add a group to the space: "(M|m)iss( |\n)(\w+)"
-    [/Lady( |\n)(\w+)/gi, '$2-sama'],
-    [/Ms.( |\n)(\w+)/gi, '$2-san'],
-    // Custom    
+    [/(M|m)iss( |\n)(?=[A-Z])(\w+)/g, '$3-san'], // Only trigger on words that start with a capital letter
+    [/(L|l)ady( |\n)(?=[A-Z])(\w+)/g, '$3-sama'],
+    [/Ms\.( |\n)(\w+)/gi, '$2-san'],
+    // Custom
   ]);
+
+  //TODO: Test in all enviroments, the combine all nameRemplacement variables into one (no need to have separate for each script)
+  //TODO2: Set default color for all scripts (Right now I think you can override only Luna's). And set a variable name like defaultNameColor
 
   // YEP (Not tested)
   // 'Name_to_replace': ['Replaced_name_or_empty_if_same', color_code_or_empty_if_ignored]
@@ -66,6 +70,8 @@ ZERO.Replace_Text = ZERO.Replace_Text || {};
   // replace the name in the namebox only
   const YEPNameReplacements = {
     //'Name': ['NewName', 3], // Change name and color
+    //'Name': ['NewName'],    // Change name and without setting new color
+    //'Bell': ['', 8],        // Change color only
   }
 
   // MPP (Not tested) (Would like to add Luna global expose method to MPP, and also update hidetextbox with that method)
@@ -81,6 +87,11 @@ ZERO.Replace_Text = ZERO.Replace_Text || {};
   // 'Name_to_replace': ['Replaced_name_or_empty_if_same', color_code_or_empty_if_ignored]
   const LunaDefaultNameColor = 0; // Set default color for Luna Nameboxes
   const LunaNameReplacements = {
+    //'Noelle': ['', 2],
+  }
+
+  // DarkPlasma
+  const DarkPlasmaReplacements = {
     //'Noelle': ['', 2],
   }
 
@@ -141,6 +152,24 @@ ZERO.Replace_Text = ZERO.Replace_Text || {};
       this.changeTextColor(this.textColor(LunaDefaultNameColor));
     }
     this.drawText(this._text, this.standardPadding() * 2, 0, this.contents.width);
+  }
+
+  /*------------------------------------------------------------------------------------- */
+  /* DarkPlasma_NameWindow */
+  if(typeof DarkPlasma_NameWindow != 'undefined' && DarkPlasma_NameWindow){ // Check if modded ver is present
+    var ZERO_Window_SpeakerName_show = DarkPlasma_NameWindow.nameWindow.prototype.show;
+    DarkPlasma_NameWindow.nameWindow.prototype.show = function(text, position) {
+      for(const key in DarkPlasmaReplacements){
+        if(new RegExp('^(\\\\c\\[\\d{1,2}\\])?' + key, 'i').test(text)){
+          if(DarkPlasmaReplacements[key][0] !== '') text = text.replace(key, DarkPlasmaReplacements[key][0]);
+          if(DarkPlasmaReplacements[key][1]) 
+            text = text.replace(/\\c\[\d{1,2}\]/i, '\\c[' + DarkPlasmaReplacements[key][1] + ']'); // Assuming there is always a color code
+          break;
+        }
+      }
+
+      ZERO_Window_SpeakerName_show.call(this, text, position);
+    };
   }
 
   /*------------------------------------------------------------------------------------- */

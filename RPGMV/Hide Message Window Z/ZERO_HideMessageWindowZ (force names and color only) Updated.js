@@ -157,7 +157,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   // usingSemiColon to true 
   // Use only one sub method (can be both false)
   const forceNameboxMethod2 = false;
-  var maxNamesLength = 15;
+  var maxNamesLength = 22;
   var nameInSameLine = false; // Is name and text continuous (true) or separated by a line break (false)?
   var usingQuotation = true; // text uses 「 or （ or 『 for dialogues?
   var usingSemiColon = false;  // Name ends with : or ： (JP width semicolon)
@@ -171,20 +171,11 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   // Replace names color
   $.addColor = {
     // By Eye colors
-    'Ovelia': '27',
-    'Hinagiku': '29',
-    'Fau': '28',
-    'Rosche': '25',
-    /* By Hair colors
-    'Ovelia': '27',
-    'Hinagiku': '7',
-    'Fau': '21',
-    'Rosche': '29',
-    */
-    'Hecate': '31',
-    'Onihime': '18',
-    'Farin': '11',
-    'Lyka': '31',
+    //'Ovelia': '27',
+    // By Hair colors
+    //'Hinagiku': '7',
+    // Unorganized
+    //'Hecate': '31',
   }
   /*** END OF MANUAL CONFIGURATION ***/
   
@@ -192,6 +183,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   var reducedMessageRows = Yanfly.Param.MSGDefaultRows - 1;
 
   if(!Yanfly.Param.MSGDefaultRows && changeMessageRows){
+    // If YEP is not present hardcode values and add missing necessary methods
     defaultMessageRows = 4; // Hard code them
     reducedMessageRows = 3;
 
@@ -202,6 +194,61 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     Game_System.prototype.messageRows = function() {
       var rows = eval(this._messageRows) || defaultMessageRows;
       return Math.max(1, parseInt(rows));
+    };
+  } else if(changeMessageRows) {
+    // If YEP is present, fix not drawing 3 lines on 3 row textboxes
+    Game_Interpreter.prototype.command101 = function() {
+      if (!$gameMessage.isBusy()) {
+        $gameMessage.setFaceImage(this._params[0], this._params[1]);
+        $gameMessage.setBackground(this._params[2]);
+        $gameMessage.setPositionType(this._params[3]);
+        while (this.isContinueMessageString()) {
+          this._index++;
+          if (this._list[this._index].code === 401) {
+            $gameMessage.addText(this.currentCommand().parameters[0]);
+          }
+          if ($gameMessage._texts.length > $gameSystem.messageRows()) break; // Allow to draw one more line
+        }
+        switch (this.nextEventCode()) {
+        case 102:
+          this._index++;
+          this.setupChoices(this.currentCommand().parameters);
+          break;
+        case 103:
+          this._index++;
+          this.setupNumInput(this.currentCommand().parameters);
+          break;
+        case 104:
+          this._index++;
+          this.setupItemChoice(this.currentCommand().parameters);
+          break;
+        }
+        this._index++;
+        this.setWaitMode('message');
+      }
+      return false;
+    };
+  }
+
+  Window_Message.prototype.updateRows = function(){
+    height = this.windowHeight();
+    this.move(this.x, this.y, this.width, height);
+    this.updatePlacement();
+    this.updateBackground();
+  }
+
+  // Fix namebox and choices colliding when they are on the left side
+  if(typeof Yanfly != 'undefined' && typeof Yanfly.Message != 'undefined' && Yanfly.Message.Window_ChoiceList_updatePlacement){
+    Window_ChoiceList.prototype.updatePlacement = function() {
+      Yanfly.Message.Window_ChoiceList_updatePlacement.call(this);
+      var messagePosType = $gameMessage.positionType();
+      if (messagePosType === 0) {
+        this.y = this._messageWindow.height;
+      } else if (messagePosType === 2) {
+        this.y = Graphics.boxHeight - this._messageWindow.height - this.height;
+        if(this.x == 0 && this._messageWindow._nameWindow.isOpen()) // Added condition
+          this.y = this.y - this._messageWindow._nameWindow.height;
+      }
     };
   }
 
@@ -235,6 +282,7 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   $.buttonHide = addKeyMapping($.buttonHide);
   $.buttonHideOpacity = addKeyMapping($.buttonHideOpacity);
 
+  /* Modify Inputs (Not related to HideMessageBox, should get it's own script) */
   // Remove 'alt' key from mappings
   delete Input.keyMapper[18];
   // Remove 'control' and replace it with left control only
@@ -242,13 +290,21 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   var ZERO_Input__onKeyDown = Input._onKeyDown;
   Input._onKeyDown = function(event) {
     ZERO_Input__onKeyDown.call(this, event);
-	  if(event.code === 'ControlLeft') this._currentState['control'] = true;
+	if(event.code === 'ControlLeft') this._currentState['control'] = true;
   };
   var ZERO_Input__onKeyUp = Input._onKeyUp
   Input._onKeyUp = function(event) {
     ZERO_Input__onKeyUp.call(this, event);
-	  if(event.code === 'ControlLeft') this._currentState['control'] = false;
+	if(event.code === 'ControlLeft') this._currentState['control'] = false;
   };
+  // Add mapping for 'd' and set vbnm to 'd'
+  Input.keyMapper[68] = 'd'; // d
+  Input.keyMapper[86] = 'd'; // v
+  Input.keyMapper[66] = 'd'; // b
+  Input.keyMapper[78] = 'd'; // n
+  Input.keyMapper[77] = 'd'; // m
+  // Set numpad0 to 'ok' (it's originally set to 'escape')
+  Input.keyMapper[96] = 'ok';
 
   /* ---------------------------------------------------------------------------- */
   /* Add nameboxes /
@@ -278,15 +334,13 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       } else $gameSystem._messageRows = defaultMessageRows;
 
       // Update rows
-      if(changeMessageRows){
-        height = this.windowHeight();
-        this.move(this.x, this.y, this.width, height);
-        this.updatePlacement();
-        this.updateBackground();
-      }
+      if(changeMessageRows) this.updateRows();
 
       this._textState.text = this._textState.text.replace(/>\n/, '>');
       this._textState.text = this.convertEscapeCharacters(this._textState.text); //Call escape characters again to create namebox
+
+      // Fix placement on luna namewindow
+      if(typeof Window_ActorName == 'function' && this._nameWindow.active) this._nameWindow.updatePlacement();
     };
   }
 
@@ -361,13 +415,17 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       // Update rows
       if(changeMessageRows && /\\n</i.test(this._textState.text)) {
         $gameSystem._messageRows = reducedMessageRows;
-        height = this.windowHeight();
-        this.move(this.x, this.y, this.width, height);
-        this.updatePlacement();
-        this.updateBackground();
-      } else $gameSystem._messageRows = defaultMessageRows;      
-     
+        this.updateRows();
+      } else if(changeMessageRows){
+        $gameSystem._messageRows = defaultMessageRows;
+        this.updateRows();
+      }
+
+      this._textState.text = this._textState.text.replace(/(C\[0\])+>/gi, '>'); //Clean up color codes
       this._textState.text = this.convertEscapeCharacters(this._textState.text); //Call escape characters again to create namebox
+
+      // Fix placement on luna namewindow
+      if(typeof Window_ActorName == 'function' && this._nameWindow.active) this._nameWindow.updatePlacement();
     };
   }
 
@@ -489,26 +547,34 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
 
     // Alt: Replace names with translated ones
     var MSGNameBoxText = Yanfly.Param.MSGNameBoxText; // Alt save state of "Name Box Added Text"
+    var MSGNameBoxTextIsColor = /\\c\[(\d{1,2})\]/i.test(MSGNameBoxText) || false;
     Yanfly.Param.MSGNameBoxText = ''; // Prevent changes to replacedName after being replaced
     var ZERO_Window_NameBox_prototype_refresh = Window_NameBox.prototype.refresh;
     Window_NameBox.prototype.refresh = function(text, position) {
       nameboxHide = false; // Reset on new window
+      let localMSGNameBoxText = MSGNameBoxText; // Modify color for current name only, not globally
 
       // Replace color of name
-      if(Yanfly.Param.MSGNameBoxText){
-        let code = Yanfly.Param.MSGNameBoxText.replace(/\\c\[(\d{1,2})\]/i, '$1');
+      if(MSGNameBoxText && MSGNameBoxTextIsColor){ // If YEP has a default namebox color
         for (const [key, value] of Object.entries($.addColor)) {
-          if(key == text) text = text.replace(code, value); 
+          if(key == text.replace(/C\[\d{1,3}\]/gi, '')) {
+            text = text.replace(/C\[\d{1,3}\]/gi, ''); // Remove color code if there was any (overrides YEP one otherwise, and we are modifying YEP)
+            localMSGNameBoxText = localMSGNameBoxText.replace(/\d{1,3}/, value);
+            break;
+          }
         }
       } else{
         for (const [key, value] of Object.entries($.addColor)) {
-          if(key == text) text = '\\c[' + value + ']' + text;
+          if(key == text.replace(/C\[\d{1,3}\]/gi, '')) {
+            text = '\\c[' + value + ']' + text;
+            break;
+          }
         }
       }
       
       // Add YEP added text now, before doing sending my text to replaced names
       // Own YEP will be ignored (as it was set to an empty string)
-      text = MSGNameBoxText + text;
+      if(localMSGNameBoxText) text = localMSGNameBoxText + text;
 
       var text = ZERO_Window_NameBox_prototype_refresh.call(this, text, position);
       return text;

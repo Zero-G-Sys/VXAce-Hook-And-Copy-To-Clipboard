@@ -233,6 +233,21 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     }
   }*/
 
+  // Fix namebox and choices colliding when they are on the left side. YEP only
+  if(Yanfly && Yanfly.message && Yanfly.Message.Window_ChoiceList_updatePlacement){
+    Window_ChoiceList.prototype.updatePlacement = function() {
+      Yanfly.Message.Window_ChoiceList_updatePlacement.call(this);
+      var messagePosType = $gameMessage.positionType();
+      if (messagePosType === 0) {
+        this.y = this._messageWindow.height;
+      } else if (messagePosType === 2) {
+        this.y = Graphics.boxHeight - this._messageWindow.height - this.height;
+        if(this.x == 0 && this._messageWindow._nameWindow.isOpen()) // Added condition
+          this.y = this.y - this._messageWindow._nameWindow.height;
+      }
+    };
+  }
+
   // Get plugin name and parameters
   var substrBegin = document.currentScript.src.lastIndexOf('/');
   var substrEnd = document.currentScript.src.indexOf('.js');
@@ -305,6 +320,9 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
       }
       this._textState.text = this._textState.text.replace(/>\n/, '>');
       this._textState.text = this.convertEscapeCharacters(this._textState.text); //Call escape characters again to create namebox
+
+      // Fix placement on luna namewindow
+      if(typeof Window_ActorName == 'function' && this._nameWindow.active) this._nameWindow.updatePlacement();
     };
   }
 
@@ -376,6 +394,9 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
         }
       }
       this._textState.text = this.convertEscapeCharacters(this._textState.text); //Call escape characters again to create namebox
+
+      // Fix placement on luna namewindow
+      if(typeof Window_ActorName == 'function' && this._nameWindow.active) this._nameWindow.updatePlacement();
     };
   }
   /* ---------------------------------------------------------------------------- */

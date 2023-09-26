@@ -1,0 +1,1 @@
+{"name":"DarkPlasma_NameWindow","status":true,"description":"メッセージに名前ウィンドウを表示する","parameters":{"standardPadding":"10","horizontalPadding":"72","defaultColor":"6","windowOffsetX":"0","windowOffsetY":"-10","closeDelayFrame":"4","actorColors":"[]","autoDetectName":"false"}},

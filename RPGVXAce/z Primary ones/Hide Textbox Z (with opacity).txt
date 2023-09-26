@@ -141,7 +141,7 @@ class Window_Message < Window_Base
         @name_window.opacity = 255 unless @name_window.nil? # MessageEnhance Name Window
         if @@normalBackground 
           @background = 0
-          @name_plate_window.opacity = ZERO::DEFAULT_OPACITY #MOTO (Window Name Plate)
+          @name_plate_window.opacity = ZERO::DEFAULT_OPACITY unless @name_plate_window.nil? #MOTO (Window Name Plate)
           self.opacity = ZERO::DEFAULT_OPACITY
         elsif @@dimBackground
           @background = 1

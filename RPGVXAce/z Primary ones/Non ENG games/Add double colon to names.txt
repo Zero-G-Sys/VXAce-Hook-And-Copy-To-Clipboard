@@ -1,11 +1,5 @@
 # DeepL fraks out if the name in the frist line is not separated by a '.' or ':'
 # Try to add it, only when the frist line is less than a specific number
-# Also assuming all text will have Åü at the start, use it as a delimeter
-# to filter out all the escape codes that the text could have at the beginning
-
-# Important this Åü was game specific, If your name doesn't have it or it doesn't
-# start with any specific symbol, remove the check for symbol_index and just get 
-# the length of the first line as is
 
 module ZERO
   MAX_NAME_LENGTH = 12
@@ -15,19 +9,16 @@ class Window_Message < Window_Base
   # Overwrite
   # Taken an overwrite from another plugin that is being used
   def process_all_text
+    open_and_wait
+    
     text = $game_message.all_text
     
     lines = text.split(/[\r\n]/, 2) # Split only on first line
     first_line = lines[0]
+    first_line_lenght = first_line.length
 
-    # Find the position of the Åü symbol
-    symbol_index = first_line.index("Åü")
-    first_line_lenght = first_line[symbol_index + 1..-1].length unless symbol_index.nil?
-
-    if symbol_index && first_line_lenght < ZERO::MAX_NAME_LENGTH && first_line_lenght != 0
-      # Replace the line break after the Åü symbol with a dot
+    if first_line_lenght < ZERO::MAX_NAME_LENGTH && first_line_lenght != 0
       lines[0] = lines[0] + ': ' unless lines[0].nil?
-      #lines[0] = lines[0] + ':' if lines[1] and (lines[1].start_with?(".") or lines[1].start_with?("Åc"))
     end
 
     text = lines.join("\n")

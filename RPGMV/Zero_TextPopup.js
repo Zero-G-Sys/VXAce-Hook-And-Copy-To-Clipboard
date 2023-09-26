@@ -1,12 +1,12 @@
 //=============================================================================
-// Text_Popup.js
+// Zero_TextPopup.js
 //=============================================================================
 /*:
- * @Text_Popup
+ * @Zero_TextPopup
  * @plugindesc Display a popup text
  * @version 1.0
  * @author Zero_G
- * @filename Text_Popup.js
+ * @filename Zero_TextPopup.js
  * @help
  -------------------------------------------------------------------------------
  == Description ==

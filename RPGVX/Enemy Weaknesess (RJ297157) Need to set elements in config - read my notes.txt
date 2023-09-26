@@ -69,6 +69,9 @@
 # Seems like ELEMENT_NAME must match the name of the element number set in
 # ELEMENT_SET. So if in the game DB, element 1 is named "Fire", the first
 # string in ELEMENT_NANME must be "Fire" (so translate them both)
+# Also seems the name of the elements like the ELEMENT_NAME must match to the 
+# ones in the DB System, if element 1 is Fire, it should also be Fire here 
+# (not "Flame" for example)
 
 #==============================================================================
 # ■ カスタマイズ開始

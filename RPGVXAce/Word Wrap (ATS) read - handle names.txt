@@ -1,0 +1,39 @@
+IMPORTANT: In one game I tested it it would erase some textboxes and leave them empty, I think it was ones that had only one word. More testing needed.
+Also be careful, saves made with this plugin are not compatible with ones that don't have it.
+
+If you set paragraph mode in line 125 (default true) it will remove the original line breaks
+
+
+If you remove line breaks and there were names in the first line:
+
+---------------------------
+[Name]
+text text text
+---------------------------
+
+it will end like this
+
+---------------------------
+[Name] text text text
+---------------------------
+
+---------------------------------------------------------------------------------
+So the solution is editing the text after the line breaks were removed.
+That is on line 432
+
+here is an example of what to do if the text was like this:
+
+---------------------------
+Name
+"text text text"
+---------------------------
+
+    # Zero_G: Custom code to add a line break after a name
+    # In this case we detect 
+    # -If there is a "
+    # -If the text doesn't start with "
+    # -There is text before a " with a length less than x
+    if result.include? '"' and !result.start_with?('"') and result.index('"') <= 15
+      result.sub! "\"", "\n\""
+    end
+    result

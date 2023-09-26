@@ -6,7 +6,7 @@
 * @plugindesc Hide textbox or make textbox invisible while showing text.
 * @title Hide Message Window Z
 * @author Zero_G
-* @version 2.2.5
+* @version 2.3.0
 * @filename ZERO_HideMessageWindowZ.js
 * @help 
 -------------------------------------------------------------------------------
@@ -54,7 +54,11 @@ HideMessageWindowZ_Lunatlazur = Window_ActorName;
 
 == Change Log ==
 TODO in 2.2.1 notes
+TODO2: Get data from subwindows instead of modifying the update of namewindows? (Will still 
+  need to update some methods to keep opacity in next messages)
 
+2.3.0
+ - Added support for DarkPlasma_NameWindow
 2.2.5
  - Fixed a bug where YEP_MessageCore Namebox would show up if hiding a textbox with no namebox
 2.2.4
@@ -135,6 +139,8 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
   $.buttonHide = addKeyMapping($.buttonHide);
   $.buttonHideOpacity = addKeyMapping($.buttonHideOpacity);
 
+
+  /* Modify Inputs (Not related to HideMessageBox, should get it's own script) */
   // Remove 'alt' key from mappings
   delete Input.keyMapper[18];
   // Remove 'control' and replace it with left control only
@@ -149,6 +155,14 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     ZERO_Input__onKeyUp.call(this, event);
 	if(event.code === 'ControlLeft') this._currentState['control'] = false;
   };
+  // Add mapping for 'd' and set vbnm to 'd'
+  Input.keyMapper[68] = 'd'; // d
+  Input.keyMapper[86] = 'd'; // v
+  Input.keyMapper[66] = 'd'; // b
+  Input.keyMapper[78] = 'd'; // n
+  Input.keyMapper[77] = 'd'; // m
+  // Set numpad0 to 'ok' (it's originally set to 'escape')
+  Input.keyMapper[96] = 'ok';
 
   /* ---------------------------------------------------------------------------- */
 
@@ -423,6 +437,34 @@ ZERO.HideMessageWindow = ZERO.HideMessageWindow || {};
     };
   }
 
- 
+  /* ---------------------------------------------------------------------------- */
+  /* For DarkPlasma_NameWindow                                                   */ 
+  /* -------------------------------------------------------------------------- */
+  // Need modded DarkPlasma_nameWindow script (Tried to expose the Window_SpeakerName
+  // only instead of needing to de anonymizing it)
+  if(typeof DarkPlasma_NameWindow != 'undefined' && DarkPlasma_NameWindow){
+    // Keep opacity to next message
+    var ZERO_Window_SpeakerName_updateBackground = DarkPlasma_NameWindow.nameWindow.prototype.updateBackground;
+    DarkPlasma_NameWindow.nameWindow.prototype.updateBackground = function() {
+      ZERO_Window_SpeakerName_updateBackground.call(this);
+      if (isHiddenOpacity) this.setBackgroundType(2);
+      else this.setBackgroundType(this._background);
+    };
 
+    var ZERO_Window_SpeakerName_update = DarkPlasma_NameWindow.nameWindow.prototype.update;
+    DarkPlasma_NameWindow.nameWindow.prototype.update = function() {
+      if ((Input.isTriggered($.buttonHide) || TouchInput.isCancelled()) && this.isOpen()) { 
+        if (isHidden) this.visible = false;
+        else this.visible = true;
+      }
+  
+      // Hide message window but keep text
+      if (Input.isTriggered($.buttonHideOpacity)) {
+        if (isHiddenOpacity) this.setBackgroundType(2);
+        else this.setBackgroundType(this._background);
+      }
+
+      ZERO_Window_SpeakerName_update.call(this);
+    };
+  }
 })(ZERO.HideMessageWindow);

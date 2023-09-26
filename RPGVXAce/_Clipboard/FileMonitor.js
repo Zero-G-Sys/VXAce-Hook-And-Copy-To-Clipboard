@@ -24,9 +24,21 @@ import iconv from 'iconv-lite';
 import { pathToFileURL } from 'node:url';
 
 /** Config */ 
-const gameFolder = 'I:/H Games/_To MTL/Curse Errant [Coolsister]'; // Update this with game folder
+//const gameFolder = 'I:/H Games/_To MTL/Curse Errant [Coolsister]'; // Update this with game folder (Change \ to / in path)
+//const gameFolder = 'I:/H Games/_To MTL/Muma\'s Curio Shop [Blackwing]'; 
+const gameFolder = 'I:/H Games/_To MTL/Bloody Virgin [U-ROOM]'; 
 const makeTextASingleLine = true;
 const ignoreNonJapaneseText = false; // Irrelevant if already activated on the ruby plugin
+
+// TODO: Add the rest of the modes
+// TODO2: Move mode 1 to before removing lines (and modify it)
+// If a textbox starts with a name, but it doesn't have a ':' between the dialogue, DeepL often times mistranslates
+const addDoubleColonToNames = true; 
+// How is the name in the text?
+// Mode 1: Name is followed by a quotation mark (ex: Name 「Dialogue」)
+const doubleColonMode = 1;
+// Only apply this if the name is less than x length? (0 disabled)
+const nameLength = 7;
 /** End of config */ 
 
 // Don't modify this if the module files are on the game folder. If you want to use
@@ -37,6 +49,9 @@ const nameReplacementsPath = gameFolder + '/_Clipboard/NameReplacements.mjs'; //
 const ignoreArrayPath = gameFolder + '/_Clipboard/Ignore.mjs'; // Default is './Ignore.mjs'
 
 const isJapaneseRegex = /[一-龠]+|[ぁ-ゔ]+|[ァ-ヴー]+|[ａ-ｚＡ-Ｚ０-９]+|[々〆〤！？]+/;
+
+// Track what is in the current file so it doesn't send the same text twice
+var previousText = "";
 
 // Make an async import so we can use the paths set in the previous variables
 var replacements = {}; // Map
@@ -109,6 +124,10 @@ fileWatcher.on('change', (path) => {
     // If empty, ignore
     if (!fileContents) return;
 
+    // Ignore if the text is the same
+    if (fileContents == previousText) return;
+    previousText = fileContents;
+
     // Ignore non japanese text (if flag is on)
     if (ignoreNonJapaneseText && !isJapaneseRegex.test(fileContents)){
       console.log('Ignoring non japanese text: ' + fileContents);
@@ -150,6 +169,20 @@ fileWatcher.on('change', (path) => {
       } else {
         // Remove spaces and line breaks at the end of text
         modifiedContents = modifiedContents.trimEnd();
+      }
+
+      // Add ':' to names
+      if(addDoubleColonToNames){
+        if(doubleColonMode == 1){
+          modifiedContents = modifiedContents.replace(/.*(「|\(|（)/, (...args)=>{ 
+            let index = modifiedContents.indexOf('「'); // Force looking first for index of 「
+            if(index == -1) index = modifiedContents.indexOf(args[1]);
+            let name = modifiedContents.substring(0, index)
+            if(nameLength != 0 && name.trim().length != 0 && name.trim().length < nameLength) 
+              return name.trim() + ': ' + args[1];
+            else return args[0];
+          });
+        }
       }
 
       // Copy modified contents to clipboard
